@@ -1,3 +1,12 @@
+export type TabFileFormat = 'pdf' | 'gp5' | 'gpx' | 'mp3'
+
+export interface TabFiles {
+  pdf?: string
+  gp5?: string
+  gpx?: string
+  mp3?: string
+}
+
 export interface Tab {
   id: string
   title: string
@@ -5,7 +14,7 @@ export interface Tab {
   price: number
   description: string
   photo_url: string
-  pdf_url: string
+  files: TabFiles
   purchase_count: number
 }
 

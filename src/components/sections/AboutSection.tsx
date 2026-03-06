@@ -1,7 +1,8 @@
 "use client"
 
+import Image from "next/image"
 import { motion } from "framer-motion"
-import { Music, Guitar, Headphones } from "lucide-react"
+import { Music, Guitar, Headphones } from 'lucide-react'
 
 const facts = [
   { icon: Guitar, label: "Гитарист", desc: "Играю более 10 лет" },
@@ -22,8 +23,14 @@ export function AboutSection() {
             transition={{ duration: 0.6 }}
             className="relative"
           >
-            <div className="aspect-square max-w-sm mx-auto rounded-2xl bg-gradient-to-br from-amber-100 to-amber-50 dark:from-amber-900/30 dark:to-amber-950/20 flex items-center justify-center border border-amber-200 dark:border-amber-800/30">
-              <Guitar className="h-24 w-24 text-amber-400" strokeWidth={1} />
+            <div className="aspect-square max-w-sm mx-auto rounded-2xl overflow-hidden border border-amber-200 dark:border-amber-800/30 relative">
+              <Image
+                src="/me.jpg"
+                alt="Олег Малыгин"
+                fill
+                className="object-cover"
+                priority
+              />
             </div>
             {/* Decorative element */}
             <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-amber-400/10 rounded-2xl -z-10" />

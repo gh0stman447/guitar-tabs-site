@@ -5,6 +5,7 @@ import { AboutSection } from '@/components/sections/AboutSection';
 import { BestsellerSection } from '@/components/sections/BestsellerSection';
 import { TabsSection } from '@/components/sections/TabsSection';
 import { ContactsSection } from '@/components/sections/ContactsSection';
+import { ScrollToTop } from '@/components/shared/ScrollToTop';
 
 export default function Home() {
   return (
@@ -18,6 +19,7 @@ export default function Home() {
         <ContactsSection />
       </main>
       <Footer />
+      <ScrollToTop />
     </>
   );
 }

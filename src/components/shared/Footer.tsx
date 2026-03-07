@@ -2,9 +2,12 @@
 
 import { Guitar } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
 
 export function Footer() {
   const t = useTranslations('footer');
+  const { locale } = useParams<{ locale: string }>();
 
   return (
     <footer className='border-t border-border py-8 mt-16'>
@@ -13,7 +16,13 @@ export function Footer() {
           <Guitar className='h-4 w-4 text-amber-500' />
           <span>{t('name')}</span>
         </div>
-        <span>© {new Date().getFullYear()} {t('rights')}</span>
+        <div className='flex flex-col sm:flex-row items-center gap-3'>
+          <span>{t('inn')}</span>
+          <Link href={`/${locale}/legal`} className='hover:text-foreground transition-colors underline underline-offset-4'>
+            {t('legal')}
+          </Link>
+          <span>© {new Date().getFullYear()} {t('rights')}</span>
+        </div>
       </div>
     </footer>
   );

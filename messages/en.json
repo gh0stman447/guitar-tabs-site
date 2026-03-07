@@ -53,6 +53,12 @@
   },
   "footer": {
     "name": "Oleg Malygin — guitar tabs",
-    "rights": "All rights reserved"
+    "rights": "All rights reserved",
+    "inn": "TIN: 502007772518",
+    "legal": "Terms & Requisites"
+  },
+  "legal": {
+    "title": "Public Offer Agreement",
+    "updated": "Last updated"
   }
 }

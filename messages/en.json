@@ -36,13 +36,15 @@
     "sortPrice": "Price",
     "reset": "Reset",
     "found": "Found: {count}",
-    "notFound": "Nothing found"
+    "notFound": "Nothing found",
+    "empty": "No tabs yet"
   },
   "bestseller": {
     "badge": "Popular",
     "title": "Most purchased",
     "purchases": "{count} purchases",
-    "buy": "Buy"
+    "buy": "Buy",
+    "empty": "No tabs yet"
   },
   "contacts": {
     "badge": "Get in touch",

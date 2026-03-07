@@ -18,6 +18,7 @@ export interface Tab {
   photo_url: string
   files: TabFiles
   purchase_count: number
+  youtube_url?: string
 }
 
 export function getTabTitle(tab: Tab, locale: string): string {

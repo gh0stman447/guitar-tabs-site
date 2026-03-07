@@ -1,0 +1,56 @@
+{
+  "nav": {
+    "tabs": "Tabs",
+    "about": "About",
+    "contacts": "Contacts"
+  },
+  "hero": {
+    "badge": "Original arrangements",
+    "title": "Guitar tabs",
+    "titleAccent": "by Oleg",
+    "description": "Accurate arrangements of popular songs as guitar tabs. Buy, download and play — it's that simple.",
+    "ctaTabs": "Browse tabs",
+    "ctaAbout": "About me"
+  },
+  "about": {
+    "badge": "About me",
+    "title": "Hi, I'm Oleg",
+    "text1": "I'm a guitarist and arranger. I create accurate tabs of popular songs adapted for solo guitar. Each arrangement is not just notes — it's a reinterpretation of the original that preserves the character of the melody.",
+    "text2": "All tabs are written by hand and tested in practice. I indicate the difficulty level so you can choose the right material for yourself.",
+    "fact1Label": "Guitarist",
+    "fact1Desc": "Playing for 10+ years",
+    "fact2Label": "Arranger",
+    "fact2Desc": "Original song arrangements",
+    "fact3Label": "Musician",
+    "fact3Desc": "Various genres and styles"
+  },
+  "tabs": {
+    "badge": "Catalog",
+    "title": "All tabs",
+    "description": "After payment, the tab will be sent to your email in the selected formats",
+    "buy": "Buy",
+    "searchPlaceholder": "Search by title...",
+    "sortPopular": "Popularity",
+    "sortTitle": "Title",
+    "sortDifficulty": "Difficulty",
+    "sortPrice": "Price",
+    "reset": "Reset",
+    "found": "Found: {count}",
+    "notFound": "Nothing found"
+  },
+  "bestseller": {
+    "badge": "Popular",
+    "title": "Most purchased",
+    "purchases": "{count} purchases",
+    "buy": "Buy"
+  },
+  "contacts": {
+    "badge": "Get in touch",
+    "title": "Contacts",
+    "description": "Have questions? Write — I'll reply quickly"
+  },
+  "footer": {
+    "name": "Oleg Malygin — guitar tabs",
+    "rights": "All rights reserved"
+  }
+}

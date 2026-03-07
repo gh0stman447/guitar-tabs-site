@@ -1,8 +1,9 @@
-"use client"
+'use client';
 
-import { motion } from "framer-motion"
-import { Card, CardContent } from "@/components/ui/card"
-import { Send, Mail } from "lucide-react"
+import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
+import { Card, CardContent } from '@/components/ui/card';
+import { Send, Mail } from 'lucide-react';
 
 const contacts = [
   {
@@ -36,6 +37,8 @@ const contacts = [
 ]
 
 export function ContactsSection() {
+  const t = useTranslations('contacts');
+
   return (
     <section id="contacts" className="py-24 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
@@ -47,12 +50,10 @@ export function ContactsSection() {
           className="text-center mb-12"
         >
           <span className="text-amber-500 text-sm font-medium tracking-widest uppercase">
-            Связаться
+            {t('badge')}
           </span>
-          <h2 className="text-3xl sm:text-4xl font-bold mt-2">Контакты</h2>
-          <p className="text-muted-foreground mt-3">
-            Есть вопросы? Пиши — отвечу быстро
-          </p>
+          <h2 className="text-3xl sm:text-4xl font-bold mt-2">{t('title')}</h2>
+          <p className="text-muted-foreground mt-3">{t('description')}</p>
         </motion.div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-2xl mx-auto">

@@ -9,13 +9,23 @@ export interface TabFiles {
 
 export interface Tab {
   id: string
-  title: string
+  title_ru: string
+  title_en: string
   difficulty: string
   price: number
-  description: string
+  description_ru: string
+  description_en: string
   photo_url: string
   files: TabFiles
   purchase_count: number
+}
+
+export function getTabTitle(tab: Tab, locale: string): string {
+  return locale === 'en' ? tab.title_en : tab.title_ru
+}
+
+export function getTabDescription(tab: Tab, locale: string): string {
+  return locale === 'en' ? tab.description_en : tab.description_ru
 }
 
 export interface Customer {

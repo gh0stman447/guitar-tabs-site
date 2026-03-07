@@ -1,25 +1,39 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 import { Guitar } from 'lucide-react';
+import { useTranslations, useLocale } from 'next-intl';
 import { ThemeToggle } from './ThemeToggle';
 import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 
-const navLinks = [
-  { href: '#tabs', label: 'Табы' },
-  { href: '#about', label: 'Обо мне' },
-  { href: '#contacts', label: 'Контакты' },
-];
-
 export function Header() {
+  const t = useTranslations('nav');
+  const locale = useLocale();
+  const pathname = usePathname();
+  const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
+    onScroll();
     window.addEventListener('scroll', onScroll);
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  function switchLocale() {
+    const next = locale === 'ru' ? 'en' : 'ru';
+    const segments = pathname.split('/');
+    segments[1] = next;
+    router.push(segments.join('/') || '/');
+  }
+
+  const navLinks = [
+    { href: '#tabs', label: t('tabs') },
+    { href: '#about', label: t('about') },
+    { href: '#contacts', label: t('contacts') },
+  ];
 
   return (
     <header
@@ -49,7 +63,15 @@ export function Header() {
             ))}
           </nav>
 
-          <ThemeToggle />
+          <div className='flex items-center gap-2'>
+            <button
+              onClick={switchLocale}
+              className='text-xs font-medium px-2 py-1 rounded border border-border text-muted-foreground hover:text-foreground hover:border-amber-500 transition-colors cursor-pointer'
+            >
+              {locale === 'ru' ? 'EN' : 'RU'}
+            </button>
+            <ThemeToggle />
+          </div>
         </div>
       </div>
     </header>

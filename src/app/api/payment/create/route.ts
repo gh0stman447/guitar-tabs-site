@@ -93,7 +93,8 @@ export async function POST(req: NextRequest) {
   const payment = await yukassaRes.json();
 
   if (!yukassaRes.ok) {
-    return NextResponse.json({ error: 'Ошибка платёжной системы' }, { status: 500 });
+    console.error('YooKassa error:', JSON.stringify(payment));
+    return NextResponse.json({ error: payment.description ?? 'Ошибка платёжной системы' }, { status: 500 });
   }
 
   // 5. Save payment_id to purchase

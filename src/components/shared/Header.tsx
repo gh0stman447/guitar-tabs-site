@@ -2,11 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Guitar } from 'lucide-react';
+import { Music, Menu } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import { ThemeToggle } from './ThemeToggle';
 import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 export function Header() {
   const t = useTranslations('nav');
@@ -14,11 +15,19 @@ export function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
+  const [hidden, setHidden] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 10);
+    let lastY = window.scrollY;
+    const onScroll = () => {
+      const y = window.scrollY;
+      setScrolled(y > 10);
+      setHidden(y > lastY && y > 80);
+      lastY = y;
+    };
     onScroll();
-    window.addEventListener('scroll', onScroll);
+    window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
@@ -29,10 +38,21 @@ export function Header() {
     router.push(segments.join('/') || '/');
   }
 
+  const isHome = pathname === `/${locale}` || pathname === `/${locale}/`;
+
+  function scrollToSection(id: string) {
+    setSheetOpen(false);
+    if (isHome) {
+      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      router.push(`/${locale}#${id}`);
+    }
+  }
+
   const navLinks = [
-    { href: '#tabs', label: t('tabs') },
-    { href: '#about', label: t('about') },
-    { href: '#contacts', label: t('contacts') },
+    { id: 'tabs', label: t('tabs') },
+    { id: 'about', label: t('about') },
+    { id: 'contacts', label: t('contacts') },
   ];
 
   return (
@@ -42,25 +62,26 @@ export function Header() {
         scrolled
           ? 'bg-background/80 backdrop-blur-md border-b border-border shadow-sm'
           : 'bg-transparent',
+        hidden ? '-translate-y-full' : 'translate-y-0',
       )}
     >
       <div className='max-w-6xl mx-auto px-4 sm:px-6 lg:px-8'>
         <div className='flex items-center justify-between h-16'>
           <Link href='/' className='flex items-center gap-2 font-semibold text-lg'>
-            <Guitar className='h-5 w-5 text-amber-500' />
+            <Music className='h-5 w-5 text-amber-500' />
             <span>OlegGuitar</span>
           </Link>
 
           <nav className='hidden md:flex items-center gap-6'>
             {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className='text-sm text-muted-foreground hover:text-foreground transition-colors'
+              <button
+                key={link.id}
+                onClick={() => scrollToSection(link.id)}
+                className='text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer'
               >
                 {link.label}
-              </Link>
-            ))}
+              </button>
+            ))},
           </nav>
 
           <div className='flex items-center gap-2'>
@@ -71,6 +92,28 @@ export function Header() {
               {locale === 'ru' ? 'EN' : 'RU'}
             </button>
             <ThemeToggle />
+            <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+              <SheetTrigger asChild>
+                <button className='md:hidden flex items-center justify-center w-9 h-9 rounded border border-border text-muted-foreground hover:text-foreground hover:border-amber-500 transition-colors cursor-pointer'>
+                  <Menu className='h-4 w-4' />
+                </button>
+              </SheetTrigger>
+              <SheetContent side='top' showCloseButton={false} className='h-auto px-4 pb-4 pt-20'>
+                <nav className='max-w-6xl mx-auto flex flex-col'>
+                  {navLinks.map((link, i) => (
+                    <div key={link.id}>
+                      {i > 0 && <div className='h-px bg-border mx-3' />}
+                      <button
+                        onClick={() => scrollToSection(link.id)}
+                        className='w-full text-left text-sm px-3 py-3 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors block cursor-pointer'
+                      >
+                        {link.label}
+                      </button>
+                    </div>
+                  ))}
+                </nav>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </div>

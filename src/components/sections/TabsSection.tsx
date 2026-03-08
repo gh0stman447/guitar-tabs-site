@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslations, useLocale } from 'next-intl';
 import { Search, ChevronUp, ChevronDown, X } from 'lucide-react';
 import type { Tab } from '@/types';
-import { TabCard } from '@/components/shared/TabCard';
+import { TabCard, TabCardSkeleton } from '@/components/shared/TabCard';
 import { supabase } from '@/lib/supabase';
 
 type SortKey = 'title' | 'difficulty' | 'price' | 'popular';
@@ -149,8 +149,10 @@ export function TabsSection() {
         )}
 
         {loading ? (
-          <div className='flex justify-center py-20'>
-            <div className='w-8 h-8 rounded-full border-2 border-amber-500 border-t-transparent animate-spin' />
+          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <TabCardSkeleton key={i} showDetails />
+            ))}
           </div>
         ) : filtered.length === 0 && !search ? (
           <p className='text-center text-muted-foreground py-12'>{t('empty')}</p>

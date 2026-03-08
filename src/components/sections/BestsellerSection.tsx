@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { useTranslations, useLocale } from 'next-intl';
 import { TrendingUp } from 'lucide-react';
 import { TabCard } from '@/components/shared/TabCard';
+import { TabCardSkeleton } from '@/components/shared/TabCard/TabCardSkeleton';
 import { supabase } from '@/lib/supabase';
 import type { Tab } from '@/types';
 
@@ -46,8 +47,8 @@ export function BestsellerSection() {
         </motion.div>
 
         {loading ? (
-          <div className='flex justify-center py-20'>
-            <div className='w-8 h-8 rounded-full border-2 border-amber-500 border-t-transparent animate-spin' />
+          <div className='grid grid-cols-1 sm:grid-cols-3 gap-6'>
+            {Array.from({ length: 3 }).map((_, i) => <TabCardSkeleton key={i} showDetails={false} />)}
           </div>
         ) : topTabs.length === 0 ? (
           <p className='text-center text-muted-foreground py-12'>{t('empty')}</p>

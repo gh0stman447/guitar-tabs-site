@@ -15,7 +15,7 @@ export function AboutSection() {
   ];
 
   return (
-    <section id='about' className='py-24 px-4 sm:px-6 lg:px-8'>
+    <section id='about' className='py-24 px-4 sm:px-6 lg:px-8 overflow-hidden'>
       <div className='max-w-6xl mx-auto'>
         <div className='grid md:grid-cols-2 gap-12 items-center'>
           <motion.div

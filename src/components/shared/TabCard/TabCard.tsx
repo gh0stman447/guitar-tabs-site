@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Music } from 'lucide-react';
 import { MarqueeText } from '@/components/shared/MarqueeText';
+import { BuyDialog } from '@/components/shared/BuyDialog';
 import type { Tab } from '@/types';
 
 function getDifficultyColor(difficulty: string) {
@@ -47,6 +48,7 @@ export function TabCard({
   showDetails = true,
 }: TabCardProps) {
   const [hovered, setHovered] = useState(false);
+  const [buyOpen, setBuyOpen] = useState(false);
   const title = locale === 'en' ? tab.title_en : tab.title_ru;
   const description = locale === 'en' ? tab.description_en : tab.description_ru;
 
@@ -67,6 +69,7 @@ export function TabCard({
         };
 
   return (
+    <>
     <motion.div
       {...(motionProps as React.ComponentProps<typeof motion.div>)}
       whileHover={{ y: -4 }}
@@ -161,6 +164,7 @@ export function TabCard({
               <Button
                 size='sm'
                 className='bg-amber-500 hover:bg-amber-600 text-white rounded-full px-5'
+                onClick={() => setBuyOpen(true)}
               >
                 {buyLabel}
               </Button>
@@ -169,5 +173,7 @@ export function TabCard({
         </CardContent>
       </Card>
     </motion.div>
+    <BuyDialog tab={tab} locale={locale} open={buyOpen} onOpenChange={setBuyOpen} />
+    </>
   );
 }

@@ -9,7 +9,6 @@ const supabaseAdmin = createClient(
 export async function POST(req: NextRequest) {
   const body = await req.json();
 
-  // YooKassa sends event object
   const event = body.event as string;
   const payment = body.object;
 
@@ -34,7 +33,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'DB update failed' }, { status: 500 });
   }
 
-  // 2. Get purchase with tab files
+  // 2. Get purchase
   const { data: purchase, error: purchaseError } = await supabaseAdmin
     .from('purchases')
     .select('tab_id, customers(firstname)')
@@ -69,31 +68,32 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Tab not found' }, { status: 404 });
   }
 
-  // 3. Generate signed URLs for each file
+  // 3. Download files from Storage and prepare attachments
   const files = tab.files as Record<string, string>;
-  const signedUrls: Record<string, string> = {};
-
-  console.log('Files from DB:', JSON.stringify(files));
+  const attachments: { filename: string; content: string }[] = [];
 
   for (const [format, path] of Object.entries(files)) {
-    const { data: signed, error: signError } = await supabaseAdmin.storage
+    const { data, error } = await supabaseAdmin.storage
       .from('tab-files')
-      .createSignedUrl(path, 60 * 60 * 24 * 7); // 7 days
+      .download(path);
 
-    console.log(`Signed URL for ${format} (${path}):`, signed?.signedUrl ?? signError);
-
-    if (signed?.signedUrl) {
-      signedUrls[format] = signed.signedUrl;
+    if (error || !data) {
+      console.error(`Failed to download ${format} (${path}):`, error);
+      continue;
     }
+
+    const buffer = await data.arrayBuffer();
+    const base64 = Buffer.from(buffer).toString('base64');
+    const filename = path.split('/').pop() ?? `tab.${format}`;
+
+    attachments.push({ filename, content: base64 });
   }
 
-  console.log('signedUrls result:', JSON.stringify(signedUrls));
-
-  // 4. Send email
+  // 4. Send email with attachments
   await sendEmail({
     to: customerEmail,
     tabTitle: tab.title_ru,
-    signedUrls,
+    attachments,
   });
 
   return NextResponse.json({ ok: true });
@@ -102,25 +102,20 @@ export async function POST(req: NextRequest) {
 async function sendEmail({
   to,
   tabTitle,
-  signedUrls,
+  attachments,
 }: {
   to: string;
   tabTitle: string;
-  signedUrls: Record<string, string>;
+  attachments: { filename: string; content: string }[];
 }) {
-  const emailService = process.env.EMAIL_SERVICE; // 'resend' | 'smtp'
+  const emailService = process.env.EMAIL_SERVICE;
 
   if (!emailService) {
-    // Dev mode: just log
-    console.log('📧 Would send email to:', to, 'Files:', signedUrls);
+    console.log('📧 Would send email to:', to, 'Attachments:', attachments.map(a => a.filename));
     return;
   }
 
   if (emailService === 'resend') {
-    const linksHtml = Object.entries(signedUrls)
-      .map(([fmt, url]) => `<a href="${url}" style="color:#f59e0b">${fmt.toUpperCase()}</a>`)
-      .join(' &nbsp;|&nbsp; ');
-
     await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -134,12 +129,15 @@ async function sendEmail({
         html: `
           <div style="font-family:sans-serif;max-width:480px;margin:0 auto">
             <h2 style="color:#f59e0b">Спасибо за покупку!</h2>
-            <p>Ваш таб <strong>${tabTitle}</strong> готов к скачиванию:</p>
-            <p style="margin:24px 0">${linksHtml}</p>
-            <p style="color:#888;font-size:13px">Ссылки действительны 7 дней.<br>
-            Есть вопросы? Пишите в Telegram: <a href="https://t.me/MalyginOleg">@MalyginOleg</a></p>
+            <p>Ваш таб <strong>${tabTitle}</strong> готов к скачиванию.</p>
+            <p>Файлы прикреплены к этому письму.</p>
+            <p style="color:#888;font-size:13px">Есть вопросы? Пишите в Telegram: <a href="https://t.me/MalyginOleg">@MalyginOleg</a></p>
           </div>
         `,
+        attachments: attachments.map(({ filename, content }) => ({
+          filename,
+          content,
+        })),
       }),
     });
   }

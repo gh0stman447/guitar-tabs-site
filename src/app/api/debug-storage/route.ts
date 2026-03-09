@@ -9,7 +9,7 @@ const supabaseAdmin = createClient(
 export async function GET() {
   const { data: files, error } = await supabaseAdmin.storage
     .from('tab-files')
-    .list('me-you-too');
+    .list('');
 
   return NextResponse.json({ files, error });
 }

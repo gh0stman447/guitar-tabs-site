@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
-export function Header() {
+export function Header({ isAdminPanelHeader = false }: { isAdminPanelHeader?: boolean }) {
   const t = useTranslations('nav');
   const locale = useLocale();
   const pathname = usePathname();
@@ -17,6 +17,10 @@ export function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    setIsAdmin(document.cookie.includes('admin_session='));
+  }, []);
 
   useEffect(() => {
     let lastY = window.scrollY;
@@ -59,7 +63,7 @@ export function Header() {
     <header
       className={cn(
         'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
-        scrolled
+        isAdminPanelHeader || scrolled
           ? 'bg-background/80 backdrop-blur-md border-b border-border shadow-sm'
           : 'bg-transparent',
         hidden ? '-translate-y-full' : 'translate-y-0',
@@ -72,48 +76,62 @@ export function Header() {
             <span>OlegGuitar</span>
           </Link>
 
-          <nav className='hidden md:flex items-center gap-6'>
-            {navLinks.map((link) => (
-              <button
-                key={link.id}
-                onClick={() => scrollToSection(link.id)}
-                className='text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer'
-              >
-                {link.label}
-              </button>
-            ))}
-          </nav>
+          {!isAdminPanelHeader && (
+            <nav className='hidden md:flex items-center gap-6'>
+              {navLinks.map((link) => (
+                <button
+                  key={link.id}
+                  onClick={() => scrollToSection(link.id)}
+                  className='text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer'
+                >
+                  {link.label}
+                </button>
+              ))}
+            </nav>
+          )}
 
           <div className='flex items-center gap-2'>
-            <button
-              onClick={switchLocale}
-              className='text-xs font-medium px-2 py-1 rounded border border-border text-muted-foreground hover:text-foreground hover:border-amber-500 transition-colors cursor-pointer'
-            >
-              {locale === 'ru' ? 'EN' : 'RU'}
-            </button>
+            {isAdmin && !isAdminPanelHeader && (
+              <Link
+                href='/admin'
+                className='text-xs font-medium px-2 py-1 rounded border border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white transition-colors'
+              >
+                + Таб
+              </Link>
+            )}
+            {!isAdminPanelHeader && (
+              <button
+                onClick={switchLocale}
+                className='text-xs font-medium px-2 py-1 rounded border border-border text-muted-foreground hover:text-foreground hover:border-amber-500 transition-colors cursor-pointer'
+              >
+                {locale === 'ru' ? 'EN' : 'RU'}
+              </button>
+            )}
             <ThemeToggle />
-            <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-              <SheetTrigger asChild>
-                <button className='md:hidden flex items-center justify-center w-9 h-9 rounded border border-border text-muted-foreground hover:text-foreground hover:border-amber-500 transition-colors cursor-pointer'>
-                  <Menu className='h-4 w-4' />
-                </button>
-              </SheetTrigger>
-              <SheetContent side='top' showCloseButton={false} className='h-auto px-4 pb-4 pt-20'>
-                <nav className='max-w-6xl mx-auto flex flex-col'>
-                  {navLinks.map((link, i) => (
-                    <div key={link.id}>
-                      {i > 0 && <div className='h-px bg-border mx-3' />}
-                      <button
-                        onClick={() => scrollToSection(link.id)}
-                        className='w-full text-left text-sm px-3 py-3 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors block cursor-pointer'
-                      >
-                        {link.label}
-                      </button>
-                    </div>
-                  ))}
-                </nav>
-              </SheetContent>
-            </Sheet>
+            {!isAdminPanelHeader && (
+              <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+                <SheetTrigger asChild>
+                  <button className='md:hidden flex items-center justify-center w-9 h-9 rounded border border-border text-muted-foreground hover:text-foreground hover:border-amber-500 transition-colors cursor-pointer'>
+                    <Menu className='h-4 w-4' />
+                  </button>
+                </SheetTrigger>
+                <SheetContent side='top' showCloseButton={false} className='h-auto px-4 pb-4 pt-20'>
+                  <nav className='max-w-6xl mx-auto flex flex-col'>
+                    {navLinks.map((link, i) => (
+                      <div key={link.id}>
+                        {i > 0 && <div className='h-px bg-border mx-3' />}
+                        <button
+                          onClick={() => scrollToSection(link.id)}
+                          className='w-full text-left text-sm px-3 py-3 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors block cursor-pointer'
+                        >
+                          {link.label}
+                        </button>
+                      </div>
+                    ))}
+                  </nav>
+                </SheetContent>
+              </Sheet>
+            )}
           </div>
         </div>
       </div>

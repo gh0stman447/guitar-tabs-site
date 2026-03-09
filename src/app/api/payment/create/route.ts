@@ -27,12 +27,13 @@ export async function POST(req: NextRequest) {
   // Validate files exist in storage
   const files = tab.files as Record<string, string>;
   for (const [format, path] of Object.entries(files)) {
-    const { error: downloadError } = await supabaseAdmin.storage
-      .from('tab-files')
-      .download(path);
+    const { error: downloadError } = await supabaseAdmin.storage.from('tab-files').download(path);
     if (downloadError) {
       console.error(`File missing for format ${format}: ${path}`);
-      return NextResponse.json({ error: 'Файлы таба временно недоступны. Попробуйте позже или свяжитесь с нами.' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'Файлы таба временно недоступны. Попробуйте позже или свяжитесь со мной.' },
+        { status: 500 },
+      );
     }
   }
 

@@ -13,15 +13,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Заполните все поля' }, { status: 400 });
   }
 
-  // 1. Get tab price
+  // 1. Get tab price and files
   const { data: tab, error: tabError } = await supabaseAdmin
     .from('guitar-tabs')
-    .select('id, price')
+    .select('id, price, files')
     .eq('id', tab_id)
     .single();
 
   if (tabError || !tab) {
     return NextResponse.json({ error: 'Таб не найден' }, { status: 404 });
+  }
+
+  // Validate files exist in storage
+  const files = tab.files as Record<string, string>;
+  for (const [format, path] of Object.entries(files)) {
+    const { error: downloadError } = await supabaseAdmin.storage
+      .from('tab-files')
+      .download(path);
+    if (downloadError) {
+      console.error(`File missing for format ${format}: ${path}`);
+      return NextResponse.json({ error: 'Файлы таба временно недоступны. Попробуйте позже или свяжитесь с нами.' }, { status: 500 });
+    }
   }
 
   // 2. Upsert customer

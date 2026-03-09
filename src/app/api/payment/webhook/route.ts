@@ -73,15 +73,21 @@ export async function POST(req: NextRequest) {
   const files = tab.files as Record<string, string>;
   const signedUrls: Record<string, string> = {};
 
+  console.log('Files from DB:', JSON.stringify(files));
+
   for (const [format, path] of Object.entries(files)) {
-    const { data: signed } = await supabaseAdmin.storage
+    const { data: signed, error: signError } = await supabaseAdmin.storage
       .from('tab-files')
       .createSignedUrl(path, 60 * 60 * 24 * 7); // 7 days
+
+    console.log(`Signed URL for ${format} (${path}):`, signed?.signedUrl ?? signError);
 
     if (signed?.signedUrl) {
       signedUrls[format] = signed.signedUrl;
     }
   }
+
+  console.log('signedUrls result:', JSON.stringify(signedUrls));
 
   // 4. Send email
   await sendEmail({

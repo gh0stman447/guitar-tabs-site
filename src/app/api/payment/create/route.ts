@@ -93,18 +93,13 @@ export async function POST(req: NextRequest) {
   const payment = await yukassaRes.json();
 
   if (!yukassaRes.ok) {
-    console.error('YooKassa error:', JSON.stringify(payment));
-    return NextResponse.json({ error: payment.description ?? 'Ошибка платёжной системы' }, { status: 500 });
+    return NextResponse.json({ error: 'Ошибка платёжной системы' }, { status: 500 });
   }
 
   // 5. Save payment_id to purchase
-  await supabaseAdmin
-    .from('purchases')
-    .update({ payment_id: payment.id })
-    .eq('id', purchase.id);
+  await supabaseAdmin.from('purchases').update({ payment_id: payment.id }).eq('id', purchase.id);
 
   return NextResponse.json({
     confirmation_url: payment.confirmation.confirmation_url,
   });
 }
-

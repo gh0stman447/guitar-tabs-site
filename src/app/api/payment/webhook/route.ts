@@ -41,6 +41,20 @@ export async function POST(req: NextRequest) {
     .eq('id', purchaseId)
     .single();
 
+  if (!purchaseError && purchase) {
+    const { data: currentTab } = await supabaseAdmin
+      .from('guitar-tabs')
+      .select('purchase_count')
+      .eq('id', purchase.tab_id)
+      .single();
+    if (currentTab) {
+      await supabaseAdmin
+        .from('guitar-tabs')
+        .update({ purchase_count: (currentTab.purchase_count ?? 0) + 1 })
+        .eq('id', purchase.tab_id);
+    }
+  }
+
   if (purchaseError || !purchase) {
     return NextResponse.json({ error: 'Purchase not found' }, { status: 404 });
   }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import JSZip from 'jszip';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -66,11 +67,18 @@ export async function POST(req: NextRequest) {
       .eq('id', tab.id);
   }
 
-  // 5. Download files from Storage and prepare attachments
-  const attachments: { filename: string; content: string }[] = [];
+  // 5. Build zip archive(s)
+  // 1 tab → one zip with files at root
+  // 2+ tabs → one zip with a subfolder per tab
+  const zip = new JSZip();
+  const multiTab = tabs.length > 1;
 
   for (const tab of tabs) {
     const files = tab.files as Record<string, string>;
+    const folder = multiTab
+      ? zip.folder(tab.title_ru.replace(/[/\\?%*:|"<>]/g, '_'))!
+      : zip;
+
     for (const [format, path] of Object.entries(files)) {
       const { data, error } = await supabaseAdmin.storage
         .from('tab-files')
@@ -82,14 +90,20 @@ export async function POST(req: NextRequest) {
       }
 
       const buffer = await data.arrayBuffer();
-      const base64 = Buffer.from(buffer).toString('base64');
       const filename = path.split('/').pop() ?? `tab.${format}`;
-
-      attachments.push({ filename, content: base64 });
+      folder.file(filename, buffer);
     }
   }
 
-  // 6. Send email with all attachments
+  const zipBuffer = await zip.generateAsync({ type: 'nodebuffer' });
+  const zipBase64 = zipBuffer.toString('base64');
+  const zipFilename = tabs.length === 1
+    ? `${tabs[0].title_ru.replace(/[/\\?%*:|"<>]/g, '_')}.zip`
+    : 'tabs.zip';
+
+  const attachments = [{ filename: zipFilename, content: zipBase64 }];
+
+  // 6. Send email with zip attachment
   const tabTitles = tabs.map((t) => t.title_ru).join(', ');
 
   await sendEmail({

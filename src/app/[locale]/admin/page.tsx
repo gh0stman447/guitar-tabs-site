@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
+import { useRouter, useParams } from 'next/navigation';
 import { Loader2, Upload, Music, Lock, X } from 'lucide-react';
 import { Header } from '@/components/shared/Header';
 import Link from 'next/link';
@@ -76,6 +77,10 @@ const FORMAT_ACCEPT: Record<(typeof FORMATS)[number], Record<string, string[]>> 
 };
 
 export default function AdminPage() {
+  const router = useRouter();
+  const params = useParams();
+  const locale = params.locale as string;
+
   const [password, setPassword] = useState('');
   const [authed, setAuthed] = useState(false);
   useEffect(() => {
@@ -103,8 +108,7 @@ export default function AdminPage() {
       body: JSON.stringify({ password }),
     });
     if (res.ok) {
-      setAuthed(true);
-      setAuthError(false);
+      router.push(`/${locale}`);
     } else {
       setAuthError(true);
     }

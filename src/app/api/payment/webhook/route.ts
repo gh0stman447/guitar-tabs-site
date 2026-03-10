@@ -33,66 +33,68 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'DB update failed' }, { status: 500 });
   }
 
-  // 2. Get purchase
+  // 2. Get purchase with tab_ids (and fallback to tab_id for old purchases)
   const { data: purchase, error: purchaseError } = await supabaseAdmin
     .from('purchases')
-    .select('tab_id, customers(firstname)')
+    .select('tab_id, tab_ids, customers(firstname)')
     .eq('id', purchaseId)
     .single();
-
-  if (!purchaseError && purchase) {
-    const { data: currentTab } = await supabaseAdmin
-      .from('guitar-tabs')
-      .select('purchase_count')
-      .eq('id', purchase.tab_id)
-      .single();
-    if (currentTab) {
-      await supabaseAdmin
-        .from('guitar-tabs')
-        .update({ purchase_count: (currentTab.purchase_count ?? 0) + 1 })
-        .eq('id', purchase.tab_id);
-    }
-  }
 
   if (purchaseError || !purchase) {
     return NextResponse.json({ error: 'Purchase not found' }, { status: 404 });
   }
 
-  const { data: tab, error: tabError } = await supabaseAdmin
-    .from('guitar-tabs')
-    .select('title_ru, title_en, files')
-    .eq('id', purchase.tab_id)
-    .single();
+  // Resolve list of tab ids
+  const tabIds: string[] = (purchase.tab_ids as string[] | null) ??
+    (purchase.tab_id ? [purchase.tab_id as string] : []);
 
-  if (tabError || !tab) {
-    return NextResponse.json({ error: 'Tab not found' }, { status: 404 });
+  // 3. Get all tabs
+  const { data: tabs, error: tabsError } = await supabaseAdmin
+    .from('guitar-tabs')
+    .select('id, title_ru, title_en, files, purchase_count')
+    .in('id', tabIds);
+
+  if (tabsError || !tabs) {
+    return NextResponse.json({ error: 'Tabs not found' }, { status: 404 });
   }
 
-  // 3. Download files from Storage and prepare attachments
-  const files = tab.files as Record<string, string>;
+  // 4. Increment purchase_count for each tab
+  for (const tab of tabs) {
+    await supabaseAdmin
+      .from('guitar-tabs')
+      .update({ purchase_count: (tab.purchase_count ?? 0) + 1 })
+      .eq('id', tab.id);
+  }
+
+  // 5. Download files from Storage and prepare attachments
   const attachments: { filename: string; content: string }[] = [];
 
-  for (const [format, path] of Object.entries(files)) {
-    const { data, error } = await supabaseAdmin.storage
-      .from('tab-files')
-      .download(path);
+  for (const tab of tabs) {
+    const files = tab.files as Record<string, string>;
+    for (const [format, path] of Object.entries(files)) {
+      const { data, error } = await supabaseAdmin.storage
+        .from('tab-files')
+        .download(path);
 
-    if (error || !data) {
-      console.error(`Failed to download ${format} (${path}):`, error);
-      continue;
+      if (error || !data) {
+        console.error(`Failed to download ${format} (${path}):`, error);
+        continue;
+      }
+
+      const buffer = await data.arrayBuffer();
+      const base64 = Buffer.from(buffer).toString('base64');
+      const filename = path.split('/').pop() ?? `tab.${format}`;
+
+      attachments.push({ filename, content: base64 });
     }
-
-    const buffer = await data.arrayBuffer();
-    const base64 = Buffer.from(buffer).toString('base64');
-    const filename = path.split('/').pop() ?? `tab.${format}`;
-
-    attachments.push({ filename, content: base64 });
   }
 
-  // 4. Send email with attachments
+  // 6. Send email with all attachments
+  const tabTitles = tabs.map((t) => t.title_ru).join(', ');
+
   await sendEmail({
     to: customerEmail,
-    tabTitle: tab.title_ru,
+    tabTitles,
     attachments,
   });
 
@@ -101,11 +103,11 @@ export async function POST(req: NextRequest) {
 
 async function sendEmail({
   to,
-  tabTitle,
+  tabTitles,
   attachments,
 }: {
   to: string;
-  tabTitle: string;
+  tabTitles: string;
   attachments: { filename: string; content: string }[];
 }) {
   const emailService = process.env.EMAIL_SERVICE;
@@ -125,12 +127,13 @@ async function sendEmail({
       body: JSON.stringify({
         from: 'onboarding@resend.dev',
         to,
-        subject: `Ваш таб: ${tabTitle}`,
+        subject: `Ваши табы: ${tabTitles}`,
         html: `
           <div style="font-family:sans-serif;max-width:480px;margin:0 auto">
             <h2 style="color:#f59e0b">Спасибо за покупку!</h2>
-            <p>Ваш таб <strong>${tabTitle}</strong> готов к скачиванию.</p>
-            <p>Файлы прикреплены к этому письму.</p>
+            <p>Ваши табы готовы к скачиванию:</p>
+            <p><strong>${tabTitles}</strong></p>
+            <p>Все файлы прикреплены к этому письму.</p>
             <p style="color:#888;font-size:13px">Есть вопросы? Пишите в Telegram: <a href="https://t.me/MalyginOleg">@MalyginOleg</a></p>
           </div>
         `,

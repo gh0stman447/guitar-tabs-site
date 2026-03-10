@@ -1,11 +1,20 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Header } from '@/components/shared/Header';
-import { BuyDialog } from '@/components/shared/BuyDialog';
-import { Loader2, ShoppingCart, CheckCircle2 } from 'lucide-react';
+import { Loader2, ShoppingCart, CheckCircle2, Trash2 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
+import { useCart } from '@/context/CartContext';
+import { toast } from 'sonner';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import type { Tab } from '@/types';
 
 const supabase = createClient(
@@ -15,13 +24,18 @@ const supabase = createClient(
 
 export default function DraftsPage() {
   const router = useRouter();
-  const params = useParams();
-  const locale = (params?.locale as string) ?? 'ru';
 
   const [tabs, setTabs] = useState<Tab[]>([]);
   const [loading, setLoading] = useState(true);
   const [publishing, setPublishing] = useState<string | null>(null);
-  const [testTab, setTestTab] = useState<Tab | null>(null);
+  const [confirmTab, setConfirmTab] = useState<Tab | null>(null);
+  const { addItem, removeItem, hasItem, setTestMode } = useCart();
+
+  useEffect(() => {
+    setTestMode(true);
+    return () => setTestMode(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!document.cookie.includes('admin_session=')) {
@@ -54,19 +68,13 @@ export default function DraftsPage() {
 
   return (
     <div className='min-h-screen bg-secondary/20'>
-      <Header isAdminPanelHeader />
+      <Header />
       <div className='max-w-4xl mx-auto px-4 pt-24 pb-12'>
         <div className='flex items-center justify-between mb-8'>
           <div>
             <h1 className='text-2xl font-bold'>Черновики</h1>
             <p className='text-sm text-muted-foreground'>Табы, ожидающие публикации</p>
           </div>
-          <button
-            onClick={() => router.push(`/${locale}/admin`)}
-            className='text-sm text-amber-500 hover:text-amber-400 transition-colors cursor-pointer'
-          >
-            Добавить таб
-          </button>
         </div>
 
         {loading ? (
@@ -104,14 +112,30 @@ export default function DraftsPage() {
                 </div>
                 <div className='flex items-center gap-2 shrink-0'>
                   <button
-                    onClick={() => setTestTab(tab)}
-                    className='flex items-center gap-1.5 border border-border hover:border-amber-400 rounded-full px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer'
+                    onClick={() => {
+                      if (hasItem(tab.id)) {
+                        removeItem(tab.id);
+                        toast(tab.title_ru, { description: 'Убрано из корзины', icon: '🗑️' });
+                      } else {
+                        addItem(tab);
+                        toast(tab.title_ru, { description: 'Добавлено в корзину', icon: '🛒' });
+                      }
+                    }}
+                    className={`flex items-center gap-1.5 border rounded-full px-3 py-1.5 text-sm transition-colors cursor-pointer ${
+                      hasItem(tab.id)
+                        ? 'border-amber-500 text-amber-500 bg-amber-500/10 hover:border-red-500 hover:text-red-500 hover:bg-red-500/10'
+                        : 'border-border text-muted-foreground hover:border-amber-400 hover:text-foreground'
+                    }`}
                   >
-                    <ShoppingCart className='h-3.5 w-3.5' />
-                    Тест оплаты
+                    {hasItem(tab.id) ? (
+                      <Trash2 className='h-3.5 w-3.5' />
+                    ) : (
+                      <ShoppingCart className='h-3.5 w-3.5' />
+                    )}
+                    {hasItem(tab.id) ? 'Убрать' : 'В корзину'}
                   </button>
                   <button
-                    onClick={() => publish(tab.id)}
+                    onClick={() => setConfirmTab(tab)}
                     disabled={publishing === tab.id}
                     className='flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white rounded-full px-4 py-1.5 text-sm font-medium transition-colors cursor-pointer'
                   >
@@ -129,17 +153,36 @@ export default function DraftsPage() {
         )}
       </div>
 
-      {testTab && (
-        <BuyDialog
-          tab={testTab}
-          locale={locale}
-          open={!!testTab}
-          onOpenChange={(open) => {
-            if (!open) setTestTab(null);
-          }}
-          testMode
-        />
-      )}
+      <Dialog
+        open={!!confirmTab}
+        onOpenChange={(open) => {
+          if (!open) setConfirmTab(null);
+        }}
+      >
+        <DialogContent className='sm:max-w-sm'>
+          <DialogHeader>
+            <DialogTitle>Опубликовать таб?</DialogTitle>
+            <DialogDescription>
+              <strong>{confirmTab?.title_ru}</strong> станет виден всем пользователям. Это действие
+              нельзя отменить отсюда.
+            </DialogDescription>
+          </DialogHeader>
+          <div className='flex gap-3 justify-end mt-2'>
+            <Button variant='outline' className='rounded-full' onClick={() => setConfirmTab(null)}>
+              Отмена
+            </Button>
+            <Button
+              className='rounded-full bg-amber-500 hover:bg-amber-600 text-white'
+              onClick={() => {
+                if (confirmTab) publish(confirmTab.id);
+                setConfirmTab(null);
+              }}
+            >
+              Опубликовать
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

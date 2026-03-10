@@ -189,7 +189,7 @@ export default function AdminPage() {
 
   return (
     <div className='min-h-screen bg-secondary/20'>
-      <Header isAdminPanelHeader />
+      <Header />
       <div className='min-h-[calc(100vh-4rem)] flex items-center justify-center py-10 px-4 pt-24'>
         <div className='w-full max-w-2xl'>
           <div className='flex items-center gap-3 mb-8'>

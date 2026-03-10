@@ -6,6 +6,8 @@ import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
 import { ScrollProgress } from '@/components/shared/ScrollProgress';
+import { CartProvider } from '@/context/CartContext';
+import { ThemedToaster } from '@/components/shared/ThemedToaster';
 import '../globals.css';
 
 const geistSans = Geist({
@@ -50,8 +52,11 @@ export default async function LocaleLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider attribute='class' defaultTheme='system' enableSystem>
-            <ScrollProgress />
-            {children}
+            <CartProvider>
+              <ScrollProgress />
+              {children}
+              <ThemedToaster />
+            </CartProvider>
           </ThemeProvider>
         </NextIntlClientProvider>
       </body>

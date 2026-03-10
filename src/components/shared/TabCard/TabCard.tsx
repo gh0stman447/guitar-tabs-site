@@ -6,9 +6,11 @@ import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import { Music } from 'lucide-react';
+import { Music, ShoppingCart, Check, Trash2 } from 'lucide-react';
 import { MarqueeText } from '@/components/shared/MarqueeText';
 import { BuyDialog } from '@/components/shared/BuyDialog';
+import { useCart } from '@/context/CartContext';
+import { toast } from 'sonner';
 import type { Tab } from '@/types';
 
 function getDifficultyColor(difficulty: string) {
@@ -50,6 +52,9 @@ export function TabCard({
   const [hovered, setHovered] = useState(false);
   const [buyOpen, setBuyOpen] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+  const { addItem, removeItem, hasItem } = useCart();
+  const inCart = hasItem(tab.id);
+  const [cartHovered, setCartHovered] = useState(false);
 
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -188,6 +193,35 @@ export function TabCard({
                       <TooltipContent>Смотреть видео аранжировки</TooltipContent>
                     </Tooltip>
                   )}
+                  <Button
+                    size='sm'
+                    variant='outline'
+                    className={`rounded-full w-9 h-9 p-0 shrink-0 transition-colors ${
+                      inCart
+                        ? cartHovered
+                          ? 'border-red-500 text-red-500 bg-red-500/10'
+                          : 'border-amber-500 text-amber-500 bg-amber-500/10'
+                        : 'hover:border-amber-500 hover:text-amber-500'
+                    }`}
+                    onClick={() => {
+                      if (inCart) {
+                        removeItem(tab.id);
+                        toast(title, { description: locale === 'en' ? 'Removed from cart' : 'Убрано из корзины', icon: '🗑️' });
+                      } else {
+                        addItem(tab);
+                        toast(title, { description: locale === 'en' ? 'Added to cart' : 'Добавлено в корзину', icon: '🛒' });
+                      }
+                    }}
+                    onMouseEnter={() => setCartHovered(true)}
+                    onMouseLeave={() => setCartHovered(false)}
+                    title={inCart ? 'Убрать из корзины' : 'В корзину'}
+                  >
+                    {inCart
+                      ? cartHovered
+                        ? <Trash2 className='h-4 w-4' />
+                        : <Check className='h-4 w-4' />
+                      : <ShoppingCart className='h-4 w-4' />}
+                  </Button>
                   <Button
                     size='sm'
                     className='bg-amber-500 hover:bg-amber-600 text-white rounded-full px-5'

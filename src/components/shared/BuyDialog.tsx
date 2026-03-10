@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -21,22 +21,60 @@ interface BuyDialogProps {
   testMode?: boolean;
 }
 
+const EMAIL_RE = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+
+function validate(firstname: string, email: string, agreed: boolean, locale: string) {
+  const errors: { firstname?: string; email?: string; agreed?: string } = {};
+  const ru = locale !== 'en';
+
+  if (!firstname.trim())
+    errors.firstname = ru ? 'Введите имя' : 'Enter your name';
+  else if (firstname.trim().length < 2)
+    errors.firstname = ru ? 'Имя слишком короткое' : 'Name is too short';
+
+  if (!email.trim())
+    errors.email = ru ? 'Введите email' : 'Enter your email';
+  else if (!EMAIL_RE.test(email))
+    errors.email = ru ? 'Некорректный email' : 'Invalid email';
+
+  if (!agreed)
+    errors.agreed = ru ? 'Примите условия оферты' : 'Please accept the terms';
+
+  return errors;
+}
+
 export function BuyDialog({ tab, locale, open, onOpenChange, testMode }: BuyDialogProps) {
   const [firstname, setFirstname] = useState('');
   const [email, setEmail] = useState('');
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [submitError, setSubmitError] = useState('');
+  const [touched, setTouched] = useState<{ firstname?: boolean; email?: boolean }>({});
 
   const title = locale === 'en' ? tab.title_en : tab.title_ru;
+  const errors = validate(firstname, email, agreed, locale);
+
+  useEffect(() => {
+    if (!open) {
+      setFirstname('');
+      setEmail('');
+      setAgreed(false);
+      setSubmitError('');
+      setTouched({});
+    }
+  }, [open]);
+
+  function blur(field: 'firstname' | 'email') {
+    setTouched((t) => ({ ...t, [field]: true }));
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!agreed) {
-      setError(locale === 'en' ? 'Please accept the terms' : 'Примите условия оферты');
-      return;
-    }
-    setError('');
+    setTouched({ firstname: true, email: true });
+
+    if (Object.keys(errors).length > 0) return;
+
+    setSubmitError('');
     setLoading(true);
 
     try {
@@ -49,18 +87,24 @@ export function BuyDialog({ tab, locale, open, onOpenChange, testMode }: BuyDial
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error ?? (locale === 'en' ? 'Something went wrong' : 'Что-то пошло не так'));
+        setSubmitError(data.error ?? (locale === 'en' ? 'Something went wrong' : 'Что-то пошло не так'));
         return;
       }
 
-      // Redirect to YooKassa payment page
       window.location.href = data.confirmation_url;
     } catch {
-      setError(locale === 'en' ? 'Network error, try again' : 'Ошибка сети, попробуйте снова');
+      setSubmitError(locale === 'en' ? 'Network error, try again' : 'Ошибка сети, попробуйте снова');
     } finally {
       setLoading(false);
     }
   }
+
+  const inputCls = (field: 'firstname' | 'email') =>
+    `w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 transition-shadow ${
+      touched[field] && errors[field]
+        ? 'border-red-500 focus:ring-red-500/30'
+        : 'border-input focus:ring-amber-500/30 focus:border-amber-500'
+    }`;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -81,48 +125,60 @@ export function BuyDialog({ tab, locale, open, onOpenChange, testMode }: BuyDial
             </label>
             <input
               type="text"
-              required
               value={firstname}
               onChange={(e) => setFirstname(e.target.value)}
+              onBlur={() => blur('firstname')}
               placeholder={locale === 'en' ? 'Your name' : 'Ваше имя'}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-500 transition-shadow"
+              className={inputCls('firstname')}
             />
+            {touched.firstname && errors.firstname && (
+              <p className="text-xs text-red-500">{errors.firstname}</p>
+            )}
           </div>
 
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium">Email</label>
             <input
-              type="email"
-              required
+              type="text"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              onBlur={() => blur('email')}
               placeholder={locale === 'en' ? 'your@email.com' : 'ваш@email.com'}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-500 transition-shadow"
+              className={inputCls('email')}
             />
-            <p className="text-xs text-muted-foreground">
-              {locale === 'en'
-                ? 'Files will be sent to this email after payment'
-                : 'На этот email придут файлы после оплаты'}
-            </p>
+            {touched.email && errors.email ? (
+              <p className="text-xs text-red-500">{errors.email}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                {locale === 'en'
+                  ? 'Files will be sent to this email after payment'
+                  : 'На этот email придут файлы после оплаты'}
+              </p>
+            )}
           </div>
 
-          <label className="flex items-start gap-2.5 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={agreed}
-              onChange={(e) => setAgreed(e.target.checked)}
-              className="mt-0.5 h-4 w-4 shrink-0 accent-amber-500"
-            />
-            <span className="text-sm text-muted-foreground leading-relaxed">
-              {locale === 'en' ? (
-                <>I accept the <Link href={`/${locale}/legal`} target="_blank" className="text-amber-500 hover:underline">terms of the public offer</Link></>
-              ) : (
-                <>Я принимаю условия <Link href={`/${locale}/legal`} target="_blank" className="text-amber-500 hover:underline">публичной оферты</Link></>
-              )}
-            </span>
-          </label>
+          <div className="flex flex-col gap-1.5">
+            <label className="flex items-start gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={agreed}
+                onChange={(e) => setAgreed(e.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0 accent-amber-500"
+              />
+              <span className="text-sm text-muted-foreground leading-relaxed">
+                {locale === 'en' ? (
+                  <>I accept the <Link href={`/${locale}/legal`} target="_blank" className="text-amber-500 hover:underline">terms of the public offer</Link></>
+                ) : (
+                  <>Я принимаю условия <Link href={`/${locale}/legal`} target="_blank" className="text-amber-500 hover:underline">публичной оферты</Link></>
+                )}
+              </span>
+            </label>
+            {errors.agreed && touched.firstname && (
+              <p className="text-xs text-red-500">{errors.agreed}</p>
+            )}
+          </div>
 
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          {submitError && <p className="text-sm text-red-500">{submitError}</p>}
 
           <Button
             type="submit"

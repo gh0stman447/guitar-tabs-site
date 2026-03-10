@@ -34,7 +34,7 @@ export function HeroSection() {
       ref={ref}
       className='relative min-h-screen flex items-center justify-center overflow-hidden'
     >
-      <div className='absolute inset-0 bg-gradient-to-br from-amber-50 via-background to-background dark:from-amber-950/20 dark:via-background dark:to-background' />
+      <div className='absolute inset-0 bg-gradient-to-br from-amber-50/50 via-background to-background dark:from-amber-950/10 dark:via-background dark:to-background' />
       <motion.div
         style={{ y: blobY1 }}
         className='absolute top-1/4 right-1/4 w-64 h-64 bg-amber-400/10 rounded-full blur-3xl'
@@ -44,25 +44,27 @@ export function HeroSection() {
         className='absolute bottom-1/4 left-1/4 w-96 h-96 bg-amber-300/5 rounded-full blur-3xl'
       />
 
-      <motion.div style={{ y: notesY }} className='absolute inset-0 pointer-events-none'>
-        {floatingNotes.map((note) => (
-          <motion.span
-            key={note.id}
-            className='absolute bottom-0 select-none text-amber-500'
-            style={{ left: note.left, fontSize: note.size, opacity: note.opacity }}
-            animate={{ y: '-110vh', rotate: [0, 15, -10, 5, 0] }}
-            initial={{ y: '110vh' }}
-            transition={{
-              duration: note.duration,
-              delay: note.delay,
-              repeat: Infinity,
-              ease: 'linear',
-            }}
-          >
-            {note.symbol}
-          </motion.span>
-        ))}
-      </motion.div>
+      <div className='absolute inset-0 pointer-events-none'>
+        <motion.div style={{ y: notesY }} className='absolute inset-0 pointer-events-none hidden md:block'>
+          {floatingNotes.map((note) => (
+            <motion.span
+              key={note.id}
+              className='absolute bottom-0 select-none text-amber-500'
+              style={{ left: note.left, fontSize: note.size, opacity: note.opacity }}
+              animate={{ y: '-110vh', rotate: [0, 15, -10, 5, 0] }}
+              initial={{ y: '110vh' }}
+              transition={{
+                duration: note.duration,
+                delay: note.delay,
+                repeat: Infinity,
+                ease: 'linear',
+              }}
+            >
+              {note.symbol}
+            </motion.span>
+          ))}
+        </motion.div>
+      </div>
 
       <motion.div
         style={{ y: contentY, opacity }}

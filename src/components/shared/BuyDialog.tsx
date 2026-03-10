@@ -18,9 +18,10 @@ interface BuyDialogProps {
   locale: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  testMode?: boolean;
 }
 
-export function BuyDialog({ tab, locale, open, onOpenChange }: BuyDialogProps) {
+export function BuyDialog({ tab, locale, open, onOpenChange, testMode }: BuyDialogProps) {
   const [firstname, setFirstname] = useState('');
   const [email, setEmail] = useState('');
   const [agreed, setAgreed] = useState(false);
@@ -42,7 +43,7 @@ export function BuyDialog({ tab, locale, open, onOpenChange }: BuyDialogProps) {
       const res = await fetch('/api/payment/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tab_id: tab.id, firstname, email }),
+        body: JSON.stringify({ tab_id: tab.id, firstname, email, test: testMode ?? false }),
       });
 
       const data = await res.json();

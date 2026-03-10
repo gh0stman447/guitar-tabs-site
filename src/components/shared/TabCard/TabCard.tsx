@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
+import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
@@ -49,6 +49,30 @@ export function TabCard({
 }: TabCardProps) {
   const [hovered, setHovered] = useState(false);
   const [buyOpen, setBuyOpen] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [6, -6]), {
+    stiffness: 300,
+    damping: 30,
+  });
+  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-6, 6]), {
+    stiffness: 300,
+    damping: 30,
+  });
+
+  function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
+    const rect = cardRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    mouseX.set((e.clientX - rect.left) / rect.width - 0.5);
+    mouseY.set((e.clientY - rect.top) / rect.height - 0.5);
+  }
+
+  function handleMouseLeave() {
+    mouseX.set(0);
+    mouseY.set(0);
+  }
   const title = locale === 'en' ? tab.title_en : tab.title_ru;
   const description = locale === 'en' ? tab.description_en : tab.description_ru;
 
@@ -70,110 +94,114 @@ export function TabCard({
 
   return (
     <>
-    <motion.div
-      {...(motionProps as React.ComponentProps<typeof motion.div>)}
-      whileHover={{ y: -4 }}
-      onHoverStart={() => setHovered(true)}
-      onHoverEnd={() => setHovered(false)}
-    >
-      <Card className='overflow-hidden h-full flex flex-col border-border hover:border-amber-300 dark:hover:border-amber-700 transition-colors relative'>
-        {showRank && (
-          <div className='absolute top-3 left-3 z-10 bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded-full'>
-            #1
-          </div>
-        )}
-
-        <div className='aspect-video relative bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/30 dark:to-zinc-900'>
-          {tab.photo_url ? (
-            <Image
-              src={tab.photo_url}
-              alt={title}
-              fill
-              className='object-cover'
-              sizes='(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw'
-            />
-          ) : (
-            <div className='flex items-center justify-center w-full h-full'>
-              <Music className='h-12 w-12 text-amber-400' strokeWidth={1} />
-            </div>
-          )}
-        </div>
-
-        <CardContent className='p-5 flex flex-col flex-1 gap-3'>
-          <div className='flex items-start justify-between gap-2'>
-            <MarqueeText
-              text={title}
-              className='font-semibold text-base leading-tight flex-1 min-w-0'
-              isHovered={hovered}
-            />
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span
-                  className={`shrink-0 text-xs font-medium px-2 py-1 rounded-full cursor-default ${getDifficultyColor(tab.difficulty)}`}
-                >
-                  {tab.difficulty}
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>Сложность: {tab.difficulty}</TooltipContent>
-            </Tooltip>
-          </div>
-
-          {purchasesLabel && (
-            <p className='text-xs text-muted-foreground'>{purchasesLabel}</p>
-          )}
-
-          {showDetails && (
-            <>
-              <MarqueeText
-                text={description}
-                className='text-sm text-muted-foreground flex-1 leading-relaxed'
-                isHovered={hovered}
-              />
-              <div className='flex flex-wrap gap-1'>
-                {(Object.keys(tab.files) as Array<keyof typeof tab.files>).map((fmt) => (
-                  <span
-                    key={fmt}
-                    className='text-xs px-2 py-0.5 rounded bg-secondary text-muted-foreground font-mono uppercase'
-                  >
-                    {fmt}
-                  </span>
-                ))}
+      <div style={{ perspective: 1000 }}>
+        <motion.div
+          ref={cardRef}
+          {...(motionProps as React.ComponentProps<typeof motion.div>)}
+          style={{ rotateX, rotateY }}
+          whileHover={{ y: -4 }}
+          onHoverStart={() => setHovered(true)}
+          onHoverEnd={() => setHovered(false)}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+        >
+          <Card className='overflow-hidden h-full flex flex-col border-border hover:border-amber-300 dark:hover:border-amber-700 transition-colors relative'>
+            {showRank && (
+              <div className='absolute top-3 left-3 z-10 bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded-full'>
+                #1
               </div>
-            </>
-          )}
+            )}
 
-          <div className='flex items-center justify-between mt-auto pt-3 border-t border-border'>
-            <span className='text-lg font-bold'>{tab.price} ₽</span>
-            <div className='flex items-center gap-2'>
-              {tab.youtube_url && (
+            <div className='aspect-video relative bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/30 dark:to-zinc-900'>
+              {tab.photo_url ? (
+                <Image
+                  src={tab.photo_url}
+                  alt={title}
+                  fill
+                  className='object-cover'
+                  sizes='(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw'
+                />
+              ) : (
+                <div className='flex items-center justify-center w-full h-full'>
+                  <Music className='h-12 w-12 text-amber-400' strokeWidth={1} />
+                </div>
+              )}
+            </div>
+
+            <CardContent className='p-5 flex flex-col flex-1 gap-3'>
+              <div className='flex items-start justify-between gap-2'>
+                <MarqueeText
+                  text={title}
+                  className='font-semibold text-base leading-tight flex-1 min-w-0'
+                  isHovered={hovered}
+                />
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <a
-                      href={tab.youtube_url}
-                      target='_blank'
-                      rel='noopener noreferrer'
-                      className='flex items-center justify-center w-9 h-9 rounded-full border border-border text-muted-foreground hover:border-red-500 hover:text-red-500 transition-colors cursor-pointer'
-                      aria-label='Смотреть на YouTube'
+                    <span
+                      className={`shrink-0 text-xs font-medium px-2 py-1 rounded-full cursor-default ${getDifficultyColor(tab.difficulty)}`}
                     >
-                      <YouTubeIcon />
-                    </a>
+                      {tab.difficulty}
+                    </span>
                   </TooltipTrigger>
-                  <TooltipContent>Смотреть видео аранжировки</TooltipContent>
+                  <TooltipContent>Сложность: {tab.difficulty}</TooltipContent>
                 </Tooltip>
+              </div>
+
+              {purchasesLabel && <p className='text-xs text-muted-foreground'>{purchasesLabel}</p>}
+
+              {showDetails && (
+                <>
+                  <MarqueeText
+                    text={description}
+                    className='text-sm text-muted-foreground flex-1 leading-relaxed'
+                    isHovered={hovered}
+                  />
+                  <div className='flex flex-wrap gap-1'>
+                    {(Object.keys(tab.files) as Array<keyof typeof tab.files>).map((fmt) => (
+                      <span
+                        key={fmt}
+                        className='text-xs px-2 py-0.5 rounded bg-secondary text-muted-foreground font-mono uppercase'
+                      >
+                        {fmt}
+                      </span>
+                    ))}
+                  </div>
+                </>
               )}
-              <Button
-                size='sm'
-                className='bg-amber-500 hover:bg-amber-600 text-white rounded-full px-5'
-                onClick={() => setBuyOpen(true)}
-              >
-                {buyLabel}
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
-    <BuyDialog tab={tab} locale={locale} open={buyOpen} onOpenChange={setBuyOpen} />
+
+              <div className='flex items-center justify-between mt-auto pt-3 border-t border-border'>
+                <span className='text-lg font-bold'>{tab.price} ₽</span>
+                <div className='flex items-center gap-2'>
+                  {tab.youtube_url && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <a
+                          href={tab.youtube_url}
+                          target='_blank'
+                          rel='noopener noreferrer'
+                          className='flex items-center justify-center w-9 h-9 rounded-full border border-border text-muted-foreground hover:border-red-500 hover:text-red-500 transition-colors cursor-pointer'
+                          aria-label='Смотреть на YouTube'
+                        >
+                          <YouTubeIcon />
+                        </a>
+                      </TooltipTrigger>
+                      <TooltipContent>Смотреть видео аранжировки</TooltipContent>
+                    </Tooltip>
+                  )}
+                  <Button
+                    size='sm'
+                    className='bg-amber-500 hover:bg-amber-600 text-white rounded-full px-5'
+                    onClick={() => setBuyOpen(true)}
+                  >
+                    {buyLabel}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+      <BuyDialog tab={tab} locale={locale} open={buyOpen} onOpenChange={setBuyOpen} />
     </>
   );
 }

@@ -39,8 +39,12 @@ export async function POST(req: NextRequest) {
     const file = formData.get(fmt) as File | null;
     if (!file || file.size === 0) continue;
 
-    const ext = file.name.split('.').pop() ?? fmt;
-    const path = `${folder}/tab.${ext}`;
+    if (/[а-яёА-ЯЁ]/.test(file.name)) {
+      return NextResponse.json({ error: `Файл "${file.name}" содержит кириллицу в названии. Переименуйте файл латиницей.` }, { status: 400 });
+    }
+
+    const safeName = file.name.replace(/[^\w.\-\s]/g, '_');
+    const path = `${folder}/${safeName}`;
     const buffer = await file.arrayBuffer();
 
     const { error } = await supabaseAdmin.storage
@@ -52,6 +56,7 @@ export async function POST(req: NextRequest) {
     }
 
     files[fmt] = path;
+
   }
 
   if (Object.keys(files).length === 0) {
@@ -90,6 +95,7 @@ export async function POST(req: NextRequest) {
       photo_url,
       files,
       purchase_count: 0,
+      is_published: false,
     })
     .select('id')
     .single();

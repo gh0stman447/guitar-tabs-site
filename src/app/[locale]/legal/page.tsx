@@ -16,7 +16,7 @@ export default async function LegalPage() {
       <Header />
       <main className="min-h-screen bg-background">
         {/* Page header */}
-        <div className="border-b border-border bg-muted/30">
+        <div className="border-b border-border bg-muted/30 pt-16">
           <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-950/40 flex items-center justify-center">

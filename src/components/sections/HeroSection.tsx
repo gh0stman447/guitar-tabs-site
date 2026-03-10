@@ -1,20 +1,73 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { useRef } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { ArrowDown } from 'lucide-react';
 
+const NOTES = ['♩', '♪', '♫', '♬', '𝄞', '♭', '♮'];
+
+const floatingNotes = Array.from({ length: 18 }, (_, i) => ({
+  id: i,
+  symbol: NOTES[i % NOTES.length],
+  left: `${5 + (i * 97) / 17}%`,
+  duration: 8 + (i % 5) * 2.5,
+  delay: -(i * 1.1),
+  size: 20 + (i % 4) * 10,
+  opacity: 0.18 + (i % 3) * 0.08,
+}));
+
 export function HeroSection() {
   const t = useTranslations('hero');
+  const ref = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
+
+  const blobY1 = useTransform(scrollYProgress, [0, 1], ['0%', '-40%']);
+  const blobY2 = useTransform(scrollYProgress, [0, 1], ['0%', '-20%']);
+  const notesY = useTransform(scrollYProgress, [0, 1], ['0%', '-60%']);
+  const contentY = useTransform(scrollYProgress, [0, 1], ['0%', '30%']);
+  const opacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
 
   return (
-    <section className='relative min-h-screen flex items-center justify-center overflow-hidden'>
+    <section
+      ref={ref}
+      className='relative min-h-screen flex items-center justify-center overflow-hidden'
+    >
       <div className='absolute inset-0 bg-gradient-to-br from-amber-50 via-background to-background dark:from-amber-950/20 dark:via-background dark:to-background' />
-      <div className='absolute top-1/4 right-1/4 w-64 h-64 bg-amber-400/10 rounded-full blur-3xl' />
-      <div className='absolute bottom-1/4 left-1/4 w-96 h-96 bg-amber-300/5 rounded-full blur-3xl' />
+      <motion.div
+        style={{ y: blobY1 }}
+        className='absolute top-1/4 right-1/4 w-64 h-64 bg-amber-400/10 rounded-full blur-3xl'
+      />
+      <motion.div
+        style={{ y: blobY2 }}
+        className='absolute bottom-1/4 left-1/4 w-96 h-96 bg-amber-300/5 rounded-full blur-3xl'
+      />
 
-      <div className='relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center'>
+      <motion.div style={{ y: notesY }} className='absolute inset-0 pointer-events-none'>
+        {floatingNotes.map((note) => (
+          <motion.span
+            key={note.id}
+            className='absolute bottom-0 select-none text-amber-500'
+            style={{ left: note.left, fontSize: note.size, opacity: note.opacity }}
+            animate={{ y: '-110vh', rotate: [0, 15, -10, 5, 0] }}
+            initial={{ y: '110vh' }}
+            transition={{
+              duration: note.duration,
+              delay: note.delay,
+              repeat: Infinity,
+              ease: 'linear',
+            }}
+          >
+            {note.symbol}
+          </motion.span>
+        ))}
+      </motion.div>
+
+      <motion.div
+        style={{ y: contentY, opacity }}
+        className='relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center'
+      >
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -35,7 +88,9 @@ export function HeroSection() {
             <Button
               size='lg'
               className='bg-amber-500 hover:bg-amber-600 text-white font-medium px-8 h-12 rounded-full'
-              onClick={() => document.getElementById('tabs')?.scrollIntoView({ behavior: 'smooth' })}
+              onClick={() =>
+                document.getElementById('tabs')?.scrollIntoView({ behavior: 'smooth' })
+              }
             >
               {t('ctaTabs')}
             </Button>
@@ -43,13 +98,15 @@ export function HeroSection() {
               variant='outline'
               size='lg'
               className='h-12 px-8 rounded-full'
-              onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}
+              onClick={() =>
+                document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })
+              }
             >
               {t('ctaAbout')}
             </Button>
           </div>
         </motion.div>
-      </div>
+      </motion.div>
 
       <motion.div
         className='absolute bottom-8 left-1/2 -translate-x-1/2'

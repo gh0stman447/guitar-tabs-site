@@ -23,6 +23,7 @@ export function TabsSection() {
     supabase
       .from('guitar-tabs')
       .select('*')
+      .eq('is_published', true)
       .then(({ data }) => {
         if (data) setTabs(data as Tab[]);
         setLoading(false);

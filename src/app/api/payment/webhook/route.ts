@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
 
   const { data: tab, error: tabError } = await supabaseAdmin
     .from('guitar-tabs')
-    .select('title_ru, files')
+    .select('title_ru, title_en, files')
     .eq('id', purchase.tab_id)
     .single();
 

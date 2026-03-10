@@ -7,7 +7,7 @@ const supabaseAdmin = createClient(
 );
 
 export async function POST(req: NextRequest) {
-  const { tab_id, firstname, email } = await req.json();
+  const { tab_id, firstname, email, test } = await req.json();
 
   if (!tab_id || !firstname || !email) {
     return NextResponse.json({ error: 'Заполните все поля' }, { status: 400 });
@@ -65,9 +65,11 @@ export async function POST(req: NextRequest) {
   }
 
   // 4. Create YooKassa payment
-  const shopId = process.env.YUKASSA_SHOP_ID;
-  const secretKey = process.env.YUKASSA_SECRET_KEY;
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  const shopId = test ? process.env.YUKASSA_TEST_SHOP_ID : process.env.YUKASSA_SHOP_ID;
+  const secretKey = test ? process.env.YUKASSA_TEST_SECRET_KEY : process.env.YUKASSA_SECRET_KEY;
+  const appUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : (process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000');
 
   if (!shopId || !secretKey) {
     // Dev mode: return fake URL

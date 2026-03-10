@@ -5,6 +5,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
+import { ScrollProgress } from '@/components/shared/ScrollProgress';
 import '../globals.css';
 
 const geistSans = Geist({
@@ -42,6 +43,7 @@ export default async function LocaleLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider attribute='class' defaultTheme='system' enableSystem>
+            <ScrollProgress />
             {children}
           </ThemeProvider>
         </NextIntlClientProvider>

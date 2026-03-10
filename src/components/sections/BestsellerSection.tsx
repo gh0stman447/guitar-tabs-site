@@ -19,6 +19,7 @@ export function BestsellerSection() {
     supabase
       .from('guitar-tabs')
       .select('*')
+      .eq('is_published', true)
       .order('purchase_count', { ascending: false })
       .limit(3)
       .then(({ data }) => {

@@ -6,12 +6,21 @@ import type { Tab } from '@/types';
 const STORAGE_KEY = 'guitar-tabs-cart';
 const STORAGE_KEY_TEST = 'guitar-tabs-cart-test';
 
+function bulkDiscountRate(count: number) {
+  if (count >= 3) return 0.15;
+  if (count >= 2) return 0.10;
+  return 0;
+}
+
 interface CartContextValue {
   items: Tab[];
   addItem: (tab: Tab) => void;
   removeItem: (id: string) => void;
   clearCart: () => void;
   hasItem: (id: string) => boolean;
+  subtotal: number;
+  discountRate: number;
+  discount: number;
   total: number;
   count: number;
   testMode: boolean;
@@ -61,10 +70,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const hasItem = useCallback((id: string) => items.some((t) => t.id === id), [items]);
 
-  const total = items.reduce((sum, t) => sum + t.price, 0);
+  const subtotal = items.reduce((sum, t) => sum + t.price, 0);
+  const discountRate = bulkDiscountRate(items.length);
+  const discount = Math.round(subtotal * discountRate);
+  const total = subtotal - discount;
 
   return (
-    <CartContext.Provider value={{ items, addItem, removeItem, clearCart, hasItem, total, count: items.length, testMode, setTestMode }}>
+    <CartContext.Provider value={{ items, addItem, removeItem, clearCart, hasItem, subtotal, discountRate, discount, total, count: items.length, testMode, setTestMode }}>
       {children}
     </CartContext.Provider>
   );

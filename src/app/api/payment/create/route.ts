@@ -41,7 +41,9 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const totalAmount = tabs.reduce((sum, t) => sum + t.price, 0);
+  const subtotal = tabs.reduce((sum, t) => sum + t.price, 0);
+  const discountRate = ids.length >= 3 ? 0.15 : ids.length >= 2 ? 0.10 : 0;
+  const totalAmount = subtotal - Math.round(subtotal * discountRate);
 
   // 2. Upsert customer
   const { data: customer, error: customerError } = await supabaseAdmin

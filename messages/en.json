@@ -42,7 +42,7 @@
   "bestseller": {
     "badge": "Popular",
     "title": "Most purchased",
-    "purchases": "{count} purchases",
+    "purchases": "{count, plural, one {# purchase} other {# purchases}}",
     "buy": "Buy",
     "empty": "No tabs yet"
   },

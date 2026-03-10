@@ -130,7 +130,7 @@ export function Header() {
                     href={`/${locale}/admin`}
                     className='text-xs font-medium px-2 py-1 rounded border border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white transition-colors'
                   >
-                    + Таб
+                    Добавить таб
                   </Link>
                 </div>
               )}
@@ -142,7 +142,7 @@ export function Header() {
               </button>
               <button
                 onClick={() => setCartOpen(true)}
-                className='relative flex items-center justify-center w-9 h-9 rounded border border-border text-muted-foreground hover:text-foreground hover:border-amber-500 transition-colors cursor-pointer'
+                className='md:hidden relative flex items-center justify-center w-9 h-9 rounded border border-border text-muted-foreground hover:text-foreground hover:border-amber-500 transition-colors cursor-pointer'
               >
                 <ShoppingCart className='h-4 w-4' />
                 {count > 0 && (
@@ -158,7 +158,12 @@ export function Header() {
                     <Menu className='h-4 w-4' />
                   </button>
                 </SheetTrigger>
-                <SheetContent side='top' showCloseButton={false} aria-describedby={undefined} className='h-auto px-6 pb-8 pt-20'>
+                <SheetContent
+                  side='top'
+                  showCloseButton={false}
+                  aria-describedby={undefined}
+                  className='h-auto px-6 pb-8 pt-20'
+                >
                   <SheetTitle className='sr-only'>Меню</SheetTitle>
                   <div className='max-w-6xl mx-auto flex flex-col gap-6'>
                     <nav className='flex flex-col gap-1'>

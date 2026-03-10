@@ -18,10 +18,15 @@ export function Footer() {
         </div>
         <div className='flex flex-col sm:flex-row items-center gap-3'>
           <span>{t('inn')}</span>
-          <Link href={`/${locale}/legal`} className='hover:text-foreground transition-colors underline underline-offset-4'>
+          <Link
+            href={`/${locale}/legal`}
+            className='hover:text-foreground transition-colors underline underline-offset-4'
+          >
             {t('legal')}
           </Link>
-          <span>© {new Date().getFullYear()} {t('rights')}</span>
+          <span>
+            © {new Date().getFullYear()} {t('rights')}
+          </span>
         </div>
       </div>
     </footer>

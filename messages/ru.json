@@ -42,7 +42,7 @@
   "bestseller": {
     "badge": "Популярное",
     "title": "Покупают чаще всего",
-    "purchases": "{count} покупок",
+    "purchases": "{count, plural, one {# покупка} few {# покупки} many {# покупок} other {# покупок}}",
     "buy": "Купить",
     "empty": "Пока нет табов"
   },

@@ -1,10 +1,17 @@
 'use client';
 
+import { useEffect } from 'react';
 import { motion, useScroll, useSpring } from 'framer-motion';
 
 export function ScrollProgress() {
   const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, { stiffness: 200, damping: 15 });
+
+  useEffect(() => {
+    if ('scrollRestoration' in history) {
+      history.scrollRestoration = 'manual';
+    }
+  }, []);
 
   return (
     <motion.div

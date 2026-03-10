@@ -5,7 +5,13 @@ import { useRouter, useParams } from 'next/navigation';
 import { Header } from '@/components/shared/Header';
 import { Loader2, EyeOff } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import type { Tab } from '@/types';
 
@@ -63,12 +69,6 @@ export default function PublishedPage() {
             <h1 className='text-2xl font-bold'>Опубликованные</h1>
             <p className='text-sm text-muted-foreground'>Табы, доступные пользователям</p>
           </div>
-          <button
-            onClick={() => router.push(`/${locale}/admin/drafts`)}
-            className='text-sm text-amber-500 hover:text-amber-400 transition-colors cursor-pointer'
-          >
-            Черновики
-          </button>
         </div>
 
         {loading ? (
@@ -102,7 +102,9 @@ export default function PublishedPage() {
                     <span className='text-xs text-muted-foreground'>
                       {Object.keys(tab.files).join(', ').toUpperCase()}
                     </span>
-                    <span className='text-xs text-muted-foreground'>{tab.purchase_count ?? 0} покупок</span>
+                    <span className='text-xs text-muted-foreground'>
+                      {tab.purchase_count ?? 0} покупок
+                    </span>
                   </div>
                 </div>
                 <div className='flex items-center gap-2 shrink-0'>
@@ -125,12 +127,18 @@ export default function PublishedPage() {
         )}
       </div>
 
-      <Dialog open={!!confirmTab} onOpenChange={(open) => { if (!open) setConfirmTab(null); }}>
+      <Dialog
+        open={!!confirmTab}
+        onOpenChange={(open) => {
+          if (!open) setConfirmTab(null);
+        }}
+      >
         <DialogContent className='sm:max-w-sm'>
           <DialogHeader>
             <DialogTitle>Снять с публикации?</DialogTitle>
             <DialogDescription>
-              <strong>{confirmTab?.title_ru}</strong> станет недоступен пользователям и переместится в черновики.
+              <strong>{confirmTab?.title_ru}</strong> станет недоступен пользователям и переместится
+              в черновики.
             </DialogDescription>
           </DialogHeader>
           <div className='flex gap-3 justify-end mt-2'>

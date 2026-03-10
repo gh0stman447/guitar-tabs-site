@@ -46,8 +46,8 @@ export async function POST(req: NextRequest) {
   }
 
   // Resolve list of tab ids
-  const tabIds: string[] = (purchase.tab_ids as string[] | null) ??
-    (purchase.tab_id ? [purchase.tab_id as string] : []);
+  const tabIds: string[] =
+    (purchase.tab_ids as string[] | null) ?? (purchase.tab_id ? [purchase.tab_id as string] : []);
 
   // 3. Get all tabs
   const { data: tabs, error: tabsError } = await supabaseAdmin
@@ -75,14 +75,10 @@ export async function POST(req: NextRequest) {
 
   for (const tab of tabs) {
     const files = tab.files as Record<string, string>;
-    const folder = multiTab
-      ? zip.folder(tab.title_ru.replace(/[/\\?%*:|"<>]/g, '_'))!
-      : zip;
+    const folder = multiTab ? zip.folder(tab.title_ru.replace(/[/\\?%*:|"<>]/g, '_'))! : zip;
 
     for (const [format, path] of Object.entries(files)) {
-      const { data, error } = await supabaseAdmin.storage
-        .from('tab-files')
-        .download(path);
+      const { data, error } = await supabaseAdmin.storage.from('tab-files').download(path);
 
       if (error || !data) {
         console.error(`Failed to download ${format} (${path}):`, error);
@@ -97,9 +93,10 @@ export async function POST(req: NextRequest) {
 
   const zipBuffer = await zip.generateAsync({ type: 'nodebuffer' });
   const zipBase64 = zipBuffer.toString('base64');
-  const zipFilename = tabs.length === 1
-    ? `${tabs[0].title_ru.replace(/[/\\?%*:|"<>]/g, '_')}.zip`
-    : 'tabs.zip';
+  const zipFilename =
+    tabs.length === 1
+      ? `${tabs[0].title_ru.replace(/[/\\?%*:|"<>]/g, '_')}.zip`
+      : 'guitar-tabs.zip';
 
   const attachments = [{ filename: zipFilename, content: zipBase64 }];
 
@@ -127,7 +124,12 @@ async function sendEmail({
   const emailService = process.env.EMAIL_SERVICE;
 
   if (!emailService) {
-    console.log('📧 Would send email to:', to, 'Attachments:', attachments.map(a => a.filename));
+    console.log(
+      '📧 Would send email to:',
+      to,
+      'Attachments:',
+      attachments.map((a) => a.filename),
+    );
     return;
   }
 

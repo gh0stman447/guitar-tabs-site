@@ -42,7 +42,8 @@ interface CartDrawerProps {
 }
 
 export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
-  const { items, removeItem, clearCart, total, testMode } = useCart();
+  const { items, removeItem, clearCart, subtotal, discountRate, discount, total, testMode } =
+    useCart();
   const ru = locale !== 'en';
 
   const [firstname, setFirstname] = useState('');
@@ -50,7 +51,7 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState('');
-  const [touched, setTouched] = useState<{ firstname?: boolean; email?: boolean }>({});
+  const [submitted, setSubmitted] = useState(false);
 
   const errors = validate(firstname, email, agreed, locale);
 
@@ -60,17 +61,19 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
       setEmail('');
       setAgreed(false);
       setSubmitError('');
-      setTouched({});
+      setSubmitted(false);
     }
   }, [open]);
 
-  function blur(field: 'firstname' | 'email') {
-    setTouched((t) => ({ ...t, [field]: true }));
-  }
+  useEffect(() => {
+    if (open && items.length === 0) {
+      onOpenChange(false);
+    }
+  }, [items.length, open, onOpenChange]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setTouched({ firstname: true, email: true });
+    setSubmitted(true);
     if (Object.keys(errors).length > 0) return;
 
     setSubmitError('');
@@ -108,6 +111,7 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side='right'
+        showCloseButton={false}
         aria-describedby={undefined}
         className='w-full sm:max-w-md flex flex-col p-0'
       >
@@ -159,10 +163,42 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
                 ))}
               </div>
 
+              {/* Discount hint */}
+              {items.length === 1 && (
+                <div className='mx-6 my-2 rounded-lg bg-amber-500/10 border border-amber-500/20 px-4 py-2.5 text-sm text-amber-600 dark:text-amber-400'>
+                  {ru
+                    ? 'Добавь ещё 1 таб и получи скидку 10% 🎸'
+                    : 'Add 1 more tab and get 10% off 🎸'}
+                </div>
+              )}
+              {items.length === 2 && (
+                <div className='mx-6 my-2 rounded-lg bg-amber-500/10 border border-amber-500/20 px-4 py-2.5 text-sm text-amber-600 dark:text-amber-400'>
+                  {ru
+                    ? 'Добавь ещё 1 таб и скидка вырастет до 15% 🎸'
+                    : 'Add 1 more tab and discount grows to 15% 🎸'}
+                </div>
+              )}
+
               {/* Total */}
-              <div className='flex items-center justify-between px-6 py-4 border-t border-border mt-auto'>
-                <span className='text-sm text-muted-foreground'>{ru ? 'Итого' : 'Total'}</span>
-                <span className='text-xl font-bold'>{total} ₽</span>
+              <div className='flex flex-col gap-1 px-6 py-4 border-t border-border mt-auto'>
+                {discount > 0 && (
+                  <>
+                    <div className='flex items-center justify-between text-sm text-muted-foreground'>
+                      <span>{ru ? 'Сумма' : 'Subtotal'}</span>
+                      <span>{subtotal} ₽</span>
+                    </div>
+                    <div className='flex items-center justify-between text-sm text-green-600 dark:text-green-400'>
+                      <span>
+                        {ru ? `Скидка ${discountRate * 100}%` : `Discount ${discountRate * 100}%`}
+                      </span>
+                      <span>−{discount} ₽</span>
+                    </div>
+                  </>
+                )}
+                <div className='flex items-center justify-between'>
+                  <span className='text-sm text-muted-foreground'>{ru ? 'Итого' : 'Total'}</span>
+                  <span className='text-xl font-bold'>{total} ₽</span>
+                </div>
               </div>
 
               {/* Form */}
@@ -177,11 +213,10 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
                     type='text'
                     value={firstname}
                     onChange={(e) => setFirstname(e.target.value)}
-                    onBlur={() => blur('firstname')}
                     placeholder={ru ? 'Ваше имя' : 'Your name'}
-                    className={inputCls(!!touched.firstname, !!errors.firstname)}
+                    className={inputCls(submitted, !!errors.firstname)}
                   />
-                  {touched.firstname && errors.firstname && (
+                  {submitted && errors.firstname && (
                     <p className='text-xs text-red-500'>{errors.firstname}</p>
                   )}
                 </div>
@@ -192,11 +227,10 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
                     type='text'
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    onBlur={() => blur('email')}
                     placeholder={ru ? 'ваш@email.com' : 'your@email.com'}
-                    className={inputCls(!!touched.email, !!errors.email)}
+                    className={inputCls(submitted, !!errors.email)}
                   />
-                  {touched.email && errors.email ? (
+                  {submitted && errors.email ? (
                     <p className='text-xs text-red-500'>{errors.email}</p>
                   ) : (
                     <p className='text-xs text-muted-foreground'>
@@ -241,7 +275,7 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
                       )}
                     </span>
                   </label>
-                  {errors.agreed && touched.firstname && (
+                  {errors.agreed && submitted && (
                     <p className='text-xs text-red-500'>{errors.agreed}</p>
                   )}
                 </div>

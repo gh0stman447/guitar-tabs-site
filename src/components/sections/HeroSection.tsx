@@ -23,11 +23,12 @@ export function HeroSection() {
   const ref = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
 
-  const blobY1 = useTransform(scrollYProgress, [0, 1], ['0%', '-40%']);
-  const blobY2 = useTransform(scrollYProgress, [0, 1], ['0%', '-20%']);
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const blobY1 = useTransform(scrollYProgress, [0, 1], isMobile ? ['0%', '0%'] : ['0%', '-40%']);
+  const blobY2 = useTransform(scrollYProgress, [0, 1], isMobile ? ['0%', '0%'] : ['0%', '-20%']);
   const notesY = useTransform(scrollYProgress, [0, 1], ['0%', '-60%']);
-  const contentY = useTransform(scrollYProgress, [0, 1], ['0%', '30%']);
-  const opacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
+  const contentY = useTransform(scrollYProgress, [0, 1], isMobile ? ['0%', '0%'] : ['0%', '30%']);
+  const opacity = useTransform(scrollYProgress, [0, 0.6], isMobile ? [1, 1] : [1, 0]);
 
   return (
     <section
@@ -45,7 +46,10 @@ export function HeroSection() {
       />
 
       <div className='absolute inset-0 pointer-events-none'>
-        <motion.div style={{ y: notesY }} className='absolute inset-0 pointer-events-none hidden md:block'>
+        <motion.div
+          style={{ y: notesY }}
+          className='absolute inset-0 pointer-events-none hidden md:block'
+        >
           {floatingNotes.map((note) => (
             <motion.span
               key={note.id}

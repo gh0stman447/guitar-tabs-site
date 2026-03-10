@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ShoppingCart } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import { useCartAnimation } from '@/context/CartAnimationContext';
 import { CartDrawer } from './CartDrawer';
 import { useLocale } from 'next-intl';
 import { cn } from '@/lib/utils';
@@ -10,9 +11,17 @@ import { cn } from '@/lib/utils';
 export function FloatingCart() {
   const locale = useLocale();
   const { count, total } = useCart();
+  const { setCartButtonRef } = useCartAnimation();
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
   const [visible, setVisible] = useState(false);
   const [bump, setBump] = useState(false);
+
+  // Register button DOM element so CartAnimationContext knows the exact target position
+  useEffect(() => {
+    setCartButtonRef(buttonRef.current);
+    return () => setCartButtonRef(null);
+  }, [setCartButtonRef]);
 
   // Show only when there's at least 1 item
   useEffect(() => {
@@ -38,6 +47,7 @@ export function FloatingCart() {
         )}
       >
         <button
+          ref={buttonRef}
           onClick={() => setOpen(true)}
           className={cn(
             'group relative flex items-center gap-3 rounded-2xl px-4 py-3',

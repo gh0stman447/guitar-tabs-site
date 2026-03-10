@@ -7,6 +7,7 @@ import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
 import { ScrollProgress } from '@/components/shared/ScrollProgress';
 import { CartProvider } from '@/context/CartContext';
+import { CartAnimationProvider } from '@/context/CartAnimationContext';
 import { ThemedToaster } from '@/components/shared/ThemedToaster';
 import { FloatingCart } from '@/components/shared/FloatingCart';
 import '../globals.css';
@@ -54,10 +55,12 @@ export default async function LocaleLayout({
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider attribute='class' defaultTheme='dark' enableSystem>
             <CartProvider>
-              <ScrollProgress />
-              {children}
-              <FloatingCart />
-              <ThemedToaster />
+              <CartAnimationProvider>
+                <ScrollProgress />
+                {children}
+                <FloatingCart />
+                <ThemedToaster />
+              </CartAnimationProvider>
             </CartProvider>
           </ThemeProvider>
         </NextIntlClientProvider>

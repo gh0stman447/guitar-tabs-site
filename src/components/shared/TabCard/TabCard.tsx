@@ -10,6 +10,7 @@ import { Music, ShoppingCart, Check, Trash2 } from 'lucide-react';
 import { MarqueeText } from '@/components/shared/MarqueeText';
 import { BuyDialog } from '@/components/shared/BuyDialog';
 import { useCart } from '@/context/CartContext';
+import { useCartAnimation } from '@/context/CartAnimationContext';
 import { toast } from 'sonner';
 import type { Tab } from '@/types';
 
@@ -53,6 +54,7 @@ export function TabCard({
   const [buyOpen, setBuyOpen] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const { addItem, removeItem, hasItem } = useCart();
+  const { flyToCart } = useCartAnimation();
   const inCart = hasItem(tab.id);
   const [cartHovered, setCartHovered] = useState(false);
 
@@ -206,21 +208,33 @@ export function TabCard({
                     onClick={() => {
                       if (inCart) {
                         removeItem(tab.id);
-                        toast(title, { description: locale === 'en' ? 'Removed from cart' : 'Убрано из корзины', icon: '🗑️' });
+                        toast(title, {
+                          description: locale === 'en' ? 'Removed from cart' : 'Убрано из корзины',
+                          icon: '🗑️',
+                        });
                       } else {
                         addItem(tab);
-                        toast(title, { description: locale === 'en' ? 'Added to cart' : 'Добавлено в корзину', icon: '🛒' });
+                        toast(title, {
+                          description: locale === 'en' ? 'Added to cart' : 'Добавлено в корзину',
+                          icon: '🛒',
+                        });
+                        const el = cardRef.current;
+                        if (el) flyToCart(el.getBoundingClientRect(), el);
                       }
                     }}
                     onMouseEnter={() => setCartHovered(true)}
                     onMouseLeave={() => setCartHovered(false)}
                     title={inCart ? 'Убрать из корзины' : 'В корзину'}
                   >
-                    {inCart
-                      ? cartHovered
-                        ? <Trash2 className='h-4 w-4' />
-                        : <Check className='h-4 w-4' />
-                      : <ShoppingCart className='h-4 w-4' />}
+                    {inCart ? (
+                      cartHovered ? (
+                        <Trash2 className='h-4 w-4' />
+                      ) : (
+                        <Check className='h-4 w-4' />
+                      )
+                    ) : (
+                      <ShoppingCart className='h-4 w-4' />
+                    )}
                   </Button>
                   <Button
                     size='sm'

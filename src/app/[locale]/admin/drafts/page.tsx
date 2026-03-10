@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { Header } from '@/components/shared/Header';
-import { Loader2, ShoppingCart, CheckCircle2, Trash2 } from 'lucide-react';
+import { Loader2, ShoppingCart, CheckCircle2, Trash2, Pencil } from 'lucide-react';
+import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 import { useCart } from '@/context/CartContext';
 import { toast } from 'sonner';
@@ -24,6 +25,8 @@ const supabase = createClient(
 
 export default function DraftsPage() {
   const router = useRouter();
+  const params = useParams();
+  const locale = (params?.locale as string) ?? 'ru';
 
   const [tabs, setTabs] = useState<Tab[]>([]);
   const [loading, setLoading] = useState(true);
@@ -111,6 +114,13 @@ export default function DraftsPage() {
                   </div>
                 </div>
                 <div className='flex items-center gap-2 shrink-0'>
+                  <Link
+                    href={`/${locale}/admin/edit/${tab.id}`}
+                    className='flex items-center gap-1.5 border border-border hover:border-amber-400 hover:text-amber-500 text-muted-foreground rounded-full px-4 py-1.5 text-sm font-medium transition-colors'
+                  >
+                    <Pencil className='h-3.5 w-3.5' />
+                    Изменить
+                  </Link>
                   <button
                     onClick={() => {
                       if (hasItem(tab.id)) {

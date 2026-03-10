@@ -23,6 +23,13 @@ export const metadata: Metadata = {
   description: 'Авторские гитарные табы и аранжировки. Купить ноты для гитары.',
 };
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
 export default async function LocaleLayout({
   children,
   params,

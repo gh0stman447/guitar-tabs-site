@@ -34,6 +34,7 @@ export function HeroSection() {
   return (
     <section
       ref={ref}
+      data-no-particles
       className='relative min-h-screen flex items-center justify-center overflow-hidden'
     >
       <div className='absolute inset-0 bg-gradient-to-br from-amber-50/50 via-background to-background dark:from-amber-950/10 dark:via-background dark:to-background' />

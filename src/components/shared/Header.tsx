@@ -8,8 +8,9 @@ import { ThemeToggle } from './ThemeToggle';
 import { CartDrawer } from './CartDrawer';
 import { useCart } from '@/context/CartContext';
 import { cn } from '@/lib/utils';
-import { useEffect, useLayoutEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { useIsTouch } from '@/hooks/useIsTouch';
 
 export function Header() {
   const t = useTranslations('nav');
@@ -21,12 +22,8 @@ export function Header() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [isTouch, setIsTouch] = useState(false);
 
-  useLayoutEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsTouch(window.matchMedia('(hover: none)').matches);
-  }, []);
+  const isTouch = useIsTouch();
   const { count } = useCart();
 
   useEffect(() => {
@@ -162,7 +159,7 @@ export function Header() {
               <ThemeToggle />
               <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
                 <SheetTrigger asChild>
-                  <button className='md:hidden flex items-center justify-center w-9 h-9 rounded border border-border text-muted-foreground hover:text-foreground hover:border-amber-500 transition-colors cursor-pointer'>
+                  <button suppressHydrationWarning className='md:hidden flex items-center justify-center w-9 h-9 rounded border border-border text-muted-foreground hover:text-foreground hover:border-amber-500 transition-colors cursor-pointer'>
                     <Menu className='h-4 w-4' />
                   </button>
                 </SheetTrigger>

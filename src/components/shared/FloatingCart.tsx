@@ -7,6 +7,7 @@ import { useCartAnimation } from '@/context/CartAnimationContext';
 import { CartDrawer } from './CartDrawer';
 import { useLocale } from 'next-intl';
 import { cn } from '@/lib/utils';
+import { useIsTouch } from '@/hooks/useIsTouch';
 
 export function FloatingCart() {
   const locale = useLocale();
@@ -16,11 +17,8 @@ export function FloatingCart() {
   const [open, setOpen] = useState(false);
   const [visible, setVisible] = useState(false);
   const [bump, setBump] = useState(false);
-  const [isTouch, setIsTouch] = useState(false);
 
-  useEffect(() => {
-    setIsTouch(window.matchMedia('(hover: none)').matches);
-  }, []);
+  const isTouch = useIsTouch();
 
   // Register button DOM element so CartAnimationContext knows the exact target position
   useEffect(() => {

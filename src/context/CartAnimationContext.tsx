@@ -30,7 +30,7 @@ export function CartAnimationProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const flyToCart = useCallback((fromRect: DOMRect, sourceEl: HTMLElement) => {
-    if (typeof window === 'undefined' || window.innerWidth < 768) return;
+    if (typeof window === 'undefined' || window.matchMedia('(hover: none)').matches) return;
 
     let targetX: number;
     let targetY: number;

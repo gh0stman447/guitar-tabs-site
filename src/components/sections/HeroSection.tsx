@@ -1,12 +1,12 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
+import { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { ArrowDown } from 'lucide-react';
-
-const NOTES = ['♩', '♪', '♫', '♬', '𝄞', '♭', '♮'];
+import { useIsTouch } from '@/hooks/useIsTouch';
+import { NOTES } from '@/lib/notes';
 
 const floatingNotes = Array.from({ length: 18 }, (_, i) => ({
   id: i,
@@ -23,11 +23,8 @@ export function HeroSection() {
   const ref = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
 
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsMobile(window.matchMedia('(hover: none)').matches);
-  }, []);
+  const isMobile = useIsTouch();
+
   const blobY1 = useTransform(scrollYProgress, [0, 1], isMobile ? ['0%', '0%'] : ['0%', '-40%']);
   const blobY2 = useTransform(scrollYProgress, [0, 1], isMobile ? ['0%', '0%'] : ['0%', '-20%']);
   const notesY = useTransform(scrollYProgress, [0, 1], ['0%', '-60%']);

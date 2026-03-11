@@ -10,6 +10,7 @@ import { CartProvider } from '@/context/CartContext';
 import { CartAnimationProvider } from '@/context/CartAnimationContext';
 import { ThemedToaster } from '@/components/shared/ThemedToaster';
 import { FloatingCart } from '@/components/shared/FloatingCart';
+import { NoteParticles } from '@/components/shared/NoteParticles';
 import '../globals.css';
 
 const geistSans = Geist({
@@ -100,6 +101,7 @@ export default async function LocaleLayout({
                 <ScrollProgress />
                 {children}
                 <FloatingCart />
+                <NoteParticles />
                 <ThemedToaster />
               </CartAnimationProvider>
             </CartProvider>

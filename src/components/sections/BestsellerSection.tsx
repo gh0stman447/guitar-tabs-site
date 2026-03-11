@@ -48,13 +48,15 @@ export function BestsellerSection() {
         </motion.div>
 
         {loading ? (
-          <div className='grid grid-cols-1 sm:grid-cols-3 gap-6'>
-            {Array.from({ length: 3 }).map((_, i) => <TabCardSkeleton key={i} showDetails={false} />)}
+          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
+            {Array.from({ length: 3 }).map((_, i) => (
+              <TabCardSkeleton key={i} showDetails={false} />
+            ))}
           </div>
         ) : topTabs.length === 0 ? (
           <p className='text-center text-muted-foreground py-12'>{t('empty')}</p>
         ) : (
-          <div className='grid grid-cols-1 sm:grid-cols-3 gap-6'>
+          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
             {topTabs.map((tab, i) => (
               <TabCard
                 key={tab.id}

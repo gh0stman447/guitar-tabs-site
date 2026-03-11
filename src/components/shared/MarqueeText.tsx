@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, useAnimation } from 'framer-motion';
+import { useIsTouch } from '@/hooks/useIsTouch';
 
 export function MarqueeText({
   text,
@@ -17,9 +18,7 @@ export function MarqueeText({
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [overflows, setOverflows] = useState(false);
-  const [isTouch] = useState(() =>
-    typeof window !== 'undefined' ? window.matchMedia('(hover: none)').matches : false,
-  );
+  const isTouch = useIsTouch();
   const [tooltipOpen, setTooltipOpen] = useState(false);
   const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0, width: 0 });
   const [isDark, setIsDark] = useState(() =>

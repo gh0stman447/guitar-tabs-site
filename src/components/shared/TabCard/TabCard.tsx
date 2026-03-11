@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { useIsTouch } from '@/hooks/useIsTouch';
 import Image from 'next/image';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -52,6 +53,7 @@ export function TabCard({
 }: TabCardProps) {
   const [hovered, setHovered] = useState(false);
   const [buyOpen, setBuyOpen] = useState(false);
+  const isTouch = useIsTouch();
   const cardRef = useRef<HTMLDivElement>(null);
   const { addItem, removeItem, hasItem } = useCart();
   const { flyToCart } = useCartAnimation();
@@ -70,6 +72,7 @@ export function TabCard({
   });
 
   function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
+    if (isTouch) return;
     const rect = cardRef.current?.getBoundingClientRect();
     if (!rect) return;
     mouseX.set((e.clientX - rect.left) / rect.width - 0.5);
@@ -77,6 +80,7 @@ export function TabCard({
   }
 
   function handleMouseLeave() {
+    if (isTouch) return;
     mouseX.set(0);
     mouseY.set(0);
   }
@@ -105,8 +109,8 @@ export function TabCard({
         <motion.div
           ref={cardRef}
           {...(motionProps as React.ComponentProps<typeof motion.div>)}
-          style={{ rotateX, rotateY }}
-          whileHover={{ y: -4 }}
+          style={isTouch ? {} : { rotateX, rotateY }}
+          whileHover={isTouch ? {} : { y: -4 }}
           onHoverStart={() => setHovered(true)}
           onHoverEnd={() => setHovered(false)}
           onMouseMove={handleMouseMove}

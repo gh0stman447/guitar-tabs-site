@@ -37,7 +37,7 @@ export default async function LegalPage() {
             <p><b>Продавец</b> — Малыгин Олег Романович, самозанятый, ИНН 502007772518.</p>
             <p><b>Покупатель</b> — любое физическое лицо, совершившее акцепт настоящей оферты.</p>
             <p><b>Товар</b> — цифровые файлы гитарных табов и аранжировок в форматах PDF, Guitar Pro (GP5/GPX) и иных, размещённые на Сайте.</p>
-            <p><b>Сайт</b> — <a href="https://olegguitar.vercel.app" className="text-amber-500 hover:underline">olegguitar.vercel.app</a>.</p>
+            <p><b>Сайт</b> — <a href="https://www.olegguitar.com" className="text-amber-500 hover:underline">olegguitar.com</a>.</p>
             <p><b>Акцепт</b> — полное и безоговорочное принятие условий настоящей оферты путём оплаты заказа.</p>
             <p><b>Заказ</b> — выбор Покупателем Товара и его оплата через платёжный сервис.</p>
           </Section>

@@ -136,7 +136,7 @@ async function sendEmail({
         Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: 'onboarding@resend.dev',
+        from: 'noreply@olegguitar.com',
         to,
         subject: `Ваши табы: ${tabTitles}`,
         html: `

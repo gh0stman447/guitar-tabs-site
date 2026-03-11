@@ -16,6 +16,11 @@ export function FloatingCart() {
   const [open, setOpen] = useState(false);
   const [visible, setVisible] = useState(false);
   const [bump, setBump] = useState(false);
+  const [isTouch, setIsTouch] = useState(false);
+
+  useEffect(() => {
+    setIsTouch(window.matchMedia('(hover: none)').matches);
+  }, []);
 
   // Register button DOM element so CartAnimationContext knows the exact target position
   useEffect(() => {
@@ -42,7 +47,8 @@ export function FloatingCart() {
     <>
       <div
         className={cn(
-          'hidden md:block fixed bottom-25 right-6 z-40 transition-all duration-500',
+          'fixed bottom-25 right-6 z-40 transition-all duration-500',
+          isTouch && 'hidden',
           visible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none',
         )}
       >

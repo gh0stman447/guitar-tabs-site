@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
@@ -23,7 +23,11 @@ export function HeroSection() {
   const ref = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
 
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsMobile(window.matchMedia('(hover: none)').matches);
+  }, []);
   const blobY1 = useTransform(scrollYProgress, [0, 1], isMobile ? ['0%', '0%'] : ['0%', '-40%']);
   const blobY2 = useTransform(scrollYProgress, [0, 1], isMobile ? ['0%', '0%'] : ['0%', '-20%']);
   const notesY = useTransform(scrollYProgress, [0, 1], ['0%', '-60%']);
@@ -47,8 +51,8 @@ export function HeroSection() {
 
       <div className='absolute inset-0 pointer-events-none'>
         <motion.div
-          style={{ y: notesY }}
-          className='absolute inset-0 pointer-events-none hidden md:block'
+          style={{ y: notesY, display: isMobile ? 'none' : undefined }}
+          className='absolute inset-0 pointer-events-none'
         >
           {floatingNotes.map((note) => (
             <motion.span
@@ -116,7 +120,7 @@ export function HeroSection() {
 
       <motion.div
         className='absolute bottom-8 left-1/2 -translate-x-1/2'
-        animate={{ y: [0, 8, 0] }}
+        animate={isMobile ? {} : { y: [0, 8, 0] }}
         transition={{ repeat: Infinity, duration: 2 }}
       >
         <ArrowDown className='h-5 w-5 text-muted-foreground' />

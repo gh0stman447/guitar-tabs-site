@@ -5,7 +5,8 @@ import { useRouter, useParams } from 'next/navigation';
 import { Header } from '@/components/shared/Header';
 import { Loader2, ShoppingCart, CheckCircle2, Trash2, Pencil } from 'lucide-react';
 import Link from 'next/link';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
+import { isAdminAuthed } from '@/lib/admin-auth';
 import { useCart } from '@/context/CartContext';
 import { toast } from 'sonner';
 import {
@@ -17,11 +18,6 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import type { Tab } from '@/types';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-);
 
 export default function DraftsPage() {
   const router = useRouter();
@@ -41,7 +37,7 @@ export default function DraftsPage() {
   }, []);
 
   useEffect(() => {
-    if (!document.cookie.includes('admin_session=')) {
+    if (!isAdminAuthed()) {
       router.replace('/');
       return;
     }
@@ -67,7 +63,7 @@ export default function DraftsPage() {
     setPublishing(null);
   }
 
-  if (typeof document !== 'undefined' && !document.cookie.includes('admin_session=')) return null;
+  if (typeof document !== 'undefined' && !isAdminAuthed()) return null;
 
   return (
     <div className='min-h-screen bg-secondary/20'>

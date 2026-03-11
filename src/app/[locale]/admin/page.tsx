@@ -1,80 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useDropzone } from 'react-dropzone';
+import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Loader2, Upload, Music, Lock, X } from 'lucide-react';
+import { Loader2, Music, Lock } from 'lucide-react';
 import { Header } from '@/components/shared/Header';
 import Link from 'next/link';
-
-const FORMATS = ['pdf', 'gp5', 'gpx', 'mp3'] as const;
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className='flex flex-col gap-1.5'>
-      <label className='text-sm font-medium text-foreground'>{label}</label>
-      {children}
-    </div>
-  );
-}
-
-const inputCls =
-  'w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-500 transition-shadow placeholder:text-muted-foreground';
-
-function DropZone({
-  label,
-  accept,
-  file,
-  onFile,
-}: {
-  label: string;
-  accept: Record<string, string[]>;
-  file: File | null;
-  onFile: (f: File | null) => void;
-}) {
-  const onDrop = useCallback(
-    (accepted: File[]) => {
-      if (accepted[0]) onFile(accepted[0]);
-    },
-    [onFile],
-  );
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept,
-    multiple: false,
-  });
-  return (
-    <div
-      {...getRootProps()}
-      className={`flex items-center gap-3 cursor-pointer rounded-lg border border-dashed px-4 py-3 transition-colors ${isDragActive ? 'border-amber-400 bg-amber-500/5' : 'border-border hover:border-amber-400'}`}
-    >
-      <input {...getInputProps()} />
-      <Upload className='h-4 w-4 text-muted-foreground shrink-0' />
-      <span className='text-sm text-muted-foreground truncate flex-1'>
-        {file ? file.name : isDragActive ? 'Отпустите файл...' : label}
-      </span>
-      {file && (
-        <button
-          type='button'
-          onClick={(e) => {
-            e.stopPropagation();
-            onFile(null);
-          }}
-          className='text-muted-foreground hover:text-foreground shrink-0'
-        >
-          <X className='h-3.5 w-3.5' />
-        </button>
-      )}
-    </div>
-  );
-}
-
-const FORMAT_ACCEPT: Record<(typeof FORMATS)[number], Record<string, string[]>> = {
-  pdf: { 'application/pdf': ['.pdf'] },
-  gp5: { 'application/octet-stream': ['.gp5'] },
-  gpx: { 'application/octet-stream': ['.gpx'] },
-  mp3: { 'audio/mpeg': ['.mp3'] },
-};
+import { isAdminAuthed } from '@/lib/admin-auth';
+import { Field, inputCls, DropZone, FORMAT_ACCEPT } from '@/components/admin/AdminFormFields';
+import { FORMATS } from '@/types';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -84,7 +17,7 @@ export default function AdminPage() {
   const [password, setPassword] = useState('');
   const [authed, setAuthed] = useState(false);
   useEffect(() => {
-    if (document.cookie.includes('admin_session=')) setAuthed(true);
+    if (isAdminAuthed()) setAuthed(true);
   }, []);
   const [authError, setAuthError] = useState(false);
 
@@ -344,7 +277,7 @@ export default function AdminPage() {
             <button
               type='submit'
               disabled={loading}
-              className='w-full bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white rounded-full py-2.5 text-sm font-medium transition-colors flex items-center justify-center gap-2'
+              className='w-full bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white rounded-full py-2.5 text-sm font-medium transition-colors flex items-center justify-center gap-2 cursor-pointer'
             >
               {loading ? (
                 <>

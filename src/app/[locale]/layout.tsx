@@ -22,10 +22,51 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 });
 
-export const metadata: Metadata = {
-  title: 'Гитарные табы — Олег Малыгин',
-  description: 'Авторские гитарные табы и аранжировки. Купить ноты для гитары.',
+const META = {
+  ru: {
+    title: 'Гитарные табы — Олег Малыгин',
+    description: 'Авторские гитарные табы и аранжировки для гитары. Купить ноты и табулатуры.',
+  },
+  en: {
+    title: 'Guitar Tabs — Oleg Malygin',
+    description: 'Original guitar tabs and arrangements. Buy sheet music and guitar tablatures.',
+  },
 };
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const meta = META[locale as 'ru' | 'en'] ?? META.ru;
+  const url = `https://www.olegguitar.com/${locale}`;
+
+  return {
+    title: meta.title,
+    description: meta.description,
+    alternates: {
+      canonical: url,
+      languages: {
+        ru: 'https://www.olegguitar.com/ru',
+        en: 'https://www.olegguitar.com/en',
+      },
+    },
+    openGraph: {
+      title: meta.title,
+      description: meta.description,
+      url,
+      siteName: 'OlegGuitar',
+      locale: locale === 'ru' ? 'ru_RU' : 'en_US',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: meta.title,
+      description: meta.description,
+    },
+  };
+}
 
 export const viewport = {
   width: 'device-width',

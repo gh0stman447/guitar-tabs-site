@@ -1,4 +1,5 @@
-export type TabFileFormat = 'pdf' | 'gp5' | 'gpx' | 'mp3'
+export const FORMATS = ['pdf', 'gp5', 'gpx', 'mp3'] as const;
+export type TabFileFormat = (typeof FORMATS)[number];
 
 export interface TabFiles {
   pdf?: string

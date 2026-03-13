@@ -49,6 +49,7 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
   const [firstname, setFirstname] = useState('');
   const [email, setEmail] = useState('');
   const [agreed, setAgreed] = useState(false);
+  const [newsletter, setNewsletter] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [submitted, setSubmitted] = useState(false);
@@ -60,6 +61,7 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
       setFirstname('');
       setEmail('');
       setAgreed(false);
+      setNewsletter(false);
       setSubmitError('');
       setSubmitted(false);
     }
@@ -87,6 +89,7 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
           tab_ids: items.map((t) => t.id),
           firstname,
           email,
+          newsletter,
           test: testMode ?? false,
         }),
       });
@@ -174,7 +177,7 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
               {items.length === 2 && (
                 <div className='mx-6 my-2 rounded-lg bg-amber-500/10 border border-amber-500/20 px-4 py-2.5 text-sm text-amber-600 dark:text-amber-400'>
                   {ru
-                    ? 'Добавь ещё 1 таб и скидка вырастет до 15% 🎸'
+                    ? 'Добавь ещё 1 таб, и скидка вырастет до 15% 🎸'
                     : 'Add 1 more tab and discount grows to 15% 🎸'}
                 </div>
               )}
@@ -259,6 +262,14 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
                             className='text-amber-500 hover:underline'
                           >
                             публичной оферты
+                          </Link>{' '}
+                          и{' '}
+                          <Link
+                            href={`/${locale}/privacy`}
+                            target='_blank'
+                            className='text-amber-500 hover:underline'
+                          >
+                            политику конфиденциальности
                           </Link>
                         </>
                       ) : (
@@ -270,6 +281,14 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
                             className='text-amber-500 hover:underline'
                           >
                             terms of the public offer
+                          </Link>{' '}
+                          and{' '}
+                          <Link
+                            href={`/${locale}/privacy`}
+                            target='_blank'
+                            className='text-amber-500 hover:underline'
+                          >
+                            privacy policy
                           </Link>
                         </>
                       )}
@@ -278,6 +297,22 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
                   {errors.agreed && submitted && (
                     <p className='text-xs text-red-500'>{errors.agreed}</p>
                   )}
+                </div>
+
+                <div className='flex flex-col gap-1.5'>
+                  <label className='flex items-start gap-2.5 cursor-pointer'>
+                    <input
+                      type='checkbox'
+                      checked={newsletter}
+                      onChange={(e) => setNewsletter(e.target.checked)}
+                      className='mt-0.5 h-4 w-4 shrink-0 accent-amber-500'
+                    />
+                    <span className='text-sm text-muted-foreground leading-relaxed'>
+                      {ru
+                        ? 'Хочу получать новости о новых табах и скидках (необязательно)'
+                        : 'I want to receive news about new tabs and discounts (optional)'}
+                    </span>
+                  </label>
                 </div>
 
                 {submitError && <p className='text-sm text-red-500'>{submitError}</p>}

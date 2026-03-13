@@ -2,18 +2,40 @@ import { NextRequest, NextResponse } from 'next/server';
 import JSZip from 'jszip';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
+interface YookassaPayment {
+  metadata?: {
+    purchase_id?: string;
+    customer_email?: string;
+  };
+}
+
 export async function POST(req: NextRequest) {
   const body = await req.json();
-
   const event = body.event as string;
-  const payment = body.object;
+  const payment = body.object as YookassaPayment;
 
-  if (event !== 'payment.succeeded') {
-    return NextResponse.json({ ok: true });
+  switch (event) {
+    case 'payment.succeeded':
+      return handlePaymentSucceeded(payment);
+    case 'payment.canceled':
+      return handlePaymentCanceled(payment);
+    default:
+      return NextResponse.json({ ok: true });
   }
+}
 
-  const purchaseId = payment?.metadata?.purchase_id as string | undefined;
-  const customerEmail = payment?.metadata?.customer_email as string | undefined;
+async function handlePaymentCanceled(payment: YookassaPayment) {
+  const purchaseId = payment?.metadata?.purchase_id;
+  if (!purchaseId) return NextResponse.json({ ok: true });
+
+  await supabaseAdmin.from('purchases').update({ status: 'canceled' }).eq('id', purchaseId);
+
+  return NextResponse.json({ ok: true });
+}
+
+async function handlePaymentSucceeded(payment: YookassaPayment) {
+  const purchaseId = payment?.metadata?.purchase_id;
+  const customerEmail = payment?.metadata?.customer_email;
 
   if (!purchaseId || !customerEmail) {
     return NextResponse.json({ error: 'Missing metadata' }, { status: 400 });
@@ -29,7 +51,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'DB update failed' }, { status: 500 });
   }
 
-  // 2. Get purchase with tab_ids (and fallback to tab_id for old purchases)
+  // 2. Get purchase with tab_ids
   const { data: purchase, error: purchaseError } = await supabaseAdmin
     .from('purchases')
     .select('tab_id, tab_ids, customers(firstname)')
@@ -40,7 +62,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Purchase not found' }, { status: 404 });
   }
 
-  // Resolve list of tab ids
   const tabIds: string[] =
     (purchase.tab_ids as string[] | null) ?? (purchase.tab_id ? [purchase.tab_id as string] : []);
 
@@ -62,9 +83,19 @@ export async function POST(req: NextRequest) {
       .eq('id', tab.id);
   }
 
-  // 5. Build zip archive(s)
-  // 1 tab → one zip with files at root
-  // 2+ tabs → one zip with a subfolder per tab
+  // 5. Build zip archive
+  const attachments = await buildZipAttachments(tabs);
+
+  // 6. Send email
+  const tabTitles = tabs.map((t) => t.title_ru).join(', ');
+  await sendEmail({ to: customerEmail, tabTitles, attachments });
+
+  return NextResponse.json({ ok: true });
+}
+
+async function buildZipAttachments(
+  tabs: { id: string; title_ru: string; files: unknown }[],
+): Promise<{ filename: string; content: string }[]> {
   const zip = new JSZip();
   const multiTab = tabs.length > 1;
 
@@ -87,24 +118,12 @@ export async function POST(req: NextRequest) {
   }
 
   const zipBuffer = await zip.generateAsync({ type: 'nodebuffer' });
-  const zipBase64 = zipBuffer.toString('base64');
   const zipFilename =
     tabs.length === 1
       ? `${tabs[0].title_ru.replace(/[/\\?%*:|"<>]/g, '_')}.zip`
       : 'guitar-tabs.zip';
 
-  const attachments = [{ filename: zipFilename, content: zipBase64 }];
-
-  // 6. Send email with zip attachment
-  const tabTitles = tabs.map((t) => t.title_ru).join(', ');
-
-  await sendEmail({
-    to: customerEmail,
-    tabTitles,
-    attachments,
-  });
-
-  return NextResponse.json({ ok: true });
+  return [{ filename: zipFilename, content: zipBuffer.toString('base64') }];
 }
 
 async function sendEmail({
@@ -140,7 +159,7 @@ async function sendEmail({
         to,
         subject: `Ваши табы: ${tabTitles}`,
         html: `
-          <div style="font-family:sans-serif;max-width:480px;margin:0 auto">
+          <div style="font-family:sans-serif;max-width:480px;margin:0;text-align:left">
             <h2 style="color:#f59e0b">Спасибо за покупку!</h2>
             <p>Ваши табы готовы к скачиванию:</p>
             <p><strong>${tabTitles}</strong></p>
@@ -148,10 +167,7 @@ async function sendEmail({
             <p style="color:#888;font-size:13px">Есть вопросы? Пишите в Telegram: <a href="https://t.me/MalyginOleg">@MalyginOleg</a></p>
           </div>
         `,
-        attachments: attachments.map(({ filename, content }) => ({
-          filename,
-          content,
-        })),
+        attachments: attachments.map(({ filename, content }) => ({ filename, content })),
       }),
     });
   }

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export async function POST(req: NextRequest) {
-  const { tab_id, tab_ids, firstname, email, test } = await req.json();
+  const { tab_id, tab_ids, firstname, email, newsletter, test } = await req.json();
 
   // Support both single tab_id and array tab_ids
   const ids: string[] = tab_ids ?? (tab_id ? [tab_id] : []);
@@ -37,13 +37,13 @@ export async function POST(req: NextRequest) {
   }
 
   const subtotal = tabs.reduce((sum, t) => sum + t.price, 0);
-  const discountRate = ids.length >= 3 ? 0.15 : ids.length >= 2 ? 0.10 : 0;
+  const discountRate = ids.length >= 3 ? 0.15 : ids.length >= 2 ? 0.1 : 0;
   const totalAmount = subtotal - Math.round(subtotal * discountRate);
 
   // 2. Upsert customer
   const { data: customer, error: customerError } = await supabaseAdmin
     .from('customers')
-    .upsert({ firstname, email }, { onConflict: 'email' })
+    .upsert({ firstname, email, newsletter: newsletter ?? false }, { onConflict: 'email' })
     .select('id')
     .single();
 
@@ -81,9 +81,8 @@ export async function POST(req: NextRequest) {
   }
 
   const idempotenceKey = purchase.id;
-  const description = tabs.length === 1
-    ? `Гитарный таб #${tabs[0].id}`
-    : `Гитарные табы (${tabs.length} шт.)`;
+  const description =
+    tabs.length === 1 ? `Гитарный таб #${tabs[0].id}` : `Гитарные табы (${tabs.length} шт.)`;
 
   const yukassaRes = await fetch('https://api.yookassa.ru/v3/payments', {
     method: 'POST',

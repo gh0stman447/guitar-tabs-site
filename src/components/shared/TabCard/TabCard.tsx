@@ -87,21 +87,12 @@ export function TabCard({
   const title = locale === 'en' ? tab.title_en : tab.title_ru;
   const description = locale === 'en' ? tab.description_en : tab.description_ru;
 
-  const motionProps =
-    index !== undefined
-      ? {
-          initial: { opacity: 0, y: 20 },
-          whileInView: { opacity: 1, y: 0 },
-          viewport: { once: true },
-          transition: { duration: 0.4, delay: index * 0.1 },
-        }
-      : {
-          layout: true,
-          initial: { opacity: 0, scale: 0.96 },
-          animate: { opacity: 1, scale: 1 },
-          exit: { opacity: 0, scale: 0.96 },
-          transition: { duration: 0.2 },
-        };
+  const motionProps = {
+    initial: { opacity: 0, y: 20 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: true },
+    transition: { duration: 0.4, delay: (index ?? 0) * 0.1 },
+  };
 
   return (
     <>
@@ -129,7 +120,8 @@ export function TabCard({
                   src={tab.photo_url}
                   alt={title}
                   fill
-                  className='object-cover'
+                  draggable={false}
+                  className='object-cover pointer-events-none'
                   sizes='(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw'
                 />
               ) : (

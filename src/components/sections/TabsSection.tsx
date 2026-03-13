@@ -92,7 +92,13 @@ export function TabsSection() {
         </motion.div>
 
         {/* Search + Sort */}
-        <div className='flex flex-col gap-3 mb-8'>
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.4, delay: 0.15 }}
+          className='flex flex-col gap-3 mb-8'
+        >
           <div className='relative'>
             <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
             <input
@@ -140,7 +146,7 @@ export function TabsSection() {
               )}
             </AnimatePresence>
           </div>
-        </div>
+        </motion.div>
 
         {/* Results count */}
         {search && (
@@ -160,8 +166,8 @@ export function TabsSection() {
         ) : (
           <motion.div layout className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
             <AnimatePresence mode='popLayout'>
-              {filtered.map((tab) => (
-                <TabCard key={tab.id} tab={tab} locale={locale} buyLabel={t('buy')} showDetails />
+              {filtered.map((tab, i) => (
+                <TabCard key={tab.id} tab={tab} locale={locale} buyLabel={t('buy')} showDetails index={i} />
               ))}
             </AnimatePresence>
           </motion.div>

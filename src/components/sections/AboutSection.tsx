@@ -45,8 +45,15 @@ export function AboutSection() {
             <p className='text-muted-foreground leading-relaxed mb-8'>{t('text2')}</p>
 
             <div className='flex flex-col gap-3'>
-              {facts.map(({ icon: Icon, label, desc }) => (
-                <div key={label} className='flex items-center gap-4 p-4 rounded-xl bg-secondary'>
+              {facts.map(({ icon: Icon, label, desc }, i) => (
+                <motion.div
+                  key={label}
+                  initial={{ opacity: 0, x: 20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: 0.1 + i * 0.1 }}
+                  className='flex items-center gap-4 p-4 rounded-xl bg-secondary'
+                >
                   <div className='shrink-0 w-9 h-9 rounded-lg bg-background flex items-center justify-center'>
                     <Icon className='h-5 w-5 text-amber-500' />
                   </div>
@@ -54,7 +61,7 @@ export function AboutSection() {
                     <div className='font-medium text-sm'>{label}</div>
                     <div className='text-xs text-muted-foreground mt-0.5'>{desc}</div>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
           </motion.div>

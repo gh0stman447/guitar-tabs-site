@@ -23,10 +23,15 @@ export function BestsellerSection() {
       .order('purchase_count', { ascending: false })
       .limit(3)
       .then(({ data }) => {
-        if (data) setTopTabs(data as Tab[]);
+        if (data) {
+          const withPurchases = data.filter((t) => (t.purchase_count ?? 0) > 0);
+          setTopTabs(withPurchases as Tab[]);
+        }
         setLoading(false);
       });
   }, []);
+
+  if (!loading && topTabs.length === 0) return null;
 
   return (
     <section className='py-24 px-4 sm:px-6 lg:px-8 bg-secondary/40'>

@@ -26,6 +26,7 @@ export async function POST(req: NextRequest) {
 
 async function handlePaymentCanceled(payment: YookassaPayment) {
   const purchaseId = payment?.metadata?.purchase_id;
+  console.log('[webhook] payment.canceled purchaseId:', purchaseId, 'metadata:', JSON.stringify(payment?.metadata));
   if (!purchaseId) return NextResponse.json({ ok: true });
 
   await supabaseAdmin.from('purchases').update({ status: 'canceled' }).eq('id', purchaseId);
@@ -88,7 +89,15 @@ async function handlePaymentSucceeded(payment: YookassaPayment) {
 
   // 6. Send email
   const tabTitles = tabs.map((t) => t.title_ru).join(', ');
-  await sendEmail({ to: customerEmail, tabTitles, attachments });
+  const emailId = await sendEmail({ to: customerEmail, tabTitles, attachments });
+
+  // 7. Save email tracking info
+  if (emailId) {
+    await supabaseAdmin
+      .from('purchases')
+      .update({ resend_email_id: emailId, email_status: 'sent' })
+      .eq('id', purchaseId);
+  }
 
   return NextResponse.json({ ok: true });
 }
@@ -134,7 +143,7 @@ async function sendEmail({
   to: string;
   tabTitles: string;
   attachments: { filename: string; content: string }[];
-}) {
+}): Promise<string | null> {
   const emailService = process.env.EMAIL_SERVICE;
 
   if (!emailService) {
@@ -144,11 +153,11 @@ async function sendEmail({
       'Attachments:',
       attachments.map((a) => a.filename),
     );
-    return;
+    return null;
   }
 
   if (emailService === 'resend') {
-    await fetch('https://api.resend.com/emails', {
+    const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -170,5 +179,9 @@ async function sendEmail({
         attachments: attachments.map(({ filename, content }) => ({ filename, content })),
       }),
     });
+    const data = await res.json();
+    return data?.id ?? null;
   }
+
+  return null;
 }

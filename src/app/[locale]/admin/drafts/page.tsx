@@ -27,7 +27,9 @@ export default function DraftsPage() {
   const [tabs, setTabs] = useState<Tab[]>([]);
   const [loading, setLoading] = useState(true);
   const [publishing, setPublishing] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const [confirmTab, setConfirmTab] = useState<Tab | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<Tab | null>(null);
   const { addItem, removeItem, hasItem, setTestMode } = useCart();
 
   useEffect(() => {
@@ -51,6 +53,17 @@ export default function DraftsPage() {
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function deleteTab(id: string) {
+    setDeleting(id);
+    const res = await fetch('/api/admin/delete-tab', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    if (res.ok) setTabs((prev) => prev.filter((t) => t.id !== id));
+    setDeleting(null);
+  }
 
   async function publish(id: string) {
     setPublishing(id);
@@ -141,6 +154,18 @@ export default function DraftsPage() {
                     {hasItem(tab.id) ? 'Убрать' : 'В корзину'}
                   </button>
                   <button
+                    onClick={() => setConfirmDelete(tab)}
+                    disabled={deleting === tab.id}
+                    className='flex items-center gap-1.5 border border-border hover:border-red-400 hover:text-red-500 disabled:opacity-60 text-muted-foreground rounded-full px-4 py-1.5 text-sm font-medium transition-colors cursor-pointer'
+                  >
+                    {deleting === tab.id ? (
+                      <Loader2 className='h-3.5 w-3.5 animate-spin' />
+                    ) : (
+                      <Trash2 className='h-3.5 w-3.5' />
+                    )}
+                    Удалить
+                  </button>
+                  <button
                     onClick={() => setConfirmTab(tab)}
                     disabled={publishing === tab.id}
                     className='flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white rounded-full px-4 py-1.5 text-sm font-medium transition-colors cursor-pointer'
@@ -158,6 +183,31 @@ export default function DraftsPage() {
           </div>
         )}
       </div>
+
+      <Dialog open={!!confirmDelete} onOpenChange={(open) => { if (!open) setConfirmDelete(null); }}>
+        <DialogContent className='sm:max-w-sm'>
+          <DialogHeader>
+            <DialogTitle>Удалить таб?</DialogTitle>
+            <DialogDescription>
+              <strong>{confirmDelete?.title_ru}</strong> будет удалён навсегда вместе с файлами. Это действие нельзя отменить.
+            </DialogDescription>
+          </DialogHeader>
+          <div className='flex gap-3 justify-end mt-2'>
+            <Button variant='outline' className='rounded-full' onClick={() => setConfirmDelete(null)}>
+              Отмена
+            </Button>
+            <Button
+              className='rounded-full bg-red-500 hover:bg-red-600 text-white'
+              onClick={() => {
+                if (confirmDelete) deleteTab(confirmDelete.id);
+                setConfirmDelete(null);
+              }}
+            >
+              Удалить
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={!!confirmTab}

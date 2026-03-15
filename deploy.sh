@@ -2,6 +2,7 @@
 set -e
 
 git pull
-npm install
+rm -rf node_modules .next
+npm ci
 npm run build
 pm2 restart guitar-tabs

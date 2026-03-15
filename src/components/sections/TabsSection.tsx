@@ -157,26 +157,26 @@ export function TabsSection() {
           </div>
         </motion.div>
 
-        {/* Results count */}
-        {search && (
-          <p className='text-sm text-muted-foreground mb-6'>
-            {filtered.length === 0 ? t('notFound') : t('found', { count: filtered.length })}
-          </p>
-        )}
-
         {/* Discount promo */}
         {!loading && tabs.length >= DISCOUNT_TIER_2_MIN && (
           <p className='text-xs text-muted-foreground/60 mb-6'>
             {locale === 'en'
               ? `🎸 Buy ${DISCOUNT_TIER_1_MIN} tabs — get ${DISCOUNT_TIER_1_RATE * 100}% off, buy ${DISCOUNT_TIER_2_MIN} or more — get ${DISCOUNT_TIER_2_RATE * 100}% off`
-              : `🎸 Купи ${DISCOUNT_TIER_1_MIN} таба — скидка ${DISCOUNT_TIER_1_RATE * 100}%, ${DISCOUNT_TIER_2_MIN} и больше — скидка ${DISCOUNT_TIER_2_RATE * 100}%`}
+              : `🎸 При покупке ${DISCOUNT_TIER_1_MIN} табов — скидка ${DISCOUNT_TIER_1_RATE * 100}%, при покупке ${DISCOUNT_TIER_2_MIN} и более — скидка ${DISCOUNT_TIER_2_RATE * 100}%`}
           </p>
         )}
         {!loading && tabs.length === DISCOUNT_TIER_1_MIN && (
           <p className='text-xs text-muted-foreground/60 mb-6'>
             {locale === 'en'
               ? `🎸 Buy ${DISCOUNT_TIER_1_MIN} tabs — get ${DISCOUNT_TIER_1_RATE * 100}% off`
-              : `🎸 Купи ${DISCOUNT_TIER_1_MIN} таба — скидка ${DISCOUNT_TIER_1_RATE * 100}%`}
+              : `🎸 При покупке ${DISCOUNT_TIER_1_MIN} табов — скидка ${DISCOUNT_TIER_1_RATE * 100}%`}
+          </p>
+        )}
+
+        {/* Results count */}
+        {search && (
+          <p className='text-sm text-muted-foreground mb-6'>
+            {filtered.length === 0 ? t('notFound') : t('found', { count: filtered.length })}
           </p>
         )}
 

@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Loader2 } from 'lucide-react';
+import { useTheme } from 'next-themes';
+import { Loader2, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import type { Tab } from '@/types';
 
@@ -13,8 +14,16 @@ interface TabPreviewDialogProps {
   onNotFound?: () => void;
 }
 
-export function TabPreviewDialog({ tab, locale, open, onOpenChange, onNotFound }: TabPreviewDialogProps) {
+export function TabPreviewDialog({
+  tab,
+  locale,
+  open,
+  onOpenChange,
+  onNotFound,
+}: TabPreviewDialogProps) {
   const title = locale === 'en' ? tab.title_en : tab.title_ru;
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -82,16 +91,28 @@ export function TabPreviewDialog({ tab, locale, open, onOpenChange, onNotFound }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='max-w-2xl w-full p-0 overflow-hidden'>
-        <DialogHeader className='px-6 pt-6 pb-4'>
+      <DialogContent className='max-w-2xl w-full p-0 overflow-hidden' showCloseButton={false}>
+        <DialogHeader
+          style={{ backgroundColor: isDark ? undefined : 'rgba(68,77,86,0.1)' }}
+          className='px-6 pt-6 pb-4 flex flex-row items-center justify-between'
+        >
           <DialogTitle className='text-base font-semibold'>{title}</DialogTitle>
+          <button
+            onClick={() => onOpenChange(false)}
+            className='rounded-full w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer'
+          >
+            <X className='h-4 w-4' />
+          </button>
         </DialogHeader>
 
         {/* Wrapper с A4-пропорцией — окно не скачет пока грузится */}
-        <div className='relative w-full' style={{ aspectRatio: '1 / 1.414' }}>
+        <div
+          className='relative w-full'
+          style={{ aspectRatio: '1 / 1.414', backgroundColor: isDark ? '#18181b' : '#ffffff' }}
+        >
           {/* Спиннер */}
           {loading && (
-            <div className='absolute inset-0 flex items-center justify-center bg-zinc-100 dark:bg-zinc-900'>
+            <div className='absolute inset-0 z-10 flex items-center justify-center'>
               <Loader2 className='h-8 w-8 animate-spin text-amber-500' />
             </div>
           )}
@@ -130,10 +151,8 @@ export function TabPreviewDialog({ tab, locale, open, onOpenChange, onNotFound }
               className='absolute inset-x-0 bottom-0 flex flex-col items-center justify-end pb-8 gap-1.5 pointer-events-none'
               style={{ height: '55%' }}
             >
-              <p className='text-sm font-medium text-foreground/80'>Только первая страница</p>
-              <p className='text-xs text-muted-foreground'>
-                Купите таб, чтобы получить полный файл
-              </p>
+              <p className='text-sm font-medium text-white'>Только первая страница</p>
+              <p className='text-xs text-white/70 '>Купите таб, чтобы получить полный файл</p>
             </div>
           </div>
         </div>

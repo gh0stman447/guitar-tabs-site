@@ -191,7 +191,7 @@ export function TabCard({
                         data-tooltip-content={locale === 'en' ? 'Preview' : 'Превью'}
                         size='sm'
                         variant='outline'
-                        className={`rounded-full w-9 h-9 p-0 shrink-0 transition-colors ${isTouch ? 'border-border text-muted-foreground' : 'hover:border-amber-500 hover:text-amber-500'}`}
+                        className={`rounded-full w-9 h-9 p-0 shrink-0 transition-colors bg-transparent hover:bg-transparent dark:bg-transparent dark:hover:bg-transparent ${isTouch ? 'border-border text-foreground' : 'hover:border-amber-500 hover:text-amber-500'}`}
                         onClick={() => setPreviewOpen(true)}
                       >
                         <Eye className='h-4 w-4' />
@@ -213,7 +213,7 @@ export function TabCard({
                         href={tab.youtube_url}
                         target='_blank'
                         rel='noopener noreferrer'
-                        className={`flex items-center justify-center w-9 h-9 rounded-full border transition-colors cursor-pointer ${isTouch ? 'border-red-500 text-red-500' : 'border-border text-muted-foreground hover:border-red-500 hover:text-red-500'}`}
+                        className={`flex items-center justify-center w-9 h-9 rounded-full border transition-colors cursor-pointer ${isTouch ? 'border-red-500 text-red-500' : 'border-border text-muted-foreground dark:text-foreground hover:border-red-500 hover:text-red-500'}`}
                         aria-label='Смотреть на YouTube'
                       >
                         <YouTubeIcon />
@@ -242,11 +242,11 @@ export function TabCard({
                         }
                         size='sm'
                         variant='outline'
-                        className={`rounded-full w-9 h-9 p-0 shrink-0 transition-colors ${
+                        className={`rounded-full w-9 h-9 p-0 shrink-0 transition-colors bg-transparent hover:bg-transparent dark:bg-transparent dark:hover:bg-transparent ${
                           inCart
                             ? cartHovered
-                              ? 'border-red-500 text-red-500 bg-red-500/10'
-                              : 'border-amber-500 text-amber-500 bg-amber-500/10'
+                              ? 'border-red-500 text-red-500'
+                              : 'border-amber-500 text-amber-500'
                             : isTouch
                               ? 'border-amber-500 text-amber-500'
                               : 'hover:border-amber-500 hover:text-amber-500'
@@ -308,7 +308,13 @@ export function TabCard({
         </motion.div>
       </div>
       <BuyDialog tab={tab} locale={locale} open={buyOpen} onOpenChange={setBuyOpen} />
-      <TabPreviewDialog tab={tab} locale={locale} open={previewOpen} onOpenChange={setPreviewOpen} onNotFound={() => setPreviewAvailable(false)} />
+      <TabPreviewDialog
+        tab={tab}
+        locale={locale}
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        onNotFound={() => setPreviewAvailable(false)}
+      />
     </>
   );
 }

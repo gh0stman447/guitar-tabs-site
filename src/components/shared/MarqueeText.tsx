@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { createPortal } from 'react-dom';
+import { useState, useRef, useEffect, useId } from 'react';
+import { Tooltip as ReactTooltip } from 'react-tooltip';
 import { motion, useAnimation } from 'framer-motion';
 import { useIsTouch } from '@/hooks/useIsTouch';
 
@@ -16,15 +16,10 @@ export function MarqueeText({
 }) {
   const measureRef = useRef<HTMLSpanElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
   const [overflows, setOverflows] = useState(false);
   const isTouch = useIsTouch();
-  const [tooltipOpen, setTooltipOpen] = useState(false);
-  const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0, width: 0 });
-  const [isDark, setIsDark] = useState(() =>
-    typeof document !== 'undefined' ? document.documentElement.classList.contains('dark') : false,
-  );
   const controls = useAnimation();
+  const tooltipId = useId();
 
   useEffect(() => {
     const measure = measureRef.current;
@@ -52,41 +47,6 @@ export function MarqueeText({
     }
   }, [isHovered, overflows, isTouch, controls]);
 
-  useEffect(() => {
-    const observer = new MutationObserver(() => {
-      setIsDark(document.documentElement.classList.contains('dark'));
-    });
-    observer.observe(document.documentElement, { attributeFilter: ['class'] });
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    if (!tooltipOpen) return;
-    const handler = (e: MouseEvent | TouchEvent) => {
-      if (buttonRef.current && !buttonRef.current.contains(e.target as Node)) {
-        setTooltipOpen(false);
-      }
-    };
-    document.addEventListener('click', handler);
-    document.addEventListener('touchstart', handler);
-    return () => {
-      document.removeEventListener('click', handler);
-      document.removeEventListener('touchstart', handler);
-    };
-  }, [tooltipOpen]);
-
-  function handleTap() {
-    if (!tooltipOpen && buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      setTooltipPos({
-        top: rect.top + window.scrollY,
-        left: rect.left + window.scrollX,
-        width: rect.width,
-      });
-    }
-    setTooltipOpen((v) => !v);
-  }
-
   return (
     <div ref={containerRef} className={`relative overflow-hidden ${className ?? ''}`}>
       <span ref={measureRef} className='absolute whitespace-nowrap invisible pointer-events-none'>
@@ -96,29 +56,13 @@ export function MarqueeText({
       {isTouch && overflows ? (
         <>
           <button
-            ref={buttonRef}
+            data-tooltip-id={tooltipId}
+            data-tooltip-content={text}
             className='block w-full text-left truncate cursor-pointer'
-            onClick={handleTap}
           >
             {text}
           </button>
-          {tooltipOpen &&
-            createPortal(
-              <div
-                style={{
-                  position: 'absolute',
-                  top: tooltipPos.top - 8,
-                  left: tooltipPos.left,
-                  width: tooltipPos.width,
-                  transform: 'translateY(-100%)',
-                  zIndex: 9999,
-                }}
-                className={`px-3 py-2 rounded-lg text-xs shadow-xl border whitespace-normal ${isDark ? 'bg-zinc-800 text-white border-zinc-700' : 'bg-white text-zinc-900 border-zinc-200'}`}
-              >
-                {text}
-              </div>,
-              document.body,
-            )}
+          <ReactTooltip id={tooltipId} place='top' positionStrategy='fixed' openOnClick />
         </>
       ) : overflows && !isTouch ? (
         <motion.span className='block whitespace-nowrap' animate={controls} initial={{ x: 0 }}>

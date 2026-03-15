@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { Tooltip as ReactTooltip } from 'react-tooltip';
 import { useIsTouch } from '@/hooks/useIsTouch';
 import Image from 'next/image';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
@@ -40,6 +41,8 @@ interface TabCardProps {
   purchasesLabel?: string;
   /** Показать форматы файлов и описание (для каталога) */
   showDetails?: boolean;
+  /** Кнопки админа вместо кнопки "Купить" */
+  adminActions?: React.ReactNode;
 }
 
 export function TabCard({
@@ -48,6 +51,7 @@ export function TabCard({
   buyLabel,
   index,
   showRank,
+  adminActions,
   purchasesLabel,
   showDetails = true,
 }: TabCardProps) {
@@ -138,16 +142,14 @@ export function TabCard({
                   className='font-semibold text-base leading-tight flex-1 min-w-0'
                   isHovered={hovered}
                 />
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span
-                      className={`shrink-0 text-xs font-medium px-2 py-1 rounded-full cursor-default ${getDifficultyColor(tab.difficulty)}`}
-                    >
-                      {tab.difficulty}
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>Сложность: {tab.difficulty}</TooltipContent>
-                </Tooltip>
+                <span
+                  data-tooltip-id={`diff-${tab.id}`}
+                  data-tooltip-content='Уровень сложности'
+                  className={`shrink-0 text-xs font-medium px-2 py-1 rounded-full cursor-default ${getDifficultyColor(tab.difficulty)}`}
+                >
+                  {tab.difficulty}
+                </span>
+                <ReactTooltip id={`diff-${tab.id}`} place='top' openOnClick={isTouch} />
               </div>
 
               {purchasesLabel && <p className='text-xs text-muted-foreground'>{purchasesLabel}</p>}
@@ -182,7 +184,7 @@ export function TabCard({
                           href={tab.youtube_url}
                           target='_blank'
                           rel='noopener noreferrer'
-                          className='flex items-center justify-center w-9 h-9 rounded-full border border-border text-muted-foreground hover:border-red-500 hover:text-red-500 transition-colors cursor-pointer'
+                          className={`flex items-center justify-center w-9 h-9 rounded-full border transition-colors cursor-pointer ${isTouch ? 'border-red-500 text-red-500' : 'border-border text-muted-foreground hover:border-red-500 hover:text-red-500'}`}
                           aria-label='Смотреть на YouTube'
                         >
                           <YouTubeIcon />
@@ -191,54 +193,74 @@ export function TabCard({
                       <TooltipContent>Смотреть видео аранжировки</TooltipContent>
                     </Tooltip>
                   )}
-                  <Button
-                    size='sm'
-                    variant='outline'
-                    className={`rounded-full w-9 h-9 p-0 shrink-0 transition-colors ${
-                      inCart
-                        ? cartHovered
-                          ? 'border-red-500 text-red-500 bg-red-500/10'
-                          : 'border-amber-500 text-amber-500 bg-amber-500/10'
-                        : 'hover:border-amber-500 hover:text-amber-500'
-                    }`}
-                    onClick={() => {
-                      if (inCart) {
-                        removeItem(tab.id);
-                        toast(title, {
-                          description: locale === 'en' ? 'Removed from cart' : 'Убрано из корзины',
-                          icon: '🗑️',
-                        });
-                      } else {
-                        addItem(tab);
-                        toast(title, {
-                          description: locale === 'en' ? 'Added to cart' : 'Добавлено в корзину',
-                          icon: '🛒',
-                        });
-                        const el = cardRef.current;
-                        if (el) flyToCart(el.getBoundingClientRect(), el);
-                      }
-                    }}
-                    onMouseEnter={() => setCartHovered(true)}
-                    onMouseLeave={() => setCartHovered(false)}
-                    title={inCart ? 'Убрать из корзины' : 'В корзину'}
-                  >
-                    {inCart ? (
-                      cartHovered ? (
-                        <Trash2 className='h-4 w-4' />
-                      ) : (
-                        <Check className='h-4 w-4' />
-                      )
-                    ) : (
-                      <ShoppingCart className='h-4 w-4' />
-                    )}
-                  </Button>
-                  <Button
-                    size='sm'
-                    className='bg-amber-500 hover:bg-amber-600 text-white rounded-full px-5'
-                    onClick={() => setBuyOpen(true)}
-                  >
-                    {buyLabel}
-                  </Button>
+                  {!adminActions && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size='sm'
+                          variant='outline'
+                          className={`rounded-full w-9 h-9 p-0 shrink-0 transition-colors ${
+                            inCart
+                              ? cartHovered
+                                ? 'border-red-500 text-red-500 bg-red-500/10'
+                                : 'border-amber-500 text-amber-500 bg-amber-500/10'
+                              : isTouch
+                                ? 'border-amber-500 text-amber-500'
+                                : 'hover:border-amber-500 hover:text-amber-500'
+                          }`}
+                          onClick={() => {
+                            if (inCart) {
+                              removeItem(tab.id);
+                              toast(title, {
+                                description:
+                                  locale === 'en' ? 'Removed from cart' : 'Убрано из корзины',
+                                icon: '🗑️',
+                              });
+                            } else {
+                              addItem(tab);
+                              toast(title, {
+                                description:
+                                  locale === 'en' ? 'Added to cart' : 'Добавлено в корзину',
+                                icon: '🛒',
+                              });
+                              const el = cardRef.current;
+                              if (el) flyToCart(el.getBoundingClientRect(), el);
+                            }
+                          }}
+                          onMouseEnter={() => setCartHovered(true)}
+                          onMouseLeave={() => setCartHovered(false)}
+                        >
+                          {inCart ? (
+                            cartHovered ? (
+                              <Trash2 className='h-4 w-4' />
+                            ) : (
+                              <Check className='h-4 w-4' />
+                            )
+                          ) : (
+                            <ShoppingCart className='h-4 w-4' />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {inCart
+                          ? locale === 'en'
+                            ? 'Remove from cart'
+                            : 'Убрать из корзины'
+                          : locale === 'en'
+                            ? 'Add to cart'
+                            : 'В корзину'}
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                  {adminActions ?? (
+                    <Button
+                      size='sm'
+                      className='bg-amber-500 hover:bg-amber-600 text-white rounded-full px-5'
+                      onClick={() => setBuyOpen(true)}
+                    >
+                      {buyLabel}
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardContent>

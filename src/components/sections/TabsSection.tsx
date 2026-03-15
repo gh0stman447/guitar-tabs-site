@@ -75,8 +75,8 @@ export function TabsSection() {
   }, [tabs, search, sort, asc]);
 
   return (
-    <section id='tabs' className='py-24 px-4 sm:px-6 lg:px-8'>
-      <div className='max-w-6xl mx-auto'>
+    <section id='tabs' className='py-24'>
+      <div className='max-w-6xl mx-auto px-4 sm:px-6 lg:px-8'>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}

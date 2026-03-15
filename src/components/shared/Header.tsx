@@ -136,6 +136,12 @@ export function Header() {
                   >
                     Добавить таб
                   </Link>
+                  <Link
+                    href={`/${locale}/admin/newsletter`}
+                    className='text-xs font-medium px-2 py-1 rounded border border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white transition-colors'
+                  >
+                    Рассылка
+                  </Link>
                 </div>
               )}
               <button
@@ -146,8 +152,8 @@ export function Header() {
               </button>
               {isTouch && (
                 <button
-                  onClick={() => setCartOpen(true)}
-                  className='relative flex items-center justify-center w-9 h-9 rounded border border-border text-muted-foreground hover:text-foreground hover:border-amber-500 transition-colors cursor-pointer'
+                  onClick={() => count > 0 && setCartOpen(true)}
+                  className={`relative flex items-center justify-center w-9 h-9 rounded border transition-colors ${count > 0 ? 'border-border text-muted-foreground hover:text-foreground hover:border-amber-500 cursor-pointer' : 'border-border text-muted-foreground/30 cursor-not-allowed'}`}
                 >
                   <ShoppingCart className='h-4 w-4' />
                   {count > 0 && (
@@ -160,7 +166,10 @@ export function Header() {
               <ThemeToggle />
               <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
                 <SheetTrigger asChild>
-                  <button suppressHydrationWarning className='md:hidden flex items-center justify-center w-9 h-9 rounded border border-border text-muted-foreground hover:text-foreground hover:border-amber-500 transition-colors cursor-pointer'>
+                  <button
+                    suppressHydrationWarning
+                    className='md:hidden flex items-center justify-center w-9 h-9 rounded border border-border text-muted-foreground hover:text-foreground hover:border-amber-500 transition-colors cursor-pointer'
+                  >
                     <Menu className='h-4 w-4' />
                   </button>
                 </SheetTrigger>
@@ -219,7 +228,14 @@ export function Header() {
                             onClick={() => setSheetOpen(false)}
                             className='text-base font-medium px-2 py-2.5 rounded-lg text-amber-500 hover:bg-amber-500/10 transition-colors'
                           >
-                            + Добавить таб
+                            Добавить таб
+                          </Link>
+                          <Link
+                            href={`/${locale}/admin/newsletter`}
+                            onClick={() => setSheetOpen(false)}
+                            className='text-base font-medium px-2 py-2.5 rounded-lg text-amber-500 hover:bg-amber-500/10 transition-colors'
+                          >
+                            Рассылка
                           </Link>
                         </div>
                       </>

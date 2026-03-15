@@ -15,8 +15,8 @@ export function AboutSection() {
   ];
 
   return (
-    <section id='about' className='py-24 px-4 sm:px-6 lg:px-8 overflow-hidden'>
-      <div className='max-w-6xl mx-auto'>
+    <section id='about' className='py-24 overflow-hidden'>
+      <div className='max-w-6xl mx-auto px-4 sm:px-6 lg:px-8'>
         <div className='grid md:grid-cols-2 gap-12 items-center'>
           <motion.div
             initial={{ opacity: 0, x: -30 }}
@@ -26,7 +26,13 @@ export function AboutSection() {
             className='relative'
           >
             <div className='aspect-square max-w-sm mx-auto rounded-2xl overflow-hidden border border-amber-200 dark:border-amber-800/30 relative'>
-              <Image src='/me.jpg' alt='Олег Малыгин' fill className='object-cover' priority />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src='/me.jpg'
+                alt='Олег Малыгин'
+                className='object-cover pointer-events-none'
+                draggable={false}
+              />
             </div>
             <div className='absolute -bottom-4 -right-4 w-32 h-32 bg-amber-400/10 rounded-2xl -z-10' />
           </motion.div>

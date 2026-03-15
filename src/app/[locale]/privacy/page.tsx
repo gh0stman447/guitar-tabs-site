@@ -484,11 +484,8 @@ export default async function PrivacyPage() {
             </p>
             <p>
               11.2. Действующая редакция Политики находится на Сайте в сети Интернет по адресу{' '}
-              <a
-                href='https://olegguitar.com/ru/privacy'
-                className='text-amber-500 hover:underline'
-              >
-                olegguitar.com/ru/privacy
+              <a href='https://olegguitar.com/privacy' className='text-amber-500 hover:underline'>
+                olegguitar.com/privacy
               </a>
               .
             </p>

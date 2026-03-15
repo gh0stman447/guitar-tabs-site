@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { requireAdminSession } from '@/lib/admin-auth';
 import { FORMATS } from '@/types';
+import { TABLE_TABS, BUCKET_TAB_FILES } from '@/lib/constants';
 
 export async function POST(req: NextRequest) {
   const authError = requireAdminSession(req);
@@ -12,11 +13,11 @@ export async function POST(req: NextRequest) {
 
   const title_ru = formData.get('title_ru') as string;
   const title_en = formData.get('title_en') as string;
-  const description_ru = formData.get('description_ru') as string ?? '';
-  const description_en = formData.get('description_en') as string ?? '';
+  const description_ru = (formData.get('description_ru') as string) ?? '';
+  const description_en = (formData.get('description_en') as string) ?? '';
   const difficulty = formData.get('difficulty') as string;
   const price = parseFloat(formData.get('price') as string);
-  const youtube_url = formData.get('youtube_url') as string ?? null;
+  const youtube_url = (formData.get('youtube_url') as string) ?? null;
   const photo = formData.get('photo') as File | null;
 
   if (!title_ru || !title_en || !difficulty || !price) {
@@ -33,7 +34,12 @@ export async function POST(req: NextRequest) {
     if (!file || file.size === 0) continue;
 
     if (/[а-яёА-ЯЁ]/.test(file.name)) {
-      return NextResponse.json({ error: `Файл "${file.name}" содержит кириллицу в названии. Переименуйте файл латиницей.` }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: `Файл "${file.name}" содержит кириллицу в названии. Переименуйте файл латиницей.`,
+        },
+        { status: 400 },
+      );
     }
 
     const safeName = file.name.replace(/[^\w.\-\s]/g, '_');
@@ -41,15 +47,17 @@ export async function POST(req: NextRequest) {
     const buffer = await file.arrayBuffer();
 
     const { error } = await supabaseAdmin.storage
-      .from('tab-files')
+      .from(BUCKET_TAB_FILES)
       .upload(path, buffer, { contentType: file.type, upsert: true });
 
     if (error) {
-      return NextResponse.json({ error: `Ошибка загрузки ${fmt}: ${error.message}` }, { status: 500 });
+      return NextResponse.json(
+        { error: `Ошибка загрузки ${fmt}: ${error.message}` },
+        { status: 500 },
+      );
     }
 
     files[fmt] = path;
-
   }
 
   if (Object.keys(files).length === 0) {
@@ -64,18 +72,18 @@ export async function POST(req: NextRequest) {
     const buffer = await photo.arrayBuffer();
 
     const { error } = await supabaseAdmin.storage
-      .from('tab-files')
+      .from(BUCKET_TAB_FILES)
       .upload(path, buffer, { contentType: photo.type, upsert: true });
 
     if (!error) {
-      const { data } = supabaseAdmin.storage.from('tab-files').getPublicUrl(path);
+      const { data } = supabaseAdmin.storage.from(BUCKET_TAB_FILES).getPublicUrl(path);
       photo_url = data.publicUrl;
     }
   }
 
   // Create tab in DB
   const { data, error } = await supabaseAdmin
-    .from('guitar-tabs')
+    .from(TABLE_TABS)
     .insert({
       id: tabId,
       title_ru,

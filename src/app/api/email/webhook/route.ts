@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { TABLE_PURCHASES } from '@/lib/constants';
 
 // Resend event priority: opened > delivered > sent
 const STATUS_PRIORITY: Record<string, number> = {
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
 
   // Only upgrade status, never downgrade
   const { data: purchase } = await supabaseAdmin
-    .from('purchases')
+    .from(TABLE_PURCHASES)
     .select('email_status')
     .eq('resend_email_id', emailId)
     .single();
@@ -42,7 +43,7 @@ export async function POST(req: NextRequest) {
 
   if (newPriority > currentPriority) {
     await supabaseAdmin
-      .from('purchases')
+      .from(TABLE_PURCHASES)
       .update({ email_status: newStatus })
       .eq('resend_email_id', emailId);
   }

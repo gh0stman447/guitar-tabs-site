@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { requireAdminSession } from '@/lib/admin-auth';
+import { TABLE_TABS } from '@/lib/constants';
 
 export async function POST(req: NextRequest) {
   const authError = requireAdminSession(req);
@@ -10,7 +11,7 @@ export async function POST(req: NextRequest) {
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
   const { error } = await supabaseAdmin
-    .from('guitar-tabs')
+    .from(TABLE_TABS)
     .update({ is_published: true })
     .eq('id', id);
 

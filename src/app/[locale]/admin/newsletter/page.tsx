@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Loader2, Mail, Send } from 'lucide-react';
 import { Header } from '@/components/shared/Header';
 import Link from 'next/link';
@@ -12,10 +12,16 @@ import { Field, inputCls } from '@/components/admin/AdminFormFields';
 export default function NewsletterPage() {
   const params = useParams();
   const locale = params.locale as string;
+  const router = useRouter();
 
   const [authed, setAuthed] = useState(false);
   useEffect(() => {
-    if (isAdminAuthed()) setAuthed(true);
+    if (!isAdminAuthed()) {
+      router.replace('/');
+    } else {
+      setAuthed(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const [subject, setSubject] = useState('');
@@ -27,18 +33,7 @@ export default function NewsletterPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
 
-  if (!authed) {
-    return (
-      <div className='min-h-screen flex items-center justify-center bg-secondary/30'>
-        <div className='text-center'>
-          <p className='text-muted-foreground mb-4'>Нет доступа</p>
-          <Link href={`/${locale}/admin`} className='text-amber-500 underline'>
-            Войти в админку
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  if (!authed) return null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

@@ -8,6 +8,7 @@ import { Loader2, ShoppingCart, CheckCircle2, Trash2, Pencil } from 'lucide-reac
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { isAdminAuthed } from '@/lib/admin-auth';
+import { TABLE_TABS } from '@/lib/constants';
 import { TabCard } from '@/components/shared/TabCard/TabCard';
 import { useCart } from '@/context/CartContext';
 import { toast } from 'sonner';
@@ -27,6 +28,7 @@ export default function DraftsPage() {
   const params = useParams();
   const locale = (params?.locale as string) ?? 'ru';
 
+  const [authed, setAuthed] = useState(false);
   const [tabs, setTabs] = useState<Tab[]>([]);
   const [loading, setLoading] = useState(true);
   const [publishing, setPublishing] = useState<string | null>(null);
@@ -47,8 +49,9 @@ export default function DraftsPage() {
       router.replace('/');
       return;
     }
+    setAuthed(true);
     supabase
-      .from('guitar-tabs')
+      .from(TABLE_TABS)
       .select('*')
       .eq('is_published', false)
       .then(({ data }) => {
@@ -80,7 +83,7 @@ export default function DraftsPage() {
     setPublishing(null);
   }
 
-  if (typeof document !== 'undefined' && !isAdminAuthed()) return null;
+  if (!authed) return null;
 
   return (
     <div className='min-h-screen bg-secondary/20'>

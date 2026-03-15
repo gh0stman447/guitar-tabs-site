@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { TABLE_TABS, TABLE_CUSTOMERS, TABLE_PURCHASES, BUCKET_TAB_FILES } from '@/lib/constants';
 
 export async function POST(req: NextRequest) {
   const { tab_id, tab_ids, firstname, email, newsletter, test } = await req.json();
@@ -13,7 +14,7 @@ export async function POST(req: NextRequest) {
 
   // 1. Get tabs
   const { data: tabs, error: tabsError } = await supabaseAdmin
-    .from('guitar-tabs')
+    .from(TABLE_TABS)
     .select('id, price, files')
     .in('id', ids);
 
@@ -25,7 +26,9 @@ export async function POST(req: NextRequest) {
   for (const tab of tabs) {
     const files = tab.files as Record<string, string>;
     for (const [format, path] of Object.entries(files)) {
-      const { error: downloadError } = await supabaseAdmin.storage.from('tab-files').download(path);
+      const { error: downloadError } = await supabaseAdmin.storage
+        .from(BUCKET_TAB_FILES)
+        .download(path);
       if (downloadError) {
         console.error(`File missing for format ${format}: ${path}`);
         return NextResponse.json(
@@ -42,7 +45,7 @@ export async function POST(req: NextRequest) {
 
   // 2. Upsert customer
   const { data: customer, error: customerError } = await supabaseAdmin
-    .from('customers')
+    .from(TABLE_CUSTOMERS)
     .upsert({ firstname, email, newsletter: newsletter ?? false }, { onConflict: 'email' })
     .select('id')
     .single();
@@ -53,7 +56,7 @@ export async function POST(req: NextRequest) {
 
   // 3. Create pending purchase
   const { data: purchase, error: purchaseError } = await supabaseAdmin
-    .from('purchases')
+    .from(TABLE_PURCHASES)
     .insert({
       customer_id: customer.id,
       tab_ids: ids,
@@ -116,7 +119,10 @@ export async function POST(req: NextRequest) {
   }
 
   // 5. Save payment_id to purchase
-  await supabaseAdmin.from('purchases').update({ payment_id: payment.id }).eq('id', purchase.id);
+  await supabaseAdmin
+    .from(TABLE_PURCHASES)
+    .update({ payment_id: payment.id })
+    .eq('id', purchase.id);
 
   return NextResponse.json({
     confirmation_url: payment.confirmation.confirmation_url,

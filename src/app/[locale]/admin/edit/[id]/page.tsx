@@ -7,6 +7,7 @@ import { Header } from '@/components/shared/Header';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { isAdminAuthed } from '@/lib/admin-auth';
+import { TABLE_TABS } from '@/lib/constants';
 import { Field, inputCls, DropZone, FORMAT_ACCEPT } from '@/components/admin/AdminFormFields';
 import type { Tab } from '@/types';
 import { FORMATS } from '@/types';
@@ -17,6 +18,7 @@ export default function EditTabPage() {
   const locale = params.locale as string;
   const tabId = params.id as string;
 
+  const [authed, setAuthed] = useState(false);
   const [tab, setTab] = useState<Tab | null>(null);
   const [loadingTab, setLoadingTab] = useState(true);
 
@@ -38,8 +40,9 @@ export default function EditTabPage() {
       router.replace('/');
       return;
     }
+    setAuthed(true);
     supabase
-      .from('guitar-tabs')
+      .from(TABLE_TABS)
       .select('*')
       .eq('id', tabId)
       .single()
@@ -60,7 +63,7 @@ export default function EditTabPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tabId]);
 
-  if (typeof document !== 'undefined' && !isAdminAuthed()) return null;
+  if (!authed) return null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -89,7 +92,7 @@ export default function EditTabPage() {
         setResult({ ok: true, message: 'Таб обновлён!' });
         // Refresh tab data
         const { data: updated } = await supabase
-          .from('guitar-tabs')
+          .from(TABLE_TABS)
           .select('*')
           .eq('id', tabId)
           .single();

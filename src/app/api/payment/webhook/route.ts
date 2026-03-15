@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import JSZip from 'jszip';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { TABLE_TABS, TABLE_PURCHASES, BUCKET_TAB_FILES } from '@/lib/constants';
 
 interface YookassaPayment {
   metadata?: {
@@ -26,10 +27,15 @@ export async function POST(req: NextRequest) {
 
 async function handlePaymentCanceled(payment: YookassaPayment) {
   const purchaseId = payment?.metadata?.purchase_id;
-  console.log('[webhook] payment.canceled purchaseId:', purchaseId, 'metadata:', JSON.stringify(payment?.metadata));
+  console.log(
+    '[webhook] payment.canceled purchaseId:',
+    purchaseId,
+    'metadata:',
+    JSON.stringify(payment?.metadata),
+  );
   if (!purchaseId) return NextResponse.json({ ok: true });
 
-  await supabaseAdmin.from('purchases').update({ status: 'canceled' }).eq('id', purchaseId);
+  await supabaseAdmin.from(TABLE_PURCHASES).update({ status: 'canceled' }).eq('id', purchaseId);
 
   return NextResponse.json({ ok: true });
 }
@@ -44,7 +50,7 @@ async function handlePaymentSucceeded(payment: YookassaPayment) {
 
   // 1. Update purchase status
   const { error: updateError } = await supabaseAdmin
-    .from('purchases')
+    .from(TABLE_PURCHASES)
     .update({ status: 'succeeded' })
     .eq('id', purchaseId);
 
@@ -54,7 +60,7 @@ async function handlePaymentSucceeded(payment: YookassaPayment) {
 
   // 2. Get purchase with tab_ids
   const { data: purchase, error: purchaseError } = await supabaseAdmin
-    .from('purchases')
+    .from(TABLE_PURCHASES)
     .select('tab_id, tab_ids, customers(firstname)')
     .eq('id', purchaseId)
     .single();
@@ -68,7 +74,7 @@ async function handlePaymentSucceeded(payment: YookassaPayment) {
 
   // 3. Get all tabs
   const { data: tabs, error: tabsError } = await supabaseAdmin
-    .from('guitar-tabs')
+    .from(TABLE_TABS)
     .select('id, title_ru, title_en, files, purchase_count')
     .in('id', tabIds);
 
@@ -79,7 +85,7 @@ async function handlePaymentSucceeded(payment: YookassaPayment) {
   // 4. Increment purchase_count for each tab
   for (const tab of tabs) {
     await supabaseAdmin
-      .from('guitar-tabs')
+      .from(TABLE_TABS)
       .update({ purchase_count: (tab.purchase_count ?? 0) + 1 })
       .eq('id', tab.id);
   }
@@ -94,7 +100,7 @@ async function handlePaymentSucceeded(payment: YookassaPayment) {
   // 7. Save email tracking info
   if (emailId) {
     await supabaseAdmin
-      .from('purchases')
+      .from(TABLE_PURCHASES)
       .update({ resend_email_id: emailId, email_status: 'sent' })
       .eq('id', purchaseId);
   }
@@ -113,7 +119,7 @@ async function buildZipAttachments(
     const folder = multiTab ? zip.folder(tab.title_ru.replace(/[/\\?%*:|"<>]/g, '_'))! : zip;
 
     for (const [format, path] of Object.entries(files)) {
-      const { data, error } = await supabaseAdmin.storage.from('tab-files').download(path);
+      const { data, error } = await supabaseAdmin.storage.from(BUCKET_TAB_FILES).download(path);
 
       if (error || !data) {
         console.error(`Failed to download ${format} (${path}):`, error);

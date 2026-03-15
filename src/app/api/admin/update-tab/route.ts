@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { requireAdminSession } from '@/lib/admin-auth';
 import { FORMATS } from '@/types';
+import { TABLE_TABS, BUCKET_TAB_FILES } from '@/lib/constants';
 
 export async function POST(req: NextRequest) {
   const authError = requireAdminSession(req);
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
     const buffer = await file.arrayBuffer();
 
     const { error } = await supabaseAdmin.storage
-      .from('tab-files')
+      .from(BUCKET_TAB_FILES)
       .upload(path, buffer, { contentType: file.type, upsert: true });
 
     if (error) {
@@ -69,11 +70,11 @@ export async function POST(req: NextRequest) {
     const buffer = await photo.arrayBuffer();
 
     const { error } = await supabaseAdmin.storage
-      .from('tab-files')
+      .from(BUCKET_TAB_FILES)
       .upload(path, buffer, { contentType: photo.type, upsert: true });
 
     if (!error) {
-      const { data } = supabaseAdmin.storage.from('tab-files').getPublicUrl(path);
+      const { data } = supabaseAdmin.storage.from(BUCKET_TAB_FILES).getPublicUrl(path);
       photo_url = data.publicUrl;
     }
   }
@@ -90,10 +91,7 @@ export async function POST(req: NextRequest) {
   };
   if (photo_url !== undefined) updateData.photo_url = photo_url;
 
-  const { error } = await supabaseAdmin
-    .from('guitar-tabs')
-    .update(updateData)
-    .eq('id', id);
+  const { error } = await supabaseAdmin.from(TABLE_TABS).update(updateData).eq('id', id);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

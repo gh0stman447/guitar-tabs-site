@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { TABLE_CUSTOMERS } from '@/lib/constants';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { data: customers, error } = await supabase
-    .from('customers')
+    .from(TABLE_CUSTOMERS)
     .select('email, firstname')
     .eq('newsletter', true);
 

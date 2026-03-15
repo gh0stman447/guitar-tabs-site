@@ -7,6 +7,7 @@ import { Search, ChevronUp, ChevronDown, X } from 'lucide-react';
 import type { Tab } from '@/types';
 import { TabCard, TabCardSkeleton } from '@/components/shared/TabCard';
 import { supabase } from '@/lib/supabase';
+import { TABLE_TABS } from '@/lib/constants';
 
 type SortKey = 'title' | 'difficulty' | 'price' | 'popular';
 
@@ -21,7 +22,7 @@ export function TabsSection() {
 
   useEffect(() => {
     supabase
-      .from('guitar-tabs')
+      .from(TABLE_TABS)
       .select('*')
       .eq('is_published', true)
       .then(({ data }) => {
@@ -167,7 +168,14 @@ export function TabsSection() {
           <motion.div layout className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
             <AnimatePresence mode='popLayout'>
               {filtered.map((tab, i) => (
-                <TabCard key={tab.id} tab={tab} locale={locale} buyLabel={t('buy')} showDetails index={i} />
+                <TabCard
+                  key={tab.id}
+                  tab={tab}
+                  locale={locale}
+                  buyLabel={t('buy')}
+                  showDetails
+                  index={i}
+                />
               ))}
             </AnimatePresence>
           </motion.div>

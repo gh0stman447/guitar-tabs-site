@@ -7,6 +7,7 @@ import { TrendingUp } from 'lucide-react';
 import { TabCard } from '@/components/shared/TabCard';
 import { TabCardSkeleton } from '@/components/shared/TabCard/TabCardSkeleton';
 import { supabase } from '@/lib/supabase';
+import { TABLE_TABS } from '@/lib/constants';
 import type { Tab } from '@/types';
 
 export function BestsellerSection() {
@@ -17,7 +18,7 @@ export function BestsellerSection() {
 
   useEffect(() => {
     supabase
-      .from('guitar-tabs')
+      .from(TABLE_TABS)
       .select('*')
       .eq('is_published', true)
       .order('purchase_count', { ascending: false })

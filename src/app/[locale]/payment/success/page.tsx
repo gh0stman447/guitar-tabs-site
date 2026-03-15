@@ -5,6 +5,7 @@ import { Header } from '@/components/shared/Header';
 import { Footer } from '@/components/shared/Footer';
 import { Button } from '@/components/ui/button';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { TABLE_PURCHASES } from '@/lib/constants';
 
 export default async function PaymentSuccessPage({
   params,
@@ -21,7 +22,7 @@ export default async function PaymentSuccessPage({
   }
 
   const { data: purchase } = await supabaseAdmin
-    .from('purchases')
+    .from(TABLE_PURCHASES)
     .select('status')
     .eq('id', purchase_id)
     .single();

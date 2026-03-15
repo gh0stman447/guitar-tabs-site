@@ -18,8 +18,8 @@ const contacts = [
   {
     icon: () => <FaVk className='h-6 w-6' />,
     label: 'VK',
-    value: 'dnbspiritual',
-    href: 'https://vk.com/dnbspiritual',
+    value: 'malyginoleg',
+    href: 'https://vk.com/malyginoleg',
     color: 'text-indigo-500',
     bg: 'bg-indigo-50 dark:bg-indigo-950/20',
   },

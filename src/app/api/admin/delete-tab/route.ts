@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { requireAdminSession } from '@/lib/admin-auth';
+import { TABLE_TABS, BUCKET_TAB_FILES } from '@/lib/constants';
 
 export async function POST(req: NextRequest) {
   const authError = requireAdminSession(req);
@@ -11,7 +12,7 @@ export async function POST(req: NextRequest) {
 
   // Only allow deleting drafts
   const { data: tab, error: fetchError } = await supabaseAdmin
-    .from('guitar-tabs')
+    .from(TABLE_TABS)
     .select('is_published, files, photo_url')
     .eq('id', id)
     .single();
@@ -21,15 +22,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Cannot delete published tab' }, { status: 403 });
 
   // Delete entire folder from storage by listing all files in it
-  const { data: storageFiles } = await supabaseAdmin.storage.from('tab-files').list(id);
+  const { data: storageFiles } = await supabaseAdmin.storage.from(BUCKET_TAB_FILES).list(id);
   console.log(`Deleting tab ${id}, found ${storageFiles?.length ?? 0} files in storage`);
   console.log(storageFiles);
   if (storageFiles && storageFiles.length > 0) {
     const paths = storageFiles.map((f) => `${id}/${f.name}`);
-    await supabaseAdmin.storage.from('tab-files').remove(paths);
+    await supabaseAdmin.storage.from(BUCKET_TAB_FILES).remove(paths);
   }
 
-  const { error } = await supabaseAdmin.from('guitar-tabs').delete().eq('id', id);
+  const { error } = await supabaseAdmin.from(TABLE_TABS).delete().eq('id', id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json({ ok: true });

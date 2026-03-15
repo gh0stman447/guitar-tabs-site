@@ -8,7 +8,13 @@ import { useCart } from '@/context/CartContext';
 import { toast } from 'sonner';
 import { CheckoutForm } from '@/components/shared/CheckoutForm';
 import type { Tab } from '@/types';
-import { DISCOUNT_TIER_1_MIN, DISCOUNT_TIER_1_RATE, DISCOUNT_TIER_2_MIN, DISCOUNT_TIER_2_RATE, TABLE_TABS } from '@/lib/constants';
+import {
+  DISCOUNT_TIER_1_MIN,
+  DISCOUNT_TIER_1_RATE,
+  DISCOUNT_TIER_2_MIN,
+  DISCOUNT_TIER_2_RATE,
+  TABLE_TABS,
+} from '@/lib/constants';
 import { supabase } from '@/lib/supabase';
 
 interface CartDrawerProps {
@@ -125,20 +131,22 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
               </div>
 
               {/* Discount hint */}
-              {items.length === DISCOUNT_TIER_1_MIN - 1 && publishedCount >= DISCOUNT_TIER_1_MIN && (
-                <div className='mx-6 my-2 rounded-lg bg-amber-500/10 border border-amber-500/20 px-4 py-2.5 text-sm text-amber-600 dark:text-amber-400'>
-                  {ru
-                    ? `Добавь ещё 1 таб и получи скидку ${DISCOUNT_TIER_1_RATE * 100}% 🎸`
-                    : `Add 1 more tab and get ${DISCOUNT_TIER_1_RATE * 100}% off 🎸`}
-                </div>
-              )}
-              {items.length === DISCOUNT_TIER_2_MIN - 1 && publishedCount >= DISCOUNT_TIER_2_MIN && (
-                <div className='mx-6 my-2 rounded-lg bg-amber-500/10 border border-amber-500/20 px-4 py-2.5 text-sm text-amber-600 dark:text-amber-400'>
-                  {ru
-                    ? `Добавь ещё 1 таб, и скидка вырастет до ${DISCOUNT_TIER_2_RATE * 100}% 🎸`
-                    : `Add 1 more tab and discount grows to ${DISCOUNT_TIER_2_RATE * 100}% 🎸`}
-                </div>
-              )}
+              {items.length === DISCOUNT_TIER_1_MIN - 1 &&
+                publishedCount >= DISCOUNT_TIER_1_MIN && (
+                  <div className='mx-6 my-2 rounded-lg bg-amber-500/10 border border-amber-500/20 px-4 py-2.5 text-sm text-amber-600 dark:text-amber-400'>
+                    {ru
+                      ? `Добавь ещё 1 таб и получи скидку ${DISCOUNT_TIER_1_RATE * 100}% 🎸`
+                      : `Add 1 more tab and get ${DISCOUNT_TIER_1_RATE * 100}% off 🎸`}
+                  </div>
+                )}
+              {items.length === DISCOUNT_TIER_2_MIN - 1 &&
+                publishedCount >= DISCOUNT_TIER_2_MIN && (
+                  <div className='mx-6 my-2 rounded-lg bg-amber-500/10 border border-amber-500/20 px-4 py-2.5 text-sm text-amber-600 dark:text-amber-400'>
+                    {ru
+                      ? `Добавь ещё 1 таб, и скидка вырастет до ${DISCOUNT_TIER_2_RATE * 100}% 🎸`
+                      : `Add 1 more tab and discount grows to ${DISCOUNT_TIER_2_RATE * 100}% 🎸`}
+                  </div>
+                )}
 
               {/* Total */}
               <div className='flex flex-col gap-1 px-6 py-4 border-t border-border mt-auto'>
@@ -189,7 +197,14 @@ function CartItem({ tab, locale, onRemove }: { tab: Tab; locale: string; onRemov
     <div className='flex items-center gap-3 px-6 py-4'>
       <div className='relative w-14 h-14 rounded-md overflow-hidden bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/30 dark:to-zinc-900 shrink-0'>
         {tab.photo_url ? (
-          <Image src={tab.photo_url} alt={title} fill className='object-cover' sizes='56px' />
+          <Image
+            src={tab.photo_url}
+            alt={title}
+            fill
+            className='object-cover'
+            sizes='56px'
+            draggable={false}
+          />
         ) : (
           <div className='flex items-center justify-center w-full h-full'>
             <Music className='h-6 w-6 text-amber-400' strokeWidth={1} />

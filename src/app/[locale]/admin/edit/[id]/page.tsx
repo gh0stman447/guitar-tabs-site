@@ -31,6 +31,7 @@ export default function EditTabPage() {
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [photo, setPhoto] = useState<File | null>(null);
   const [files, setFiles] = useState<Partial<Record<(typeof FORMATS)[number], File>>>({});
+  const [deletedFormats, setDeletedFormats] = useState<string[]>([]);
 
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
@@ -80,6 +81,7 @@ export default function EditTabPage() {
     formData.append('price', price);
     formData.append('youtube_url', youtubeUrl);
     formData.append('existing_files', JSON.stringify(tab?.files ?? {}));
+    formData.append('formats_to_delete', JSON.stringify(deletedFormats));
     if (photo) formData.append('photo', photo);
     for (const [fmt, file] of Object.entries(files)) {
       if (file) formData.append(fmt, file);
@@ -99,6 +101,7 @@ export default function EditTabPage() {
         if (updated) setTab(updated as Tab);
         setFiles({});
         setPhoto(null);
+        setDeletedFormats([]);
       } else {
         setResult({ ok: false, message: data.error });
       }
@@ -254,7 +257,14 @@ export default function EditTabPage() {
                           )
                         }
                         existingLabel={
-                          tab.files[fmt] ? tab.files[fmt]!.split('/').pop() : undefined
+                          tab.files[fmt] && !deletedFormats.includes(fmt)
+                            ? tab.files[fmt]!.split('/').pop()
+                            : undefined
+                        }
+                        onDeleteExisting={
+                          tab.files[fmt] && !deletedFormats.includes(fmt)
+                            ? () => setDeletedFormats((prev) => [...prev, fmt])
+                            : undefined
                         }
                       />
                     </div>

@@ -30,12 +30,14 @@ export function DropZone({
   file,
   onFile,
   existingLabel,
+  onDeleteExisting,
 }: {
   label: string;
   accept: Record<string, string[]>;
   file: File | null;
   onFile: (f: File | null) => void;
   existingLabel?: string;
+  onDeleteExisting?: () => void;
 }) {
   const onDrop = useCallback(
     (accepted: File[]) => {
@@ -78,11 +80,18 @@ export function DropZone({
       {file && (
         <button
           type='button'
-          onClick={(e) => {
-            e.stopPropagation();
-            onFile(null);
-          }}
+          onClick={(e) => { e.stopPropagation(); onFile(null); }}
           className='text-muted-foreground hover:text-foreground shrink-0'
+        >
+          <X className='h-3.5 w-3.5' />
+        </button>
+      )}
+      {!file && existingLabel && onDeleteExisting && (
+        <button
+          type='button'
+          onClick={(e) => { e.stopPropagation(); onDeleteExisting(); }}
+          className='text-muted-foreground hover:text-red-500 shrink-0'
+          title='Удалить файл'
         >
           <X className='h-3.5 w-3.5' />
         </button>

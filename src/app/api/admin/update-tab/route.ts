@@ -20,6 +20,7 @@ export async function POST(req: NextRequest) {
   const youtube_url = (formData.get('youtube_url') as string) || null;
   const photo = formData.get('photo') as File | null;
   const existingFiles = JSON.parse((formData.get('existing_files') as string) ?? '{}');
+  const formatsToDelete: string[] = JSON.parse((formData.get('formats_to_delete') as string) ?? '[]');
 
   if (!id || !title_ru || !title_en || !difficulty || !price) {
     return NextResponse.json({ error: 'Заполните обязательные поля' }, { status: 400 });
@@ -27,6 +28,19 @@ export async function POST(req: NextRequest) {
 
   const folder = id;
   const files: Record<string, string> = { ...existingFiles };
+
+  // Delete removed formats from Storage and files map
+  for (const fmt of formatsToDelete) {
+    const path = existingFiles[fmt] as string | undefined;
+    if (path) await supabaseAdmin.storage.from(BUCKET_TAB_FILES).remove([path]);
+    delete files[fmt];
+  }
+
+  // Sync: remove files that no longer exist in Storage
+  for (const [fmt, path] of Object.entries(files)) {
+    const { data } = await supabaseAdmin.storage.from(BUCKET_TAB_FILES).list(folder, { search: path.split('/').pop() });
+    if (!data || data.length === 0) delete files[fmt];
+  }
 
   // Upload new tab files
   for (const fmt of FORMATS) {
@@ -42,6 +56,13 @@ export async function POST(req: NextRequest) {
 
     const safeName = file.name.replace(/[^\w.\-\s]/g, '_');
     const path = `${folder}/${safeName}`;
+
+    // Удаляем старый файл если он отличается по имени
+    const oldPath = existingFiles[fmt] as string | undefined;
+    if (oldPath && oldPath !== path) {
+      await supabaseAdmin.storage.from(BUCKET_TAB_FILES).remove([oldPath]);
+    }
+
     const buffer = await file.arrayBuffer();
 
     const { error } = await supabaseAdmin.storage

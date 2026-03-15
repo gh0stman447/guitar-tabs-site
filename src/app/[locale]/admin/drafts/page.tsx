@@ -20,7 +20,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { Tooltip as ReactTooltip } from 'react-tooltip';
 import type { Tab } from '@/types';
 
 export default function DraftsPage() {
@@ -114,83 +114,94 @@ export default function DraftsPage() {
                 purchasesLabel={`${tab.purchase_count ?? 0} покупок`}
                 adminActions={
                   <div className='flex items-center gap-1.5'>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Link
-                          href={`/${locale}/admin/edit/${tab.id}`}
-                          className={`flex items-center justify-center w-8 h-8 rounded-full border transition-colors ${isTouch ? 'border-amber-400 text-amber-500' : 'border-border text-muted-foreground hover:border-amber-400 hover:text-amber-500'}`}
-                        >
-                          <Pencil className='h-3.5 w-3.5' />
-                        </Link>
-                      </TooltipTrigger>
-                      <TooltipContent>Изменить</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={() => {
-                            if (hasItem(tab.id)) {
-                              removeItem(tab.id);
-                              toast(tab.title_ru, { description: 'Убрано из корзины', icon: '🗑️' });
-                            } else {
-                              addItem(tab);
-                              toast(tab.title_ru, {
-                                description: 'Добавлено в корзину',
-                                icon: '🛒',
-                              });
-                            }
-                          }}
-                          className={`flex items-center justify-center w-8 h-8 rounded-full border transition-colors cursor-pointer ${
-                            hasItem(tab.id)
-                              ? 'border-amber-500 text-amber-500 bg-amber-500/10 hover:border-red-500 hover:text-red-500 hover:bg-red-500/10'
-                              : isTouch
-                                ? 'border-amber-400 text-amber-500'
-                                : 'border-border text-muted-foreground hover:border-amber-400 hover:text-foreground'
-                          }`}
-                        >
-                          {hasItem(tab.id) ? (
-                            <Trash2 className='h-3.5 w-3.5' />
-                          ) : (
-                            <ShoppingCart className='h-3.5 w-3.5' />
-                          )}
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {hasItem(tab.id) ? 'Убрать из корзины' : 'В корзину'}
-                      </TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={() => setConfirmDelete(tab)}
-                          disabled={deleting === tab.id}
-                          className={`flex items-center justify-center w-8 h-8 rounded-full border disabled:opacity-60 transition-colors cursor-pointer ${isTouch ? 'border-red-400 text-red-500' : 'border-border text-muted-foreground hover:border-red-400 hover:text-red-500'}`}
-                        >
-                          {deleting === tab.id ? (
-                            <Loader2 className='h-3.5 w-3.5 animate-spin' />
-                          ) : (
-                            <Trash2 className='h-3.5 w-3.5' />
-                          )}
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent>Удалить</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={() => setConfirmTab(tab)}
-                          disabled={publishing === tab.id}
-                          className='flex items-center justify-center w-8 h-8 rounded-full bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white transition-colors cursor-pointer'
-                        >
-                          {publishing === tab.id ? (
-                            <Loader2 className='h-3.5 w-3.5 animate-spin' />
-                          ) : (
-                            <CheckCircle2 className='h-3.5 w-3.5' />
-                          )}
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent>Опубликовать</TooltipContent>
-                    </Tooltip>
+                    <Link
+                      data-tooltip-id={`dft-edit-${tab.id}`}
+                      data-tooltip-content='Изменить'
+                      href={`/${locale}/admin/edit/${tab.id}`}
+                      className={`flex items-center justify-center w-8 h-8 rounded-full border transition-colors ${isTouch ? 'border-amber-400 text-amber-500' : 'border-border text-muted-foreground hover:border-amber-400 hover:text-amber-500'}`}
+                    >
+                      <Pencil className='h-3.5 w-3.5' />
+                    </Link>
+                    <ReactTooltip
+                      id={`dft-edit-${tab.id}`}
+                      place='top'
+                      hidden={isTouch}
+                      opacity={1}
+                      delayShow={isTouch ? 0 : 350}
+                    />
+                    <button
+                      data-tooltip-id={`dft-cart-${tab.id}`}
+                      data-tooltip-content={hasItem(tab.id) ? 'Убрать из корзины' : 'В корзину'}
+                      onClick={() => {
+                        if (hasItem(tab.id)) {
+                          removeItem(tab.id);
+                          toast(tab.title_ru, { description: 'Убрано из корзины', icon: '🗑️' });
+                        } else {
+                          addItem(tab);
+                          toast(tab.title_ru, { description: 'Добавлено в корзину', icon: '🛒' });
+                        }
+                      }}
+                      className={`flex items-center justify-center w-8 h-8 rounded-full border transition-colors cursor-pointer ${
+                        hasItem(tab.id)
+                          ? 'border-amber-500 text-amber-500 bg-amber-500/10 hover:border-red-500 hover:text-red-500 hover:bg-red-500/10'
+                          : isTouch
+                            ? 'border-amber-400 text-amber-500'
+                            : 'border-border text-muted-foreground hover:border-amber-400 hover:text-foreground'
+                      }`}
+                    >
+                      {hasItem(tab.id) ? (
+                        <Trash2 className='h-3.5 w-3.5' />
+                      ) : (
+                        <ShoppingCart className='h-3.5 w-3.5' />
+                      )}
+                    </button>
+                    <ReactTooltip
+                      id={`dft-cart-${tab.id}`}
+                      place='top'
+                      hidden={isTouch}
+                      opacity={1}
+                      delayShow={350}
+                    />
+                    <button
+                      data-tooltip-id={`dft-del-${tab.id}`}
+                      data-tooltip-content='Удалить'
+                      onClick={() => setConfirmDelete(tab)}
+                      disabled={deleting === tab.id}
+                      className={`flex items-center justify-center w-8 h-8 rounded-full border disabled:opacity-60 transition-colors cursor-pointer ${isTouch ? 'border-red-400 text-red-500' : 'border-border text-muted-foreground hover:border-red-400 hover:text-red-500'}`}
+                    >
+                      {deleting === tab.id ? (
+                        <Loader2 className='h-3.5 w-3.5 animate-spin' />
+                      ) : (
+                        <Trash2 className='h-3.5 w-3.5' />
+                      )}
+                    </button>
+                    <ReactTooltip
+                      id={`dft-del-${tab.id}`}
+                      place='top'
+                      hidden={isTouch}
+                      opacity={1}
+                      delayShow={isTouch ? 0 : 350}
+                    />
+                    <button
+                      data-tooltip-id={`dft-pub-${tab.id}`}
+                      data-tooltip-content='Опубликовать'
+                      onClick={() => setConfirmTab(tab)}
+                      disabled={publishing === tab.id}
+                      className='flex items-center justify-center w-8 h-8 rounded-full bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white transition-colors cursor-pointer'
+                    >
+                      {publishing === tab.id ? (
+                        <Loader2 className='h-3.5 w-3.5 animate-spin' />
+                      ) : (
+                        <CheckCircle2 className='h-3.5 w-3.5' />
+                      )}
+                    </button>
+                    <ReactTooltip
+                      id={`dft-pub-${tab.id}`}
+                      place='top'
+                      hidden={isTouch}
+                      opacity={1}
+                      delayShow={isTouch ? 0 : 350}
+                    />
                   </div>
                 }
               />

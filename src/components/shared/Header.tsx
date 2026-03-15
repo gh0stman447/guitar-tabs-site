@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Menu, ShoppingCart, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { useTranslations, useLocale } from 'next-intl';
 import { ThemeToggle } from './ThemeToggle';
 import { CartDrawer } from './CartDrawer';
@@ -145,12 +146,6 @@ export function Header() {
                   </Link>
                 </div>
               )}
-              <button
-                onClick={switchLocale}
-                className='text-xs font-medium px-2 py-1 rounded border border-border text-muted-foreground hover:text-foreground hover:border-amber-500 transition-colors cursor-pointer'
-              >
-                {locale === 'ru' ? 'EN' : 'RU'}
-              </button>
               {isTouch && (
                 <button
                   onClick={() => count > 0 && setCartOpen(true)}
@@ -164,6 +159,15 @@ export function Header() {
                   )}
                 </button>
               )}
+              <Button
+                variant='ghost'
+                size='icon'
+                onClick={switchLocale}
+                aria-label='Переключить язык'
+                className='text-xs font-semibold text-muted-foreground'
+              >
+                {locale === 'ru' ? 'EN' : 'RU'}
+              </Button>
               <ThemeToggle />
               <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
                 <SheetTrigger asChild>

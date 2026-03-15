@@ -73,6 +73,7 @@ export function BestsellerSection() {
                 showRank={i === 0}
                 purchasesLabel={t('purchases', { count: tab.purchase_count })}
                 showDetails={false}
+                tooltipPrefix='bestseller'
               />
             ))}
           </div>

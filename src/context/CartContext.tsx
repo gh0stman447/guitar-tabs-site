@@ -2,13 +2,14 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import type { Tab } from '@/types';
+import { DISCOUNT_TIER_1_MIN, DISCOUNT_TIER_1_RATE, DISCOUNT_TIER_2_MIN, DISCOUNT_TIER_2_RATE } from '@/lib/constants';
 
 const STORAGE_KEY = 'guitar-tabs-cart';
 const STORAGE_KEY_TEST = 'guitar-tabs-cart-test';
 
 function bulkDiscountRate(count: number) {
-  if (count >= 3) return 0.15;
-  if (count >= 2) return 0.10;
+  if (count >= DISCOUNT_TIER_2_MIN) return DISCOUNT_TIER_2_RATE;
+  if (count >= DISCOUNT_TIER_1_MIN) return DISCOUNT_TIER_1_RATE;
   return 0;
 }
 

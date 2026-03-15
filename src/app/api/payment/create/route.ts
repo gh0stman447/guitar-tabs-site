@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   // 1. Get tabs
   const { data: tabs, error: tabsError } = await supabaseAdmin
     .from(TABLE_TABS)
-    .select('id, price, files')
+    .select('id, price, files, title_ru')
     .in('id', ids);
 
   if (tabsError || !tabs || tabs.length !== ids.length) {
@@ -85,7 +85,9 @@ export async function POST(req: NextRequest) {
 
   const idempotenceKey = purchase.id;
   const description =
-    tabs.length === 1 ? `Гитарный таб #${tabs[0].id}` : `Гитарные табы (${tabs.length} шт.)`;
+    tabs.length === 1
+      ? `Гитарный таб #${tabs[0].id} (${(tabs[0] as { title_ru: string }).title_ru})`
+      : `Гитарные табы (${tabs.length} шт.): ${(tabs as { title_ru: string }[]).map((t) => t.title_ru).join(', ')}`;
 
   const yukassaRes = await fetch('https://api.yookassa.ru/v3/payments', {
     method: 'POST',

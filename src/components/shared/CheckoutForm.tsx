@@ -73,8 +73,12 @@ export function CheckoutForm({ locale, price, onSubmit }: CheckoutFormProps) {
   return (
     <form onSubmit={handleSubmit} className='flex flex-col gap-4'>
       <div className='flex flex-col gap-1.5'>
-        <label className='text-sm font-medium'>{ru ? 'Имя' : 'First name'}</label>
+        <label htmlFor='checkout-firstname' className='text-sm font-medium'>
+          {ru ? 'Имя' : 'First name'}
+        </label>
         <input
+          id='checkout-firstname'
+          name='firstname'
           type='text'
           value={firstname}
           onChange={(e) => setFirstname(e.target.value)}
@@ -87,8 +91,12 @@ export function CheckoutForm({ locale, price, onSubmit }: CheckoutFormProps) {
       </div>
 
       <div className='flex flex-col gap-1.5'>
-        <label className='text-sm font-medium'>Email</label>
+        <label htmlFor='checkout-email' className='text-sm font-medium'>
+          Email
+        </label>
         <input
+          id='checkout-email'
+          name='email'
           type='text'
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -107,12 +115,17 @@ export function CheckoutForm({ locale, price, onSubmit }: CheckoutFormProps) {
       </div>
 
       <div className='flex flex-col gap-1.5'>
-        <label className='flex items-start gap-2.5 cursor-pointer'>
+        <label
+          htmlFor='checkout-agreed'
+          className='flex items-start gap-2.5 cursor-pointer min-w-0'
+        >
           <input
+            id='checkout-agreed'
+            name='agreed'
             type='checkbox'
             checked={agreed}
             onChange={(e) => setAgreed(e.target.checked)}
-            className='mt-0.5 h-4 w-4 shrink-0 accent-amber-500'
+            className='mt-0.5 h-4 w-4 shrink-0 accent-amber-500 min-w-5'
           />
           <span className='text-sm text-muted-foreground leading-relaxed'>
             {ru ? (
@@ -160,12 +173,17 @@ export function CheckoutForm({ locale, price, onSubmit }: CheckoutFormProps) {
       </div>
 
       <div className='flex flex-col gap-1.5'>
-        <label className='flex items-start gap-2.5 cursor-pointer'>
+        <label
+          htmlFor='checkout-newsletter'
+          className='flex items-start gap-2.5 cursor-pointer min-w-0'
+        >
           <input
+            id='checkout-newsletter'
+            name='newsletter'
             type='checkbox'
             checked={newsletter}
             onChange={(e) => setNewsletter(e.target.checked)}
-            className='mt-0.5 h-4 w-4 shrink-0 accent-amber-500'
+            className='mt-0.5 h-4 w-4 shrink-0 accent-amber-500 min-w-5'
           />
           <span className='text-sm text-muted-foreground leading-relaxed'>
             {ru
@@ -180,16 +198,16 @@ export function CheckoutForm({ locale, price, onSubmit }: CheckoutFormProps) {
       <p className='text-xs text-muted-foreground text-center'>
         {ru ? (
           <>
-            Находитесь за пределами России?{' '}
+            Находитесь не в РФ?{' '}
             <a
               href='https://t.me/MalyginOleg'
               target='_blank'
               rel='noopener noreferrer'
               className='text-amber-500 hover:underline'
             >
-              Напишите мне в Telegram
+              Напишите в Telegram
             </a>
-            , и мы договоримся об удобном способе оплаты.
+            {' '}— подберем удобный способ оплаты
           </>
         ) : (
           <>
@@ -200,9 +218,9 @@ export function CheckoutForm({ locale, price, onSubmit }: CheckoutFormProps) {
               rel='noopener noreferrer'
               className='text-amber-500 hover:underline'
             >
-              Write me on Telegram
-            </a>{' '}
-            and we&apos;ll find a convenient payment method.
+              Write us on Telegram
+            </a>
+            {' '}— we&apos;ll sort out a payment method
           </>
         )}
       </p>

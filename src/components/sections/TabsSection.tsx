@@ -3,11 +3,18 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslations, useLocale } from 'next-intl';
+import { useIsTouch } from '@/hooks/useIsTouch';
 import { Search, ChevronUp, ChevronDown, X } from 'lucide-react';
 import type { Tab } from '@/types';
 import { TabCard, TabCardSkeleton } from '@/components/shared/TabCard';
 import { supabase } from '@/lib/supabase';
-import { TABLE_TABS } from '@/lib/constants';
+import {
+  TABLE_TABS,
+  DISCOUNT_TIER_1_MIN,
+  DISCOUNT_TIER_1_RATE,
+  DISCOUNT_TIER_2_MIN,
+  DISCOUNT_TIER_2_RATE,
+} from '@/lib/constants';
 
 type SortKey = 'title' | 'difficulty' | 'price' | 'popular';
 
@@ -38,6 +45,7 @@ export function TabsSection() {
     { value: 'price', label: t('sortPrice') },
   ];
 
+  const isTouch = useIsTouch();
   const isDirty = search !== '' || sort !== 'popular' || asc;
 
   function reset() {
@@ -156,6 +164,22 @@ export function TabsSection() {
           </p>
         )}
 
+        {/* Discount promo */}
+        {!loading && tabs.length >= DISCOUNT_TIER_2_MIN && (
+          <p className='text-xs text-muted-foreground/60 mb-6'>
+            {locale === 'en'
+              ? `🎸 Buy ${DISCOUNT_TIER_1_MIN} tabs — get ${DISCOUNT_TIER_1_RATE * 100}% off, buy ${DISCOUNT_TIER_2_MIN} or more — get ${DISCOUNT_TIER_2_RATE * 100}% off`
+              : `🎸 Купи ${DISCOUNT_TIER_1_MIN} таба — скидка ${DISCOUNT_TIER_1_RATE * 100}%, ${DISCOUNT_TIER_2_MIN} и больше — скидка ${DISCOUNT_TIER_2_RATE * 100}%`}
+          </p>
+        )}
+        {!loading && tabs.length === DISCOUNT_TIER_1_MIN && (
+          <p className='text-xs text-muted-foreground/60 mb-6'>
+            {locale === 'en'
+              ? `🎸 Buy ${DISCOUNT_TIER_1_MIN} tabs — get ${DISCOUNT_TIER_1_RATE * 100}% off`
+              : `🎸 Купи ${DISCOUNT_TIER_1_MIN} таба — скидка ${DISCOUNT_TIER_1_RATE * 100}%`}
+          </p>
+        )}
+
         {loading ? (
           <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
             {Array.from({ length: 6 }).map((_, i) => (
@@ -164,18 +188,28 @@ export function TabsSection() {
           </div>
         ) : filtered.length === 0 && !search ? (
           <p className='text-center text-muted-foreground py-12'>{t('empty')}</p>
+        ) : isTouch ? (
+          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
+            {filtered.map((tab, i) => (
+              <div key={tab.id}>
+                <TabCard tab={tab} locale={locale} buyLabel={t('buy')} showDetails index={i} tooltipPrefix='catalog' />
+              </div>
+            ))}
+          </div>
         ) : (
           <motion.div layout className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
-            <AnimatePresence mode='popLayout'>
+            <AnimatePresence>
               {filtered.map((tab, i) => (
-                <TabCard
+                <motion.div
                   key={tab.id}
-                  tab={tab}
-                  locale={locale}
-                  buyLabel={t('buy')}
-                  showDetails
-                  index={i}
-                />
+                  layout
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <TabCard tab={tab} locale={locale} buyLabel={t('buy')} showDetails index={i} tooltipPrefix='catalog' />
+                </motion.div>
               ))}
             </AnimatePresence>
           </motion.div>

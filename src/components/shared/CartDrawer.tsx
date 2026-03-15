@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { X, Trash2, Music, ShoppingCart } from 'lucide-react';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
@@ -8,6 +8,8 @@ import { useCart } from '@/context/CartContext';
 import { toast } from 'sonner';
 import { CheckoutForm } from '@/components/shared/CheckoutForm';
 import type { Tab } from '@/types';
+import { DISCOUNT_TIER_1_MIN, DISCOUNT_TIER_1_RATE, DISCOUNT_TIER_2_MIN, DISCOUNT_TIER_2_RATE, TABLE_TABS } from '@/lib/constants';
+import { supabase } from '@/lib/supabase';
 
 interface CartDrawerProps {
   open: boolean;
@@ -19,6 +21,15 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
   const { items, removeItem, clearCart, subtotal, discountRate, discount, total, testMode } =
     useCart();
   const ru = locale !== 'en';
+  const [publishedCount, setPublishedCount] = useState(0);
+
+  useEffect(() => {
+    supabase
+      .from(TABLE_TABS)
+      .select('id', { count: 'exact', head: true })
+      .eq('is_published', true)
+      .then(({ count }) => setPublishedCount(count ?? 0));
+  }, []);
 
   useEffect(() => {
     if (open && items.length === 0) {
@@ -114,18 +125,18 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
               </div>
 
               {/* Discount hint */}
-              {items.length === 1 && (
+              {items.length === DISCOUNT_TIER_1_MIN - 1 && publishedCount >= DISCOUNT_TIER_1_MIN && (
                 <div className='mx-6 my-2 rounded-lg bg-amber-500/10 border border-amber-500/20 px-4 py-2.5 text-sm text-amber-600 dark:text-amber-400'>
                   {ru
-                    ? 'Добавь ещё 1 таб и получи скидку 10% 🎸'
-                    : 'Add 1 more tab and get 10% off 🎸'}
+                    ? `Добавь ещё 1 таб и получи скидку ${DISCOUNT_TIER_1_RATE * 100}% 🎸`
+                    : `Add 1 more tab and get ${DISCOUNT_TIER_1_RATE * 100}% off 🎸`}
                 </div>
               )}
-              {items.length === 2 && (
+              {items.length === DISCOUNT_TIER_2_MIN - 1 && publishedCount >= DISCOUNT_TIER_2_MIN && (
                 <div className='mx-6 my-2 rounded-lg bg-amber-500/10 border border-amber-500/20 px-4 py-2.5 text-sm text-amber-600 dark:text-amber-400'>
                   {ru
-                    ? 'Добавь ещё 1 таб, и скидка вырастет до 15% 🎸'
-                    : 'Add 1 more tab and discount grows to 15% 🎸'}
+                    ? `Добавь ещё 1 таб, и скидка вырастет до ${DISCOUNT_TIER_2_RATE * 100}% 🎸`
+                    : `Add 1 more tab and discount grows to ${DISCOUNT_TIER_2_RATE * 100}% 🎸`}
                 </div>
               )}
 

@@ -18,7 +18,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { Tooltip as ReactTooltip } from 'react-tooltip';
 import type { Tab } from '@/types';
 
 export default function PublishedPage() {
@@ -93,33 +93,41 @@ export default function PublishedPage() {
                 purchasesLabel={`${tab.purchase_count ?? 0} покупок`}
                 adminActions={
                   <div className='flex items-center gap-1.5'>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Link
-                          href={`/${locale}/admin/edit/${tab.id}`}
-                          className={`flex items-center justify-center w-8 h-8 rounded-full border transition-colors ${isTouch ? 'border-amber-400 text-amber-500' : 'border-border text-muted-foreground hover:border-amber-400 hover:text-amber-500'}`}
-                        >
-                          <Pencil className='h-3.5 w-3.5' />
-                        </Link>
-                      </TooltipTrigger>
-                      <TooltipContent>Изменить</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={() => setConfirmTab(tab)}
-                          disabled={unpublishing === tab.id}
-                          className={`flex items-center justify-center w-8 h-8 rounded-full border disabled:opacity-60 transition-colors cursor-pointer ${isTouch ? 'border-red-400 text-red-500' : 'border-border text-muted-foreground hover:border-red-400 hover:text-red-500'}`}
-                        >
-                          {unpublishing === tab.id ? (
-                            <Loader2 className='h-3.5 w-3.5 animate-spin' />
-                          ) : (
-                            <EyeOff className='h-3.5 w-3.5' />
-                          )}
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent>Снять с публикации</TooltipContent>
-                    </Tooltip>
+                    <Link
+                      data-tooltip-id={`pub-edit-${tab.id}`}
+                      data-tooltip-content='Изменить'
+                      href={`/${locale}/admin/edit/${tab.id}`}
+                      className={`flex items-center justify-center w-8 h-8 rounded-full border transition-colors ${isTouch ? 'border-amber-400 text-amber-500' : 'border-border text-muted-foreground hover:border-amber-400 hover:text-amber-500'}`}
+                    >
+                      <Pencil className='h-3.5 w-3.5' />
+                    </Link>
+                    <ReactTooltip
+                      id={`pub-edit-${tab.id}`}
+                      place='top'
+                      hidden={isTouch}
+                      opacity={1}
+                      delayShow={isTouch ? 0 : 350}
+                    />
+                    <button
+                      data-tooltip-id={`pub-hide-${tab.id}`}
+                      data-tooltip-content='Снять с публикации'
+                      onClick={() => setConfirmTab(tab)}
+                      disabled={unpublishing === tab.id}
+                      className={`flex items-center justify-center w-8 h-8 rounded-full border disabled:opacity-60 transition-colors cursor-pointer ${isTouch ? 'border-red-400 text-red-500' : 'border-border text-muted-foreground hover:border-red-400 hover:text-red-500'}`}
+                    >
+                      {unpublishing === tab.id ? (
+                        <Loader2 className='h-3.5 w-3.5 animate-spin' />
+                      ) : (
+                        <EyeOff className='h-3.5 w-3.5' />
+                      )}
+                    </button>
+                    <ReactTooltip
+                      id={`pub-hide-${tab.id}`}
+                      place='top'
+                      hidden={isTouch}
+                      opacity={1}
+                      delayShow={isTouch ? 0 : 350}
+                    />
                   </div>
                 }
               />

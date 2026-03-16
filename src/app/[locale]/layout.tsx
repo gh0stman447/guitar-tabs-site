@@ -25,11 +25,11 @@ const geistMono = Geist_Mono({
 
 const META = {
   ru: {
-    title: 'Гитарные табы — Олег Малыгин',
+    title: 'Табы | OlegGuitar',
     description: 'Авторские гитарные табы и аранжировки для гитары. Купить ноты и табулатуры.',
   },
   en: {
-    title: 'Guitar Tabs — Oleg Malygin',
+    title: 'Tabs | OlegGuitar',
     description: 'Original guitar tabs and arrangements. Buy sheet music and guitar tablatures.',
   },
 };

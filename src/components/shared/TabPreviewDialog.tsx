@@ -12,7 +12,7 @@ interface TabPreviewDialogProps {
   locale: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onNotFound?: () => void;
+  onBuy?: () => void;
 }
 
 export function TabPreviewDialog({
@@ -20,23 +20,41 @@ export function TabPreviewDialog({
   locale,
   open,
   onOpenChange,
-  onNotFound,
+  onBuy,
 }: TabPreviewDialogProps) {
   const title = locale === 'en' ? tab.title_en : tab.title_ru;
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const pageRef = useRef<import('pdfjs-dist/types/src/display/api').PDFPageProxy | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const autoScrollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const userScrolledRef = useRef(false);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+
+  function renderPage(containerWidth: number) {
+    const page = pageRef.current;
+    const canvas = canvasRef.current;
+    if (!page || !canvas) return;
+    const dpr = Math.max(window.devicePixelRatio || 1, 2);
+    const viewport = page.getViewport({ scale: 1 });
+    const scale = (containerWidth / viewport.width) * dpr;
+    const scaledViewport = page.getViewport({ scale });
+    canvas.width = scaledViewport.width;
+    canvas.height = scaledViewport.height;
+    canvas.style.width = `${containerWidth}px`;
+    canvas.style.height = `${scaledViewport.height / dpr}px`;
+    const ctx = canvas.getContext('2d')!;
+    page.render({ canvasContext: ctx, viewport: scaledViewport });
+  }
 
   useEffect(() => {
     if (!open) return;
 
     let cancelled = false;
     setLoading(true);
-    setError(false);
 
-    async function render() {
+    async function load() {
       try {
         const pdfjsLib = await import('pdfjs-dist');
         pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
@@ -45,9 +63,12 @@ export function TabPreviewDialog({
           cache: 'no-store',
         });
         if (!response.ok) {
-          onNotFound?.();
           onOpenChange(false);
-          toast.error(locale === 'en' ? 'Failed to load preview' : 'Не удалось загрузить превью');
+          toast.error(
+            locale === 'en'
+              ? 'Failed to load preview. Try again.'
+              : 'Не удалось загрузить превью. Попробуйте ещё раз.',
+          );
           return;
         }
 
@@ -64,39 +85,102 @@ export function TabPreviewDialog({
         const canvas = canvasRef.current;
         if (!canvas) throw new Error('Canvas not available');
 
-        const containerWidth = canvas.parentElement?.clientWidth ?? 600;
-        const dpr = Math.max(window.devicePixelRatio || 1, 2);
-        const viewport = page.getViewport({ scale: 1 });
-        const scale = (containerWidth / viewport.width) * dpr;
-        const scaledViewport = page.getViewport({ scale });
-
-        canvas.width = scaledViewport.width;
-        canvas.height = scaledViewport.height;
-        canvas.style.width = `${containerWidth}px`;
-        canvas.style.height = `${scaledViewport.height / dpr}px`;
-
-        const ctx = canvas.getContext('2d')!;
-        await page.render({ canvasContext: ctx, viewport: scaledViewport }).promise;
+        pageRef.current = page;
+        renderPage(canvas.parentElement?.clientWidth ?? 600);
       } catch (e) {
         console.error('[TabPreview] render error:', e);
-        if (!cancelled) setError(true);
+        if (!cancelled) {
+          onOpenChange(false);
+          toast.error(
+            locale === 'en'
+              ? 'Failed to load preview. Try again.'
+              : 'Не удалось загрузить превью. Попробуйте ещё раз.',
+          );
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
     }
 
-    render();
+    load();
     return () => {
       cancelled = true;
+      pageRef.current = null;
     };
-  }, [open, tab.id, locale, onNotFound, onOpenChange]);
+  }, [open, tab.id, locale, onOpenChange]);
+
+  useEffect(() => {
+    if (loading) return;
+    const el = scrollRef.current;
+    if (!el) return;
+
+    userScrolledRef.current = false;
+
+    function onUserScroll() {
+      userScrolledRef.current = true;
+      stopAutoScroll();
+    }
+
+    function stopAutoScroll() {
+      if (autoScrollRef.current) {
+        clearInterval(autoScrollRef.current);
+        autoScrollRef.current = null;
+      }
+      el?.removeEventListener('wheel', onUserScroll);
+      el?.removeEventListener('touchstart', onUserScroll);
+    }
+
+    el.addEventListener('wheel', onUserScroll, { passive: true });
+    el.addEventListener('touchstart', onUserScroll, { passive: true });
+
+    const startDelay = setTimeout(() => {
+      if (userScrolledRef.current) return;
+      autoScrollRef.current = setInterval(() => {
+        if (!el || userScrolledRef.current) {
+          stopAutoScroll();
+          return;
+        }
+        el.scrollBy({ top: 1, behavior: 'instant' });
+        if (el.scrollTop + el.clientHeight >= el.scrollHeight - 2) {
+          stopAutoScroll();
+        }
+      }, 10);
+    }, 1000);
+
+    return () => {
+      clearTimeout(startDelay);
+      stopAutoScroll();
+    };
+  }, [loading]);
+
+  useEffect(() => {
+    if (!open) return;
+    let timer: ReturnType<typeof setTimeout>;
+    function onResize() {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        renderPage(canvas.parentElement?.clientWidth ?? 600);
+      }, 150);
+    }
+    window.addEventListener('resize', onResize);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      clearTimeout(timer);
+    };
+  }, [open]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='max-w-2xl w-full p-0 gap-0 overflow-hidden' showCloseButton={false}>
+      <DialogContent
+        className='max-w-2xl w-full p-0 gap-0 overflow-hidden flex flex-col'
+        style={{ maxHeight: '90dvh' }}
+        showCloseButton={false}
+      >
         <DialogHeader
           style={{ backgroundColor: isDark ? undefined : 'rgba(68,77,86,0.1)' }}
-          className='px-6 pt-4 pb-4 flex flex-row items-center justify-between'
+          className='px-6 pt-4 pb-4 flex flex-row items-center justify-between shrink-0'
         >
           <DialogTitle className='text-base font-semibold'>{title}</DialogTitle>
           <button
@@ -107,54 +191,70 @@ export function TabPreviewDialog({
           </button>
         </DialogHeader>
 
-        {/* Wrapper с A4-пропорцией — окно не скачет пока грузится */}
+        {/* Канвас — скролл если не помещается */}
         <div
-          className='relative w-full'
-          style={{ aspectRatio: '1 / 1.414', backgroundColor: isDark ? '#18181b' : '#ffffff' }}
+          ref={scrollRef}
+          className='overflow-y-auto overflow-x-hidden min-h-0 flex-1 [scrollbar-width:thin] [scrollbar-color:var(--color-zinc-400)_transparent] dark:[scrollbar-color:var(--color-zinc-600)_transparent]'
         >
-          {/* Спиннер */}
-          {loading && (
-            <div className='absolute inset-0 z-10 flex items-center justify-center'>
-              <Loader2 className='h-8 w-8 animate-spin text-amber-500' />
-            </div>
-          )}
+          <div
+            className='relative'
+            style={{
+              backgroundColor: isDark ? '#18181b' : '#ffffff',
+              aspectRatio: loading ? '1 / 1.414' : undefined,
+            }}
+          >
+            {/* Спиннер поверх canvas пока грузится */}
+            {loading && (
+              <div className='absolute inset-0 z-10 flex items-center justify-center'>
+                <Loader2 className='h-8 w-8 animate-spin text-amber-500' />
+              </div>
+            )}
 
-          {/* Ошибка */}
-          {error && !loading && (
-            <div className='absolute inset-0 flex items-center justify-center text-sm text-muted-foreground bg-zinc-100 dark:bg-zinc-900'>
-              Не удалось загрузить превью
-            </div>
-          )}
-
-          {/* Canvas — всегда в DOM чтобы ref работал */}
-          <div className={`absolute inset-0 ${loading || error ? 'invisible' : ''}`}>
-            <canvas ref={canvasRef} className='w-full block' />
-
-            {/* Градиент-блюр нижней половины */}
+            {/* Canvas — всегда в DOM чтобы ref работал */}
             <div
-              className='absolute inset-x-0 bottom-0 pointer-events-none dark:hidden'
-              style={{
-                height: '55%',
-                background:
-                  'linear-gradient(to bottom, transparent 0%, rgba(250,250,250,0.7) 35%, rgba(255,255,255,1) 65%)',
-              }}
-            />
-            <div
-              className='absolute inset-x-0 bottom-0 pointer-events-none hidden dark:block'
-              style={{
-                height: '75%',
-                background:
-                  'linear-gradient(to bottom, transparent 0%, rgba(24,24,27,0.7) 35%, rgba(24,24,27,0.99) 65%)',
-              }}
-            />
-
-            {/* Текст поверх блюра */}
-            <div
-              className='absolute inset-x-0 bottom-0 flex flex-col items-center justify-end pb-8 gap-1.5 pointer-events-none'
-              style={{ height: '55%' }}
+              className='relative transition-opacity duration-500'
+              style={{ opacity: loading ? 0 : 1 }}
             >
-              <p className='text-sm font-medium text-zinc-800'>Только первая страница</p>
-              <p className='text-xs text-zinc-600'>Купите таб, чтобы получить полный файл</p>
+              <canvas ref={canvasRef} className='w-full block' />
+
+              <div
+                className='absolute inset-x-0 bottom-0 pointer-events-none'
+                style={{
+                  height: '55%',
+                  opacity: 1,
+                  background: isDark
+                    ? 'linear-gradient(to bottom, transparent 0%, rgba(24,24,27,0.2) 15%, rgba(24,24,27,0.6) 35%, rgba(24,24,27,0.92) 55%, rgba(24,24,27, 1) 70%)'
+                    : 'linear-gradient(to bottom, transparent 0%, rgba(250,250,250,0.7) 35%, rgba(255,255,255,1) 65%)',
+                }}
+              />
+              <div
+                className='absolute inset-x-0 bottom-0 flex flex-col items-center justify-end pb-8 gap-1.5 pointer-events-none'
+                style={{ height: '55%' }}
+              >
+                <p className={`text-sm font-medium ${isDark ? 'text-zinc-200' : 'text-zinc-800'}`}>
+                  {locale === 'en' ? 'First page only' : 'Только первая страница'}
+                </p>
+                {onBuy ? (
+                  <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
+                    <button
+                      className='text-amber-500 pointer-events-auto cursor-pointer hover:scale-105 transition-transform inline-block'
+                      onClick={() => {
+                        onOpenChange(false);
+                        onBuy();
+                      }}
+                    >
+                      {locale === 'en' ? 'Buy the tab' : 'Купите таб'}
+                    </button>
+                    {locale === 'en' ? ' to get the full file' : ', чтобы получить полный файл'}
+                  </p>
+                ) : (
+                  <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
+                    {locale === 'en'
+                      ? 'Buy the tab to get the full file'
+                      : 'Купите таб, чтобы получить полный файл'}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>

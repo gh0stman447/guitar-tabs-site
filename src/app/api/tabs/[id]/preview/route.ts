@@ -12,6 +12,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     .single();
 
   if (error || !tab) {
+    console.error('Tab fetch error:', JSON.stringify(error));
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 

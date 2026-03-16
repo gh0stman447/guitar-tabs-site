@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTheme } from 'next-themes';
 import { Loader2, X } from 'lucide-react';
+import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import type { Tab } from '@/types';
 
@@ -46,6 +47,7 @@ export function TabPreviewDialog({
         if (!response.ok) {
           onNotFound?.();
           onOpenChange(false);
+          toast.error(locale === 'en' ? 'Failed to load preview' : 'Не удалось загрузить превью');
           return;
         }
 
@@ -87,14 +89,14 @@ export function TabPreviewDialog({
     return () => {
       cancelled = true;
     };
-  }, [open, tab.id, onNotFound, onOpenChange]);
+  }, [open, tab.id, locale, onNotFound, onOpenChange]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='max-w-2xl w-full p-0 overflow-hidden' showCloseButton={false}>
+      <DialogContent className='max-w-2xl w-full p-0 gap-0 overflow-hidden' showCloseButton={false}>
         <DialogHeader
           style={{ backgroundColor: isDark ? undefined : 'rgba(68,77,86,0.1)' }}
-          className='px-6 pt-6 pb-4 flex flex-row items-center justify-between'
+          className='px-6 pt-4 pb-4 flex flex-row items-center justify-between'
         >
           <DialogTitle className='text-base font-semibold'>{title}</DialogTitle>
           <button
@@ -132,7 +134,7 @@ export function TabPreviewDialog({
             <div
               className='absolute inset-x-0 bottom-0 pointer-events-none dark:hidden'
               style={{
-                height: '75%',
+                height: '55%',
                 background:
                   'linear-gradient(to bottom, transparent 0%, rgba(250,250,250,0.7) 35%, rgba(255,255,255,1) 65%)',
               }}
@@ -151,8 +153,8 @@ export function TabPreviewDialog({
               className='absolute inset-x-0 bottom-0 flex flex-col items-center justify-end pb-8 gap-1.5 pointer-events-none'
               style={{ height: '55%' }}
             >
-              <p className='text-sm font-medium text-white'>Только первая страница</p>
-              <p className='text-xs text-white/70 '>Купите таб, чтобы получить полный файл</p>
+              <p className='text-sm font-medium text-zinc-800'>Только первая страница</p>
+              <p className='text-xs text-zinc-600'>Купите таб, чтобы получить полный файл</p>
             </div>
           </div>
         </div>

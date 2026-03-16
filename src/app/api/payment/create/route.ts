@@ -3,7 +3,8 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 import { TABLE_TABS, TABLE_CUSTOMERS, TABLE_PURCHASES, BUCKET_TAB_FILES } from '@/lib/constants';
 
 export async function POST(req: NextRequest) {
-  const { tab_id, tab_ids, firstname, email, newsletter, test } = await req.json();
+  const { tab_id, tab_ids, firstname, email: rawEmail, newsletter, test } = await req.json();
+  const email = rawEmail?.trim().toLowerCase();
 
   // Support both single tab_id and array tab_ids
   const ids: string[] = tab_ids ?? (tab_id ? [tab_id] : []);

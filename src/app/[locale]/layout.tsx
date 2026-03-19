@@ -92,8 +92,32 @@ export default async function LocaleLayout({
 
   const messages = await getMessages();
 
+  const websiteSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'OlegGuitar',
+    url: 'https://www.olegguitar.com',
+    inLanguage: locale === 'ru' ? 'ru-RU' : 'en-US',
+    description:
+      locale === 'ru'
+        ? 'Авторские гитарные табы и аранжировки для гитары'
+        : 'Original guitar tabs and arrangements',
+    author: {
+      '@type': 'Person',
+      name: 'Oleg',
+      url: 'https://www.olegguitar.com',
+      knowsAbout: ['Guitar', 'Music Arrangement', 'Guitar Tablature'],
+    },
+  };
+
   return (
     <html lang={locale} suppressHydrationWarning>
+      <head>
+        <script
+          type='application/ld+json'
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+        />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider attribute='class' defaultTheme='dark' enableSystem>

@@ -4,16 +4,46 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 import { TABLE_TABS, TABLE_PURCHASES, BUCKET_TAB_FILES } from '@/lib/constants';
 
 interface YookassaPayment {
+  id?: string;
+  status?: string;
   metadata?: {
     purchase_id?: string;
     customer_email?: string;
   };
 }
 
+async function verifyWithYookassa(paymentId: string, test: boolean): Promise<boolean> {
+  const shopId = test ? process.env.YUKASSA_TEST_SHOP_ID : process.env.YUKASSA_SHOP_ID;
+  const secretKey = test ? process.env.YUKASSA_TEST_SECRET_KEY : process.env.YUKASSA_SECRET_KEY;
+
+  if (!shopId || !secretKey) return true; // dev mode, skip verification
+
+  const res = await fetch(`https://api.yookassa.ru/v3/payments/${paymentId}`, {
+    headers: {
+      Authorization: `Basic ${Buffer.from(`${shopId}:${secretKey}`).toString('base64')}`,
+    },
+  });
+
+  if (!res.ok) return false;
+  const data = await res.json();
+  return data.status === 'succeeded';
+}
+
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const event = body.event as string;
   const payment = body.object as YookassaPayment;
+
+  if (event === 'payment.succeeded') {
+    if (!payment?.id) {
+      return NextResponse.json({ error: 'Missing payment id' }, { status: 400 });
+    }
+    const isTest = !!body.object?.test;
+    const verified = await verifyWithYookassa(payment.id, isTest);
+    if (!verified) {
+      return NextResponse.json({ error: 'Payment verification failed' }, { status: 403 });
+    }
+  }
 
   switch (event) {
     case 'payment.succeeded':

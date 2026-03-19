@@ -10,6 +10,7 @@ import { CartDrawer } from './CartDrawer';
 import { useCart } from '@/context/CartContext';
 import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
+import { useAdmin } from '@/context/AdminContext';
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useIsTouch } from '@/hooks/useIsTouch';
 
@@ -22,15 +23,10 @@ export function Header() {
   const [hidden, setHidden] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { isAdmin } = useAdmin();
 
   const isTouch = useIsTouch();
   const { count } = useCart();
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsAdmin(document.cookie.includes('admin_session='));
-  }, []);
 
   useEffect(() => {
     let lastY = window.scrollY;

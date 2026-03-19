@@ -9,7 +9,7 @@ import {
 export async function POST(req: NextRequest) {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
 
-  const { blocked, remaining } = checkRateLimit(ip);
+  const { blocked } = checkRateLimit(ip);
   if (blocked) {
     return NextResponse.json(
       { error: 'Слишком много попыток. Попробуйте через 15 минут.' },
@@ -21,8 +21,15 @@ export async function POST(req: NextRequest) {
 
   if (password !== process.env.ADMIN_PASSWORD) {
     recordFailedAttempt(ip);
+    const { remaining: remainingAfter, blocked: blockedAfter } = checkRateLimit(ip);
+    if (blockedAfter) {
+      return NextResponse.json(
+        { error: 'Слишком много попыток. Попробуйте через 15 минут.' },
+        { status: 429 },
+      );
+    }
     return NextResponse.json(
-      { error: `Неверный пароль. Осталось попыток: ${remaining - 1}` },
+      { error: `Неверный пароль. Осталось попыток: ${remainingAfter}` },
       { status: 401 },
     );
   }

@@ -1,25 +1,23 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Loader2, Music, Lock } from 'lucide-react';
 import { Header } from '@/components/shared/Header';
 import Link from 'next/link';
-import { isAdminAuthed } from '@/lib/admin-auth';
 import { Field, inputCls, DropZone, FORMAT_ACCEPT } from '@/components/admin/AdminFormFields';
 import { FORMATS } from '@/types';
+import { useAdmin } from '@/context/AdminContext';
 
 export default function AdminPage() {
   const router = useRouter();
   const params = useParams();
   const locale = params.locale as string;
 
+  const { isAdmin: authed, setIsAdmin } = useAdmin();
   const [password, setPassword] = useState('');
-  const [authed, setAuthed] = useState(false);
-  useEffect(() => {
-    if (isAdminAuthed()) setAuthed(true);
-  }, []);
-  const [authError, setAuthError] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [loginBlocked, setLoginBlocked] = useState(false);
 
   const [titleRu, setTitleRu] = useState('');
   const [titleEn, setTitleEn] = useState('');
@@ -41,9 +39,13 @@ export default function AdminPage() {
       body: JSON.stringify({ password }),
     });
     if (res.ok) {
+      setIsAdmin(true);
       router.push(`/${locale}`);
     } else {
-      setAuthError(true);
+      const data = await res.json();
+      const msg = data.error ?? 'Неверный пароль';
+      setAuthError(msg);
+      if (res.status === 429) setLoginBlocked(true);
     }
   }
 
@@ -65,17 +67,18 @@ export default function AdminPage() {
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value);
-                setAuthError(false);
+                setAuthError(null);
               }}
-              onKeyDown={(e) => e.key === 'Enter' && tryAuth()}
-              className={`${inputCls} ${authError ? 'border-red-500 focus:ring-red-500' : ''}`}
+              onKeyDown={(e) => e.key === 'Enter' && !loginBlocked && tryAuth()}
+              className={`${inputCls} ${authError !== null ? 'border-red-500 focus:ring-red-500' : ''}`}
             />
-            {authError && <p className='text-sm text-red-500'>Неверный пароль</p>}
+            {authError && <p className='text-sm text-red-500'>{authError}</p>}
             <button
               onClick={tryAuth}
-              className='w-full bg-amber-500 hover:bg-amber-600 text-white rounded-full py-2 text-sm font-medium transition-colors'
+              disabled={loginBlocked}
+              className='w-full bg-amber-500 hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-full py-2 text-sm font-medium transition-colors'
             >
-              Войти
+              {loginBlocked ? 'Заблокировано на 15 минут' : 'Войти'}
             </button>
           </div>
         </div>

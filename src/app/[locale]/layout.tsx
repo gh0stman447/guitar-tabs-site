@@ -8,6 +8,7 @@ import { routing } from '@/i18n/routing';
 import { ScrollProgress } from '@/components/shared/ScrollProgress';
 import { CartProvider } from '@/context/CartContext';
 import { CartAnimationProvider } from '@/context/CartAnimationContext';
+import { AdminProvider } from '@/context/AdminContext';
 import { ThemedToaster } from '@/components/shared/ThemedToaster';
 import { FloatingCart } from '@/components/shared/FloatingCart';
 import { NoteParticles } from '@/components/shared/NoteParticles';
@@ -121,6 +122,7 @@ export default async function LocaleLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider attribute='class' defaultTheme='dark' enableSystem>
+            <AdminProvider>
             <CartProvider>
               <CartAnimationProvider>
                 <ScrollProgress />
@@ -130,6 +132,7 @@ export default async function LocaleLayout({
                 <ThemedToaster />
               </CartAnimationProvider>
             </CartProvider>
+            </AdminProvider>
           </ThemeProvider>
         </NextIntlClientProvider>
       </body>

@@ -1,28 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { useParams } from 'next/navigation';
 import { Loader2, Mail, Send } from 'lucide-react';
 import { Header } from '@/components/shared/Header';
 import Link from 'next/link';
-import { isAdminAuthed } from '@/lib/admin-auth';
 import { SITE_URL } from '@/lib/constants';
 import { Field, inputCls } from '@/components/admin/AdminFormFields';
+import { useAdmin } from '@/context/AdminContext';
 
 export default function NewsletterPage() {
   const params = useParams();
   const locale = params.locale as string;
-  const router = useRouter();
-
-  const [authed, setAuthed] = useState(false);
-  useEffect(() => {
-    if (!isAdminAuthed()) {
-      router.replace('/');
-    } else {
-      setAuthed(true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const { isAdmin: authed } = useAdmin();
 
   const [subject, setSubject] = useState('');
   const [tabTitle, setTabTitle] = useState('');

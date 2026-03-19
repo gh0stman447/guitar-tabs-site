@@ -1,24 +1,23 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { Loader2, Music, ArrowLeft } from 'lucide-react';
 import { Header } from '@/components/shared/Header';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import { isAdminAuthed } from '@/lib/admin-auth';
 import { TABLE_TABS } from '@/lib/constants';
+import { useAdmin } from '@/context/AdminContext';
 import { Field, inputCls, DropZone, FORMAT_ACCEPT } from '@/components/admin/AdminFormFields';
 import type { Tab } from '@/types';
 import { FORMATS } from '@/types';
 
 export default function EditTabPage() {
-  const router = useRouter();
   const params = useParams();
   const locale = params.locale as string;
   const tabId = params.id as string;
 
-  const [authed, setAuthed] = useState(false);
+  const { isAdmin: authed } = useAdmin();
   const [tab, setTab] = useState<Tab | null>(null);
   const [loadingTab, setLoadingTab] = useState(true);
 
@@ -37,11 +36,7 @@ export default function EditTabPage() {
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
 
   useEffect(() => {
-    if (!isAdminAuthed()) {
-      router.replace('/');
-      return;
-    }
-    setAuthed(true);
+    if (!authed) return;
     supabase
       .from(TABLE_TABS)
       .select('*')
@@ -61,8 +56,7 @@ export default function EditTabPage() {
         }
         setLoadingTab(false);
       });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tabId]);
+  }, [authed, tabId]);
 
   if (!authed) return null;
 

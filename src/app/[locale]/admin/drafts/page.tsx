@@ -1,14 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useIsTouch } from '@/hooks/useIsTouch';
 import { Header } from '@/components/shared/Header';
 import { Loader2, ShoppingCart, CheckCircle2, Trash2, Pencil } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import { isAdminAuthed } from '@/lib/admin-auth';
 import { TABLE_TABS } from '@/lib/constants';
+import { useAdmin } from '@/context/AdminContext';
 import { TabCard } from '@/components/shared/TabCard/TabCard';
 import { useCart } from '@/context/CartContext';
 import { toast } from 'sonner';
@@ -24,11 +24,10 @@ import { Tooltip as ReactTooltip } from 'react-tooltip';
 import type { Tab } from '@/types';
 
 export default function DraftsPage() {
-  const router = useRouter();
   const params = useParams();
   const locale = (params?.locale as string) ?? 'ru';
 
-  const [authed, setAuthed] = useState(false);
+  const { isAdmin: authed } = useAdmin();
   const [tabs, setTabs] = useState<Tab[]>([]);
   const [loading, setLoading] = useState(true);
   const [publishing, setPublishing] = useState<string | null>(null);
@@ -45,11 +44,7 @@ export default function DraftsPage() {
   }, []);
 
   useEffect(() => {
-    if (!isAdminAuthed()) {
-      router.replace('/');
-      return;
-    }
-    setAuthed(true);
+    if (!authed) return;
     supabase
       .from(TABLE_TABS)
       .select('*')
@@ -59,7 +54,7 @@ export default function DraftsPage() {
         setLoading(false);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [authed]);
 
   async function deleteTab(id: string) {
     setDeleting(id);

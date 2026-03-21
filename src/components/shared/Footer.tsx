@@ -29,7 +29,7 @@ export function Footer() {
             target='_blank'
             className='hover:text-foreground transition-colors underline underline-offset-4'
           >
-            Политика конфиденциальности
+            {t('privacy')}
           </Link>
           <span>
             © {new Date().getFullYear()} {t('rights')}

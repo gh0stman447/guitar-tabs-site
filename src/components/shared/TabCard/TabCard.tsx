@@ -183,25 +183,27 @@ export function TabCard({
               <div className='flex items-center justify-between mt-auto pt-3 border-t border-border'>
                 <span className='text-lg font-bold'>{tab.price} ₽</span>
                 <div className='flex items-center gap-2'>
-                  <>
-                    <Button
-                      data-tooltip-id={`prev-${tp}${tab.id}`}
-                      data-tooltip-content={locale === 'en' ? 'Preview' : 'Превью'}
-                      size='sm'
-                      variant='outline'
-                      className={`rounded-full w-9 h-9 p-0 shrink-0 transition-colors bg-transparent hover:bg-transparent dark:bg-transparent dark:hover:bg-transparent ${isTouch ? 'border-border text-foreground' : 'hover:border-amber-500 hover:text-amber-500'}`}
-                      onClick={() => setPreviewOpen(true)}
-                    >
-                      <Eye className='h-4 w-4' />
-                    </Button>
-                    <ReactTooltip
-                      id={`prev-${tp}${tab.id}`}
-                      place='top'
-                      hidden={isTouch}
-                      opacity={1}
-                      delayShow={350}
-                    />
-                  </>
+                  {tab.files.pdf && (
+                    <>
+                      <Button
+                        data-tooltip-id={`prev-${tp}${tab.id}`}
+                        data-tooltip-content={locale === 'en' ? 'Preview' : 'Превью'}
+                        size='sm'
+                        variant='outline'
+                        className={`rounded-full w-9 h-9 p-0 shrink-0 transition-colors bg-transparent hover:bg-transparent dark:bg-transparent dark:hover:bg-transparent ${isTouch ? 'border-border text-foreground' : 'hover:border-amber-500 hover:text-amber-500'}`}
+                        onClick={() => setPreviewOpen(true)}
+                      >
+                        <Eye className='h-4 w-4' />
+                      </Button>
+                      <ReactTooltip
+                        id={`prev-${tp}${tab.id}`}
+                        place='top'
+                        hidden={isTouch}
+                        opacity={1}
+                        delayShow={350}
+                      />
+                    </>
+                  )}
                   {tab.youtube_url && (
                     <>
                       <a

@@ -49,6 +49,7 @@ export function Header() {
   }
 
   const isHome = pathname === `/${locale}` || pathname === `/${locale}/`;
+  const isAdminRoute = pathname.includes('/admin');
 
   function scrollToSection(id: string) {
     setSheetOpen(false);
@@ -155,15 +156,17 @@ export function Header() {
                   )}
                 </button>
               )}
-              <Button
-                variant='ghost'
-                size='icon'
-                onClick={switchLocale}
-                aria-label='Переключить язык'
-                className='text-xs font-semibold text-muted-foreground'
-              >
-                {locale === 'ru' ? 'EN' : 'RU'}
-              </Button>
+              {!isAdminRoute && (
+                <Button
+                  variant='ghost'
+                  size='icon'
+                  onClick={switchLocale}
+                  aria-label='Переключить язык'
+                  className='text-xs font-semibold text-muted-foreground'
+                >
+                  {locale === 'ru' ? 'EN' : 'RU'}
+                </Button>
+              )}
               <ThemeToggle />
               <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
                 <SheetTrigger asChild>

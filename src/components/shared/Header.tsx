@@ -48,13 +48,13 @@ export function Header() {
     router.push(segments.join('/') || '/');
   }
 
-  const isHome = pathname === `/${locale}` || pathname === `/${locale}/`;
   const isAdminRoute = pathname.includes('/admin');
 
   function scrollToSection(id: string) {
     setSheetOpen(false);
-    if (isHome) {
-      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
     } else {
       router.push(`/${locale}#${id}`);
     }

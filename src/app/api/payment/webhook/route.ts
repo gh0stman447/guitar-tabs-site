@@ -141,7 +141,7 @@ async function handlePaymentSucceeded(payment: YookassaPayment) {
   // 2. Get purchase with tab_ids
   const { data: purchase, error: purchaseError } = await supabaseAdmin
     .from(TABLE_PURCHASES)
-    .select('tab_id, tab_ids, amount, customers(firstname)')
+    .select('tab_id, tab_ids, amount, customer_id')
     .eq('id', purchaseId)
     .single();
 
@@ -171,9 +171,10 @@ async function handlePaymentSucceeded(payment: YookassaPayment) {
   }
 
   // 5. Generate receipt via RU proxy (перед отправкой email)
-  const customers = purchase.customers as unknown as { firstname: string }[] | null;
-  const customerName = customers?.[0]?.firstname || 'Покупатель';
-  const receiptUrl = await createReceipt(purchase.amount, customerName);
+  const serviceName = tabs.length === 1
+    ? tabs[0].title_ru
+    : `Гитарные табы (${tabs.length} шт.)`;
+  const receiptUrl = await createReceipt(purchase.amount, serviceName);
 
   // 6. Build zip archive
   const attachments = await buildZipAttachments(tabs);

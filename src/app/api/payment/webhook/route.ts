@@ -12,6 +12,57 @@ interface YookassaPayment {
   };
 }
 
+/**
+ * Запрос чека на российский сервер (Мой Налог)
+ */
+async function createReceipt(amount: number, customerName: string): Promise<string | null> {
+  а;
+  const proxyUrl = process.env.NALOG_PROXY_URL;
+  const proxyKey = process.env.NALOG_PROXY_KEY;
+  const testMode = process.env.NALOG_PROXY_TEST_MODE === 'true';
+
+  if (testMode) {
+    console.log('🧪 Test mode: skipping receipt creation');
+    return null;
+  }
+
+  if (!proxyUrl || !proxyKey) {
+    console.warn('⚠️ NALOG_PROXY_URL or NALOG_PROXY_KEY not configured, skipping receipt');
+    return null;
+  }
+
+  try {
+    const res = await fetch(`${proxyUrl}/create_receipt`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': proxyKey,
+      },
+      body: JSON.stringify({
+        amount: amount,
+        name: customerName || 'Покупатель',
+      }),
+    });
+
+    if (!res.ok) {
+      console.error(`❌ Receipt API error: ${res.status} ${res.statusText}`);
+      return null;
+    }
+
+    const data = await res.json();
+    if (data.status === 'success' && data.url) {
+      console.log('✅ Receipt created:', data.url);
+      return data.url;
+    } else {
+      console.error('❌ Receipt error:', data.error);
+      return null;
+    }
+  } catch (error) {
+    console.error('❌ Receipt request failed:', error);
+    return null;
+  }
+}
+
 async function verifyWithYookassa(paymentId: string, test: boolean): Promise<boolean> {
   const shopId = test ? process.env.YUKASSA_TEST_SHOP_ID : process.env.YUKASSA_SHOP_ID;
   const secretKey = test ? process.env.YUKASSA_TEST_SECRET_KEY : process.env.YUKASSA_SECRET_KEY;
@@ -91,7 +142,7 @@ async function handlePaymentSucceeded(payment: YookassaPayment) {
   // 2. Get purchase with tab_ids
   const { data: purchase, error: purchaseError } = await supabaseAdmin
     .from(TABLE_PURCHASES)
-    .select('tab_id, tab_ids, customers(firstname)')
+    .select('tab_id, tab_ids, amount, customers(firstname)')
     .eq('id', purchaseId)
     .single();
 
@@ -120,19 +171,30 @@ async function handlePaymentSucceeded(payment: YookassaPayment) {
       .eq('id', tab.id);
   }
 
-  // 5. Build zip archive
+  // 5. Generate receipt via RU proxy (перед отправкой email)
+  const customers = purchase.customers as unknown as { firstname: string }[] | null;
+  const customerName = customers?.[0]?.firstname || 'Покупатель';
+  const receiptUrl = await createReceipt(purchase.amount, customerName);
+
+  // 6. Build zip archive
   const attachments = await buildZipAttachments(tabs);
 
-  // 6. Send email
+  // 7. Send email с чеком
   const tabTitles = tabs.map((t) => t.title_ru).join(', ');
-  const emailId = await sendEmail({ to: customerEmail, tabTitles, attachments });
+  const emailId = await sendEmail({ to: customerEmail, tabTitles, attachments, receiptUrl });
 
-  // 7. Save email tracking info
+  // 8. Save email tracking info и ссылку на чек
+  const updateData: { resend_email_id?: string; email_status?: string; receipt_url?: string } = {};
   if (emailId) {
-    await supabaseAdmin
-      .from(TABLE_PURCHASES)
-      .update({ resend_email_id: emailId, email_status: 'sent' })
-      .eq('id', purchaseId);
+    updateData.resend_email_id = emailId;
+    updateData.email_status = 'sent';
+  }
+  if (receiptUrl) {
+    updateData.receipt_url = receiptUrl;
+  }
+
+  if (Object.keys(updateData).length > 0) {
+    await supabaseAdmin.from(TABLE_PURCHASES).update(updateData).eq('id', purchaseId);
   }
 
   return NextResponse.json({ ok: true });
@@ -175,10 +237,12 @@ async function sendEmail({
   to,
   tabTitles,
   attachments,
+  receiptUrl,
 }: {
   to: string;
   tabTitles: string;
   attachments: { filename: string; content: string }[];
+  receiptUrl?: string | null;
 }): Promise<string | null> {
   const emailService = process.env.EMAIL_SERVICE;
 
@@ -186,6 +250,8 @@ async function sendEmail({
     console.log(
       '📧 Would send email to:',
       to,
+      'Receipt:',
+      receiptUrl,
       'Attachments:',
       attachments.map((a) => a.filename),
     );
@@ -193,6 +259,14 @@ async function sendEmail({
   }
 
   if (emailService === 'resend') {
+    const receiptHtml = receiptUrl
+      ? `<p style="margin-top:20px;padding-top:20px;border-top:1px solid #eee">
+           <a href="${receiptUrl}" style="color:#f59e0b;text-decoration:none">
+             🧾 Чек на оплату
+           </a>
+         </p>`
+      : '';
+
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -209,7 +283,10 @@ async function sendEmail({
             <p>Ваши табы готовы к скачиванию:</p>
             <p><strong>${tabTitles}</strong></p>
             <p>Все файлы прикреплены к этому письму.</p>
-            <p style="color:#888;font-size:13px">Есть вопросы? Пишите в Telegram: <a href="https://t.me/MalyginOleg">@MalyginOleg</a></p>
+            ${receiptHtml}
+            <p style="color:#888;font-size:13px;margin-top:20px">
+              Есть вопросы? Пишите в Telegram: <a href="https://t.me/MalyginOleg">@MalyginOleg</a>
+            </p>
           </div>
         `,
         attachments: attachments.map(({ filename, content }) => ({ filename, content })),

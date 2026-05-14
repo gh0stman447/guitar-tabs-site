@@ -16,7 +16,6 @@ interface YookassaPayment {
  * Запрос чека на российский сервер (Мой Налог)
  */
 async function createReceipt(amount: number, customerName: string): Promise<string | null> {
-  а;
   const proxyUrl = process.env.NALOG_PROXY_URL;
   const proxyKey = process.env.NALOG_PROXY_KEY;
   const testMode = process.env.NALOG_PROXY_TEST_MODE === 'true';

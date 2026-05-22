@@ -4,7 +4,7 @@ import { TABLE_PURCHASES } from '@/lib/constants';
 
 // GET /api/purchases/[id] - get purchase by ID
 export async function GET(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {

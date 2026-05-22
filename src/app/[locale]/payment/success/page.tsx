@@ -4,7 +4,6 @@ import { CheckCircle2 } from 'lucide-react';
 import { Header } from '@/components/shared/Header';
 import { Footer } from '@/components/shared/Footer';
 import { Button } from '@/components/ui/button';
-import { TABLE_PURCHASES } from '@/lib/constants';
 
 export default async function PaymentSuccessPage({
   params,

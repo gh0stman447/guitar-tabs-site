@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import db from '@/lib/db';
 import { TABLE_CUSTOMERS } from '@/lib/constants';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-);
 
 export async function POST(req: NextRequest) {
   const adminSession = req.cookies.get('admin_session')?.value;
@@ -19,13 +14,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Заполните все поля' }, { status: 400 });
   }
 
-  const { data: customers, error } = await supabase
-    .from(TABLE_CUSTOMERS)
-    .select('email, firstname')
-    .eq('newsletter', true);
+  const { data: customers, error } = await db.from(TABLE_CUSTOMERS).select('email, firstname').eq('newsletter', true);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 
   if (!customers || customers.length === 0) {
@@ -34,7 +26,7 @@ export async function POST(req: NextRequest) {
 
   // deduplicate by email
   const seen = new Set<string>();
-  const unique = customers.filter((c) => {
+  const unique = (customers as Array<{ email: string; firstname: string }>).filter((c) => {
     if (seen.has(c.email)) return false;
     seen.add(c.email);
     return true;

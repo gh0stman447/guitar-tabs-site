@@ -163,7 +163,7 @@ async function handlePaymentSucceeded(payment: YookassaPayment) {
   }
 
   // 4. Increment purchase_count for each tab
-  for (const tab of tabs) {
+  for (const tab of tabs as Array<{ id: string; purchase_count: number | null }>) {
     await supabaseAdmin
       .from(TABLE_TABS)
       .update({ purchase_count: (tab.purchase_count ?? 0) + 1 })
@@ -171,16 +171,17 @@ async function handlePaymentSucceeded(payment: YookassaPayment) {
   }
 
   // 5. Generate receipt via RU proxy (перед отправкой email)
-  const serviceName = tabs.length === 1
-    ? tabs[0].title_ru
-    : `Гитарные табы (${tabs.length} шт.)`;
+  const tabsWithTitles = tabs as Array<{ id: string; title_ru: string; files: Record<string, string> }>;
+  const serviceName = tabsWithTitles.length === 1
+    ? tabsWithTitles[0].title_ru
+    : `Гитарные табы (${tabsWithTitles.length} шт.)`;
   const receiptUrl = await createReceipt(purchase.amount, serviceName);
 
   // 6. Build zip archive
-  const attachments = await buildZipAttachments(tabs);
+  const attachments = await buildZipAttachments(tabsWithTitles);
 
   // 7. Send email с чеком
-  const tabTitles = tabs.map((t) => t.title_ru).join(', ');
+  const tabTitles = tabsWithTitles.map((t) => t.title_ru).join(', ');
   const emailId = await sendEmail({ to: customerEmail, tabTitles, attachments, receiptUrl });
 
   // 8. Save email tracking info и ссылку на чек
@@ -218,9 +219,9 @@ async function buildZipAttachments(
         continue;
       }
 
-      const buffer = await data.arrayBuffer();
+      // data is already a Buffer from our storage implementation
       const filename = path.split('/').pop() ?? `tab.${format}`;
-      folder.file(filename, buffer);
+      folder.file(filename, data);
     }
   }
 

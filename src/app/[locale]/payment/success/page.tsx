@@ -4,7 +4,6 @@ import { CheckCircle2 } from 'lucide-react';
 import { Header } from '@/components/shared/Header';
 import { Footer } from '@/components/shared/Footer';
 import { Button } from '@/components/ui/button';
-import { supabaseAdmin } from '@/lib/supabase-admin';
 import { TABLE_PURCHASES } from '@/lib/constants';
 
 export default async function PaymentSuccessPage({
@@ -21,13 +20,18 @@ export default async function PaymentSuccessPage({
     redirect(`/${locale}`);
   }
 
-  const { data: purchase } = await supabaseAdmin
-    .from(TABLE_PURCHASES)
-    .select('status')
-    .eq('id', purchase_id)
-    .single();
+  // Fetch purchase from API
+  const res = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/purchases/${purchase_id}`, {
+    cache: 'no-store',
+  });
 
-  if (!purchase || purchase.status !== 'succeeded') {
+  if (!res.ok) {
+    redirect(`/${locale}`);
+  }
+
+  const purchase = await res.json();
+
+  if (purchase.status !== 'succeeded') {
     redirect(`/${locale}`);
   }
 

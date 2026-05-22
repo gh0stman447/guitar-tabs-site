@@ -23,9 +23,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Один или несколько табов не найдены' }, { status: 404 });
   }
 
+  const tabsData = tabs as Array<{ id: string; files: Record<string, string>; price: number; title_ru: string }>;
+
   // Validate files exist in storage
-  for (const tab of tabs) {
-    const files = tab.files as Record<string, string>;
+  for (const tab of tabsData) {
+    const files = tab.files;
     for (const [format, path] of Object.entries(files)) {
       const { error: downloadError } = await supabaseAdmin.storage
         .from(BUCKET_TAB_FILES)
@@ -40,7 +42,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const subtotal = tabs.reduce((sum, t) => sum + t.price, 0);
+  const subtotal = tabsData.reduce((sum, t) => sum + t.price, 0);
   const discountRate = ids.length >= 3 ? 0.15 : ids.length >= 2 ? 0.1 : 0;
   const totalAmount = subtotal - Math.round(subtotal * discountRate);
 
@@ -86,9 +88,9 @@ export async function POST(req: NextRequest) {
 
   const idempotenceKey = purchase.id;
   const description =
-    tabs.length === 1
-      ? `Гитарный таб #${tabs[0].id} (${(tabs[0] as { title_ru: string }).title_ru})`
-      : `Гитарные табы (${tabs.length} шт.): ${(tabs as { title_ru: string }[]).map((t) => t.title_ru).join(', ')}`;
+    tabsData.length === 1
+      ? `Гитарный таб #${tabsData[0].id} (${tabsData[0].title_ru})`
+      : `Гитарные табы (${tabsData.length} шт.): ${tabsData.map((t) => t.title_ru).join(', ')}`;
 
   const yukassaRes = await fetch('https://api.yookassa.ru/v3/payments', {
     method: 'POST',

@@ -35,12 +35,12 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: 'Failed to load PDF' }, { status: 500 });
   }
 
-  const buffer = await data.arrayBuffer();
-
-  return new NextResponse(buffer, {
+  // data is already a Buffer from our storage implementation
+  // Convert Buffer to ArrayBuffer for NextResponse body
+  return new NextResponse(data.buffer as ArrayBuffer, {
     headers: {
       'Content-Type': 'application/pdf',
-      'Content-Length': buffer.byteLength.toString(),
+      'Content-Length': data.byteLength.toString(),
       'Cache-Control': 'no-store',
     },
   });

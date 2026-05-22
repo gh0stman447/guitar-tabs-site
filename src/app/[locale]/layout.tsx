@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
 import { ThemeProvider } from 'next-themes';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
@@ -13,16 +12,6 @@ import { ThemedToaster } from '@/components/shared/ThemedToaster';
 import { FloatingCart } from '@/components/shared/FloatingCart';
 import { NoteParticles } from '@/components/shared/NoteParticles';
 import '../globals.css';
-
-const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
-});
 
 const META = {
   ru: {
@@ -119,7 +108,7 @@ export default async function LocaleLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
         />
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className='antialiased'>
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider attribute='class' defaultTheme='dark' enableSystem>
             <AdminProvider>

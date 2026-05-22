@@ -25,8 +25,8 @@ export function BestsellerSection() {
       .limit(3)
       .then(({ data }) => {
         if (data) {
-          const withPurchases = data.filter((t) => (t.purchase_count ?? 0) > 0);
-          setTopTabs(withPurchases as Tab[]);
+          const withPurchases = (data as Tab[]).filter((t) => (t.purchase_count ?? 0) > 0);
+          setTopTabs(withPurchases);
         }
         setLoading(false);
       });

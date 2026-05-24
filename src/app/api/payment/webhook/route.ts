@@ -19,12 +19,6 @@ interface YookassaPayment {
 async function createReceipt(amount: number, customerName: string): Promise<string | null> {
   const proxyUrl = process.env.NALOG_PROXY_URL;
   const proxyKey = process.env.NALOG_PROXY_KEY;
-  const testMode = process.env.NALOG_PROXY_TEST_MODE === 'true';
-
-  if (testMode) {
-    console.log('🧪 Test mode: skipping receipt creation');
-    return null;
-  }
 
   if (!proxyUrl || !proxyKey) {
     console.warn('⚠️ NALOG_PROXY_URL or NALOG_PROXY_KEY not configured, skipping receipt');

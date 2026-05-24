@@ -220,11 +220,11 @@ export function TabPreviewDialog({
               <div
                 className='absolute inset-x-0 bottom-0 pointer-events-none'
                 style={{
-                  height: '55%',
+                  height: '30%',
                   opacity: 1,
                   background: isDark
-                    ? 'linear-gradient(to bottom, transparent 0%, rgba(24,24,27,0.2) 15%, rgba(24,24,27,0.6) 35%, rgba(24,24,27,0.92) 55%, rgba(24,24,27, 1) 70%)'
-                    : 'linear-gradient(to bottom, transparent 0%, rgba(250,250,250,0.7) 35%, rgba(255,255,255,1) 65%)',
+                    ? 'linear-gradient(to bottom, transparent 0%, rgba(24,24,27,0.1) 20%, rgba(24,24,27,0.4) 50%, rgba(24,24,27,0.7) 80%, rgba(24,24,27, 1) 100%)'
+                    : 'linear-gradient(to bottom, transparent 0%, rgba(250,250,250,0.4) 40%, rgba(255,255,255,0.85) 70%, rgba(255,255,255,1) 100%)',
                 }}
               />
               <div

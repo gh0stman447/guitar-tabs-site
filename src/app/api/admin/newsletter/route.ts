@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
-import { TABLE_CUSTOMERS } from '@/lib/constants';
+import db, { query } from '@/lib/db';
+import { TABLE_CUSTOMERS, TABLE_NEWSLETTER_LOGS } from '@/lib/constants';
 
 export async function POST(req: NextRequest) {
   const adminSession = req.cookies.get('admin_session')?.value;
@@ -58,6 +58,22 @@ export async function POST(req: NextRequest) {
   if (!res.ok) {
     const err = await res.json();
     return NextResponse.json({ error: err.message || 'Ошибка Resend' }, { status: 500 });
+  }
+
+  const data = await res.json();
+
+  // Save email IDs to newsletter_logs
+  if (data?.data?.length) {
+    for (const item of data.data) {
+      const recipient = emails.find((e) => e.to === item.to);
+      if (recipient) {
+        await query(
+          `INSERT INTO "${TABLE_NEWSLETTER_LOGS}" (email, resend_email_id, subject, status)
+           VALUES ($1, $2, $3, $4)`,
+          [recipient.to, item.id, subject, 'sent'],
+        );
+      }
+    }
   }
 
   return NextResponse.json({ ok: true, sent: unique.length });

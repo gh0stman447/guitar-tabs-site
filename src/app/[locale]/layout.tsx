@@ -110,17 +110,17 @@ export default async function LocaleLayout({
       </head>
       <body className='antialiased'>
         <NextIntlClientProvider messages={messages}>
-          <ThemeProvider attribute='class' defaultTheme='dark' enableSystem>
+          <ThemeProvider attribute='class' defaultTheme='dark'>
             <AdminProvider>
-            <CartProvider>
-              <CartAnimationProvider>
-                <ScrollProgress />
-                {children}
-                <FloatingCart />
-                <NoteParticles />
-                <ThemedToaster />
-              </CartAnimationProvider>
-            </CartProvider>
+              <CartProvider>
+                <CartAnimationProvider>
+                  <ScrollProgress />
+                  {children}
+                  <FloatingCart />
+                  <NoteParticles />
+                  <ThemedToaster />
+                </CartAnimationProvider>
+              </CartProvider>
             </AdminProvider>
           </ThemeProvider>
         </NextIntlClientProvider>

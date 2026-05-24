@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { requireAdminSession } from '@/lib/admin-auth';
 import { FORMATS } from '@/types';
-import { TABLE_TABS, BUCKET_TAB_FILES } from '@/lib/constants';
+import { TABLE_TABS } from '@/lib/constants';
+import { deleteFile, uploadFile } from '@/lib/storage';
+import { query } from '@/lib/db';
 
 export async function POST(req: NextRequest) {
   const authError = requireAdminSession(req);
@@ -19,30 +21,25 @@ export async function POST(req: NextRequest) {
   const price = parseFloat(formData.get('price') as string);
   const youtube_url = (formData.get('youtube_url') as string) || null;
   const photo = formData.get('photo') as File | null;
-  const existingFiles = JSON.parse((formData.get('existing_files') as string) ?? '{}');
+  const existingFiles: Record<string, boolean> = JSON.parse((formData.get('existing_files') as string) ?? '{}');
   const formatsToDelete: string[] = JSON.parse((formData.get('formats_to_delete') as string) ?? '[]');
+  const deletePhoto = formData.get('delete_photo') === 'true';
 
   if (!id || !title_ru || !title_en || !difficulty || !price) {
     return NextResponse.json({ error: 'Заполните обязательные поля' }, { status: 400 });
   }
 
   const folder = id;
-  const files: Record<string, string> = { ...existingFiles };
+  const files: Record<string, boolean> = { ...existingFiles };
 
-  // Delete removed formats from Storage and files map
+  // Delete removed formats from storage and tab_files
   for (const fmt of formatsToDelete) {
-    const path = existingFiles[fmt] as string | undefined;
-    if (path) await supabaseAdmin.storage.from(BUCKET_TAB_FILES).remove([path]);
+    const filePath = `${folder}/${fmt}`;
+    await deleteFile(filePath);
     delete files[fmt];
   }
 
-  // Sync: remove files that no longer exist in Storage
-  for (const [fmt, path] of Object.entries(files)) {
-    const { data } = await supabaseAdmin.storage.from(BUCKET_TAB_FILES).list(folder, { search: path.split('/').pop() });
-    if (!data || data.length === 0) delete files[fmt];
-  }
-
-  // Upload new tab files
+  // Upload new files
   for (const fmt of FORMATS) {
     const file = formData.get(fmt) as File | null;
     if (!file || file.size === 0) continue;
@@ -56,48 +53,34 @@ export async function POST(req: NextRequest) {
 
     const safeName = file.name.replace(/[^\w.\-\s]/g, '_');
     const path = `${folder}/${safeName}`;
-
-    // Удаляем старый файл если он отличается по имени
-    const oldPath = existingFiles[fmt] as string | undefined;
-    if (oldPath && oldPath !== path) {
-      await supabaseAdmin.storage.from(BUCKET_TAB_FILES).remove([oldPath]);
-    }
-
     const buffer = await file.arrayBuffer();
 
-    const { error } = await supabaseAdmin.storage
-      .from(BUCKET_TAB_FILES)
-      .upload(path, buffer, { contentType: file.type, upsert: true });
-
-    if (error) {
-      return NextResponse.json(
-        { error: `Ошибка загрузки ${fmt}: ${error.message}` },
-        { status: 500 },
-      );
-    }
-
-    files[fmt] = path;
+    await uploadFile(path, buffer, file.type);
+    files[fmt] = true;
   }
 
   if (Object.keys(files).length === 0) {
     return NextResponse.json({ error: 'Нужен хотя бы один файл таба' }, { status: 400 });
   }
 
+  // Handle photo deletion
+  if (deletePhoto) {
+    // Delete the photo file from storage (format: 'photo')
+    await query('DELETE FROM tab_files WHERE tab_id = $1 AND format = $2', [id, 'photo']);
+  }
+
   // Upload new photo if provided
-  let photo_url: string | undefined = undefined;
+  let photo_url: string | null | undefined = undefined;
   if (photo && photo.size > 0) {
     const ext = photo.name.split('.').pop() ?? 'jpg';
-    const path = `${folder}/cover.${ext}`;
+    const safeName = `cover.${ext}`;
+    const path = `${folder}/${safeName}`;
     const buffer = await photo.arrayBuffer();
 
-    const { error } = await supabaseAdmin.storage
-      .from(BUCKET_TAB_FILES)
-      .upload(path, buffer, { contentType: photo.type, upsert: true });
-
-    if (!error) {
-      const { data } = supabaseAdmin.storage.from(BUCKET_TAB_FILES).getPublicUrl(path);
-      photo_url = data.publicUrl;
-    }
+    await uploadFile(path, buffer, photo.type);
+    photo_url = `/api/files/${id}/photo?t=${Date.now()}`;
+  } else if (deletePhoto) {
+    photo_url = null;
   }
 
   const updateData: Record<string, unknown> = {

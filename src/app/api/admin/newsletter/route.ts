@@ -137,7 +137,7 @@ function buildEmailHtml({
             <td style="border-top:1px solid #222;padding-top:24px;">
               <p style="margin:0;font-size:13px;color:#666666;text-align:center;">
                 Вы получили это письмо, потому что подписались на обновления при покупке.<br/>
-                <a href="${process.env.NEXT_PUBLIC_APP_URL}/api/unsubscribe?email=${encodeURIComponent(email)}"
+                <a href="${process.env.NEXT_PUBLIC_SITE_URL}/api/unsubscribe?email=${encodeURIComponent(email)}"
                   style="color:#888888;">Отписаться</a>
               </p>
             </td>

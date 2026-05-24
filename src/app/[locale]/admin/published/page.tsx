@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useIsTouch } from '@/hooks/useIsTouch';
 import { Header } from '@/components/shared/Header';
 import { Loader2, EyeOff, Pencil } from 'lucide-react';
@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase';
 import { TABLE_TABS } from '@/lib/constants';
 import { useAdmin } from '@/context/AdminContext';
 import { TabCard } from '@/components/shared/TabCard/TabCard';
+import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
@@ -24,8 +25,9 @@ import type { Tab } from '@/types';
 export default function PublishedPage() {
   const params = useParams();
   const locale = (params?.locale as string) ?? 'ru';
+  const router = useRouter();
 
-  const { isAdmin: authed } = useAdmin();
+  const { isAdmin: authed, isLoading } = useAdmin();
   const [tabs, setTabs] = useState<Tab[]>([]);
   const [loading, setLoading] = useState(true);
   const [unpublishing, setUnpublishing] = useState<string | null>(null);
@@ -33,7 +35,12 @@ export default function PublishedPage() {
   const isTouch = useIsTouch();
 
   useEffect(() => {
-    if (!authed) return;
+    if (isLoading) return;
+    if (!authed) {
+      toast.error('Требуется авторизация');
+      router.push(`/${locale}`);
+      return;
+    }
     supabase
       .from(TABLE_TABS)
       .select('*')
@@ -43,7 +50,7 @@ export default function PublishedPage() {
         if (data) setTabs(data as Tab[]);
         setLoading(false);
       });
-  }, [authed]);
+  }, [authed, isLoading, router, locale]);
 
   async function unpublish(id: string) {
     setUnpublishing(id);
@@ -54,6 +61,14 @@ export default function PublishedPage() {
     });
     if (res.ok) setTabs((prev) => prev.filter((t) => t.id !== id));
     setUnpublishing(null);
+  }
+
+  if (isLoading) {
+    return (
+      <div className='min-h-screen bg-secondary/20 flex items-center justify-center'>
+        <Loader2 className='h-8 w-8 animate-spin text-amber-500' />
+      </div>
+    );
   }
 
   if (!authed) return null;

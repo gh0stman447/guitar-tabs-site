@@ -1,46 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase-admin';
-import { TABLE_TABS, BUCKET_TAB_FILES } from '@/lib/constants';
+import { query } from '@/lib/db';
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  const { data: tab, error } = await supabaseAdmin
-    .from(TABLE_TABS)
-    .select('files, is_published')
-    .eq('id', id)
-    .single();
+  // Check if tab exists and is published
+  const tabResult = await query(
+    'SELECT id, is_published FROM "guitar-tabs" WHERE id = $1',
+    [id]
+  );
 
-  if (error || !tab) {
-    console.error('Tab fetch error:', JSON.stringify(error));
+  if (tabResult.rows.length === 0 || tabResult.rows[0].is_published !== true) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  if (!tab.is_published) {
-    return NextResponse.json({ error: 'Not available' }, { status: 403 });
-  }
+  // Get PDF from tab_files
+  const result = await query(
+    'SELECT filename, content_type, data FROM tab_files WHERE tab_id = $1 AND format = $2',
+    [id, 'pdf']
+  );
 
-  const files = tab.files as Record<string, string>;
-  const pdfPath = files?.pdf;
+  console.log('Preview result:', {
+    tabId: id,
+    hasRows: result.rows.length > 0,
+    rowCount: result.rows.length,
+  });
 
-  if (!pdfPath) {
+  if (result.rows.length === 0) {
     return NextResponse.json({ error: 'No PDF' }, { status: 404 });
   }
 
-  const { data, error: dlError } = await supabaseAdmin.storage
-    .from(BUCKET_TAB_FILES)
-    .download(pdfPath);
-
-  if (dlError || !data) {
-    return NextResponse.json({ error: 'Failed to load PDF' }, { status: 500 });
-  }
-
-  // data is already a Buffer from our storage implementation
-  // Convert Buffer to ArrayBuffer for NextResponse body
-  return new NextResponse(data.buffer as ArrayBuffer, {
+  const row = result.rows[0];
+  return new NextResponse(row.data, {
     headers: {
       'Content-Type': 'application/pdf',
-      'Content-Length': data.byteLength.toString(),
+      'Content-Disposition': `inline; filename="${row.filename}"`,
       'Cache-Control': 'no-store',
     },
   });

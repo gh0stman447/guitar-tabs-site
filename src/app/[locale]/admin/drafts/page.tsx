@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useIsTouch } from '@/hooks/useIsTouch';
 import { Header } from '@/components/shared/Header';
 import { Loader2, ShoppingCart, CheckCircle2, Trash2, Pencil } from 'lucide-react';
@@ -26,8 +26,9 @@ import type { Tab } from '@/types';
 export default function DraftsPage() {
   const params = useParams();
   const locale = (params?.locale as string) ?? 'ru';
+  const router = useRouter();
 
-  const { isAdmin: authed } = useAdmin();
+  const { isAdmin: authed, isLoading } = useAdmin();
   const [tabs, setTabs] = useState<Tab[]>([]);
   const [loading, setLoading] = useState(true);
   const [publishing, setPublishing] = useState<string | null>(null);
@@ -44,7 +45,12 @@ export default function DraftsPage() {
   }, []);
 
   useEffect(() => {
-    if (!authed) return;
+    if (isLoading) return;
+    if (!authed) {
+      toast.error('Требуется авторизация');
+      router.push(`/${locale}`);
+      return;
+    }
     supabase
       .from(TABLE_TABS)
       .select('*')
@@ -54,7 +60,7 @@ export default function DraftsPage() {
         setLoading(false);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authed]);
+  }, [authed, isLoading, router, locale]);
 
   async function deleteTab(id: string) {
     setDeleting(id);
@@ -76,6 +82,14 @@ export default function DraftsPage() {
     });
     if (res.ok) setTabs((prev) => prev.filter((t) => t.id !== id));
     setPublishing(null);
+  }
+
+  if (isLoading) {
+    return (
+      <div className='min-h-screen bg-secondary/20 flex items-center justify-center'>
+        <Loader2 className='h-8 w-8 animate-spin text-amber-500' />
+      </div>
+    );
   }
 
   if (!authed) return null;

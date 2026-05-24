@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query as dbQuery } from '@/lib/db';
 import { TABLE_TABS } from '@/lib/constants';
 
+// Quote table name if it contains hyphen
+const TABLE_TABS_QUOTED = `"${TABLE_TABS}"`;
+
 // GET /api/tabs - get all published tabs
 // Query params: published=true | count=true | single=true | order=field | dir=asc|desc | limit=N
 export async function GET(req: NextRequest) {
@@ -14,7 +17,7 @@ export async function GET(req: NextRequest) {
     const dir = searchParams.get('dir') === 'asc' ? 'ASC' : 'DESC';
     const limit = searchParams.get('limit');
 
-    let sql = `SELECT * FROM ${TABLE_TABS}`;
+    let sql = `SELECT * FROM ${TABLE_TABS_QUOTED}`;
     if (onlyPublished) {
       sql += ' WHERE is_published = true';
     }

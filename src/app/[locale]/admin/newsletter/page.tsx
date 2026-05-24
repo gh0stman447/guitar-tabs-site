@@ -1,18 +1,20 @@
 'use client';
 
-import { useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import { Loader2, Mail, Send } from 'lucide-react';
 import { Header } from '@/components/shared/Header';
 import Link from 'next/link';
 import { SITE_URL } from '@/lib/constants';
 import { Field, inputCls } from '@/components/admin/AdminFormFields';
 import { useAdmin } from '@/context/AdminContext';
+import { toast } from 'sonner';
 
 export default function NewsletterPage() {
   const params = useParams();
   const locale = params.locale as string;
-  const { isAdmin: authed } = useAdmin();
+  const router = useRouter();
+  const { isAdmin: authed, isLoading } = useAdmin();
 
   const [subject, setSubject] = useState('');
   const [tabTitle, setTabTitle] = useState('');
@@ -22,6 +24,22 @@ export default function NewsletterPage() {
 
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (!authed) {
+      toast.error('Требуется авторизация');
+      router.push(`/${locale}`);
+    }
+  }, [authed, router, locale, isLoading]);
+
+  if (isLoading) {
+    return (
+      <div className='min-h-screen bg-secondary/20 flex items-center justify-center'>
+        <Loader2 className='h-8 w-8 animate-spin text-amber-500' />
+      </div>
+    );
+  }
 
   if (!authed) return null;
 

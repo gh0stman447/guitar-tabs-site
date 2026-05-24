@@ -192,7 +192,14 @@ export function TabsSection() {
           <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
             {filtered.map((tab, i) => (
               <div key={tab.id}>
-                <TabCard tab={tab} locale={locale} buyLabel={t('buy')} showDetails index={i} tooltipPrefix='catalog' />
+                <TabCard
+                  tab={tab}
+                  locale={locale}
+                  buyLabel={t('buy')}
+                  showDetails
+                  index={i}
+                  tooltipPrefix='catalog'
+                />
               </div>
             ))}
           </div>
@@ -208,7 +215,14 @@ export function TabsSection() {
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <TabCard tab={tab} locale={locale} buyLabel={t('buy')} showDetails index={i} tooltipPrefix='catalog' />
+                  <TabCard
+                    tab={tab}
+                    locale={locale}
+                    buyLabel={t('buy')}
+                    showDetails
+                    index={i}
+                    tooltipPrefix='catalog'
+                  />
                 </motion.div>
               ))}
             </AnimatePresence>

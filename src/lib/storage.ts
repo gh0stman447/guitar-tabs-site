@@ -1,59 +1,119 @@
-import { promises as fs } from 'fs';
-import path from 'path';
-
-// Storage directory on VPS
-const STORAGE_ROOT = process.env.STORAGE_ROOT || '/var/www/guitar-tabs/storage';
-
-// Ensure storage directory exists
-async function ensureDir(dir: string) {
-  await fs.mkdir(dir, { recursive: true });
-}
+import { query } from './db';
 
 /**
- * Upload a file to storage
- * @param key - File path relative to storage root (e.g., 'tab-abc123/file.pdf')
+ * Upload a file to PostgreSQL bytea storage
+ * @param key - File path like 'tab-abc123/file.pdf'
  * @param buffer - File content as ArrayBuffer or Buffer
  * @param contentType - MIME type
  */
 export async function uploadFile(
   key: string,
-  buffer: ArrayBuffer | Buffer
+  buffer: ArrayBuffer | Buffer,
+  contentType?: string
 ) {
-  const filePath = path.join(STORAGE_ROOT, key);
-  await ensureDir(path.dirname(filePath));
+  // Parse key: 'tab-id/filename.ext' -> tabId, format, filename
+  const parts = key.split('/');
+  const tabId = parts[0];
+  const filename = parts[1];
+  const ext = filename.split('.').pop()?.toLowerCase();
+
+  // Determine format from extension
+  const formatMap: Record<string, string> = {
+    'pdf': 'pdf',
+    'gp3': 'gp5',
+    'gp4': 'gp5',
+    'gp5': 'gp5',
+    'gpx': 'gpx',
+    'mp3': 'mp3',
+    'jpg': 'photo',
+    'jpeg': 'photo',
+    'png': 'photo',
+    'webp': 'photo',
+  };
+  const format = formatMap[ext || ''] || 'other';
 
   const bufferToUse = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
-  await fs.writeFile(filePath, bufferToUse);
+
+  // Upsert into tab_files table
+  await query(
+    `INSERT INTO tab_files (tab_id, format, filename, content_type, data)
+     VALUES ($1, $2, $3, $4, $5)
+     ON CONFLICT (tab_id, format) DO UPDATE SET
+       filename = EXCLUDED.filename,
+       content_type = EXCLUDED.content_type,
+       data = EXCLUDED.data`,
+    [tabId, format, filename, contentType || 'application/octet-stream', bufferToUse]
+  );
 
   return { path: key };
 }
 
 /**
- * Download a file from storage
- * @param key - File path relative to storage root
+ * Download a file from PostgreSQL bytea storage
+ * @param key - File path like 'tab-abc123/file.pdf'
  * @returns File content as Buffer
  */
 export async function downloadFile(key: string): Promise<Buffer> {
-  const filePath = path.join(STORAGE_ROOT, key);
-  return fs.readFile(filePath);
+  const parts = key.split('/');
+  const tabId = parts[0];
+  const filename = parts[1];
+  const ext = filename.split('.').pop()?.toLowerCase();
+
+  const formatMap: Record<string, string> = {
+    'pdf': 'pdf',
+    'gp3': 'gp5',
+    'gp4': 'gp5',
+    'gp5': 'gp5',
+    'gpx': 'gpx',
+    'mp3': 'mp3',
+    'jpg': 'photo',
+    'jpeg': 'photo',
+    'png': 'photo',
+    'webp': 'photo',
+  };
+  const format = formatMap[ext || ''] || 'other';
+
+  const result = await query(
+    'SELECT data FROM tab_files WHERE tab_id = $1 AND format = $2',
+    [tabId, format]
+  );
+
+  if (result.rows.length === 0) {
+    throw new Error(`File not found: ${key}`);
+  }
+
+  return result.rows[0].data;
 }
 
 /**
- * Delete a file from storage
- * @param key - File path relative to storage root
+ * Delete a file from PostgreSQL bytea storage
+ * @param key - File path like 'tab-abc123/file.pdf'
  */
 export async function deleteFile(key: string) {
-  const filePath = path.join(STORAGE_ROOT, key);
-  try {
-    await fs.unlink(filePath);
-  } catch (error: unknown) {
-    const err = error as NodeJS.ErrnoException;
-    if (err.code !== 'ENOENT') throw error;
-  }
+  const parts = key.split('/');
+  const tabId = parts[0];
+  const filename = parts[1];
+  const ext = filename.split('.').pop()?.toLowerCase();
+
+  const formatMap: Record<string, string> = {
+    'pdf': 'pdf',
+    'gp3': 'gp5',
+    'gp4': 'gp5',
+    'gp5': 'gp5',
+    'gpx': 'gpx',
+    'mp3': 'mp3',
+    'jpg': 'photo',
+    'jpeg': 'photo',
+    'png': 'photo',
+    'webp': 'photo',
+  };
+  const format = formatMap[ext || ''] || 'other';
+
+  await query('DELETE FROM tab_files WHERE tab_id = $1 AND format = $2', [tabId, format]);
 }
 
 /**
- * Delete multiple files from storage
+ * Delete multiple files from PostgreSQL bytea storage
  * @param keys - Array of file paths
  */
 export async function deleteFiles(keys: string[]) {
@@ -61,8 +121,8 @@ export async function deleteFiles(keys: string[]) {
 }
 
 /**
- * List files in a directory
- * @param folder - Folder path relative to storage root
+ * List files for a tab from PostgreSQL bytea storage
+ * @param folder - Tab ID
  * @param options - Optional search filter
  * @returns Array of file info objects
  */
@@ -70,49 +130,82 @@ export async function listFiles(
   folder: string,
   options?: { search?: string }
 ) {
-  const dirPath = path.join(STORAGE_ROOT, folder);
+  const result = await query(
+    'SELECT format, filename FROM tab_files WHERE tab_id = $1',
+    [folder]
+  );
 
-  try {
-    const entries = await fs.readdir(dirPath, { withFileTypes: true });
-    let files = entries
-      .filter(d => d.isFile())
-      .map(f => ({
-        name: f.name,
-        path: `${folder}/${f.name}`,
-      }));
+  let files = result.rows.map((f: { format: string; filename: string }) => ({
+    name: f.filename,
+    path: `${folder}/${f.filename}`,
+    format: f.format,
+  }));
 
-    if (options?.search) {
-      files = files.filter(f => f.name.includes(options.search!));
-    }
-
-    return files;
-  } catch (error: unknown) {
-    const err = error as NodeJS.ErrnoException;
-    if (err.code === 'ENOENT') return [];
-    throw error;
+  if (options?.search) {
+    files = files.filter(f => f.name.includes(options.search!));
   }
+
+  return files;
 }
 
 /**
- * Get public URL for a file
- * @param key - File path relative to storage root
- * @returns Public URL
+ * Get public URL for a file (serves via API endpoint)
+ * @param key - File path like 'tab-abc123/file.pdf'
+ * @returns API endpoint URL (relative path)
  */
 export function getPublicUrl(key: string): string {
-  const baseUrl = process.env.STORAGE_URL || 'https://olegguitar.com/storage';
-  return `${baseUrl}/${key}`;
+  // Parse key: 'tab-id/filename.ext' -> extract format
+  const parts = key.split('/');
+  const tabId = parts[0];
+  const filename = parts[1];
+  const ext = filename.split('.').pop()?.toLowerCase();
+
+  const formatMap: Record<string, string> = {
+    'pdf': 'pdf',
+    'gp3': 'gp5',
+    'gp4': 'gp5',
+    'gp5': 'gp5',
+    'gpx': 'gpx',
+    'mp3': 'mp3',
+    'jpg': 'photo',
+    'jpeg': 'photo',
+    'png': 'photo',
+    'webp': 'photo',
+  };
+  const format = formatMap[ext || ''] || 'other';
+
+  // Return relative path for next/image compatibility
+  return `/api/files/${tabId}/${format}`;
 }
 
 /**
- * Check if file exists
- * @param key - File path relative to storage root
+ * Check if file exists in PostgreSQL bytea storage
+ * @param key - File path like 'tab-abc123/file.pdf'
  */
 export async function fileExists(key: string): Promise<boolean> {
-  const filePath = path.join(STORAGE_ROOT, key);
-  try {
-    await fs.access(filePath);
-    return true;
-  } catch {
-    return false;
-  }
+  const parts = key.split('/');
+  const tabId = parts[0];
+  const filename = parts[1];
+  const ext = filename.split('.').pop()?.toLowerCase();
+
+  const formatMap: Record<string, string> = {
+    'pdf': 'pdf',
+    'gp3': 'gp5',
+    'gp4': 'gp5',
+    'gp5': 'gp5',
+    'gpx': 'gpx',
+    'mp3': 'mp3',
+    'jpg': 'photo',
+    'jpeg': 'photo',
+    'png': 'photo',
+    'webp': 'photo',
+  };
+  const format = formatMap[ext || ''] || 'other';
+
+  const result = await query(
+    'SELECT 1 FROM tab_files WHERE tab_id = $1 AND format = $2 LIMIT 1',
+    [tabId, format]
+  );
+
+  return result.rows.length > 0;
 }

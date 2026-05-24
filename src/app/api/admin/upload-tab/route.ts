@@ -3,7 +3,8 @@ import { randomUUID } from 'crypto';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { requireAdminSession } from '@/lib/admin-auth';
 import { FORMATS } from '@/types';
-import { TABLE_TABS, BUCKET_TAB_FILES } from '@/lib/constants';
+import { TABLE_TABS } from '@/lib/constants';
+import { uploadFile } from '@/lib/storage';
 
 export async function POST(req: NextRequest) {
   const authError = requireAdminSession(req);
@@ -27,8 +28,32 @@ export async function POST(req: NextRequest) {
   const tabId = randomUUID();
   const folder = tabId;
 
+  // First, create the tab record in DB (without files)
+  const { data: tabData, error: createError } = await supabaseAdmin
+    .from(TABLE_TABS)
+    .insert({
+      id: tabId,
+      title_ru,
+      title_en,
+      description_ru,
+      description_en,
+      difficulty,
+      price,
+      youtube_url: youtube_url || null,
+      photo_url: null,
+      files: {},
+      purchase_count: 0,
+      is_published: false,
+    })
+    .select('id')
+    .single();
+
+  if (createError) {
+    return NextResponse.json({ error: createError.message }, { status: 500 });
+  }
+
   // Upload tab files
-  const files: Record<string, string> = {};
+  const files: Record<string, boolean> = {};
   for (const fmt of FORMATS) {
     const file = formData.get(fmt) as File | null;
     if (!file || file.size === 0) continue;
@@ -46,18 +71,8 @@ export async function POST(req: NextRequest) {
     const path = `${folder}/${safeName}`;
     const buffer = await file.arrayBuffer();
 
-    const { error } = await supabaseAdmin.storage
-      .from(BUCKET_TAB_FILES)
-      .upload(path, buffer, { contentType: file.type, upsert: true });
-
-    if (error) {
-      return NextResponse.json(
-        { error: `Ошибка загрузки ${fmt}: ${error.message}` },
-        { status: 500 },
-      );
-    }
-
-    files[fmt] = path;
+    await uploadFile(path, buffer, file.type);
+    files[fmt] = true;
   }
 
   if (Object.keys(files).length === 0) {
@@ -68,42 +83,23 @@ export async function POST(req: NextRequest) {
   let photo_url: string | null = null;
   if (photo && photo.size > 0) {
     const ext = photo.name.split('.').pop() ?? 'jpg';
-    const path = `${folder}/cover.${ext}`;
+    const safeName = `cover.${ext}`;
+    const path = `${folder}/${safeName}`;
     const buffer = await photo.arrayBuffer();
 
-    const { error } = await supabaseAdmin.storage
-      .from(BUCKET_TAB_FILES)
-      .upload(path, buffer, { contentType: photo.type, upsert: true });
-
-    if (!error) {
-      const { data } = supabaseAdmin.storage.from(BUCKET_TAB_FILES).getPublicUrl(path);
-      photo_url = data.publicUrl;
-    }
+    await uploadFile(path, buffer, photo.type);
+    photo_url = `/api/files/${tabId}/photo`;
   }
 
-  // Create tab in DB
-  const { data, error } = await supabaseAdmin
+  // Update tab with files and photo_url
+  const { error: updateError } = await supabaseAdmin
     .from(TABLE_TABS)
-    .insert({
-      id: tabId,
-      title_ru,
-      title_en,
-      description_ru,
-      description_en,
-      difficulty,
-      price,
-      youtube_url: youtube_url || null,
-      photo_url,
-      files,
-      purchase_count: 0,
-      is_published: false,
-    })
-    .select('id')
-    .single();
+    .update({ files, photo_url })
+    .eq('id', tabId);
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (updateError) {
+    return NextResponse.json({ error: updateError.message }, { status: 500 });
   }
 
-  return NextResponse.json({ id: data.id });
+  return NextResponse.json({ id: tabData.id });
 }

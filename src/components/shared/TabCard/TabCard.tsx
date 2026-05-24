@@ -95,19 +95,13 @@ export function TabCard({
   const title = locale === 'en' ? tab.title_en : tab.title_ru;
   const description = locale === 'en' ? tab.description_en : tab.description_ru;
 
-  const motionProps = {
-    initial: { opacity: 0, y: 20 },
-    whileInView: { opacity: 1, y: 0 },
-    viewport: { once: true },
-    transition: { duration: 0.4, delay: (index ?? 0) * 0.1 },
-  };
-
   return (
     <>
       <div style={{ perspective: 1000 }}>
         <motion.div
           ref={cardRef}
-          {...(motionProps as React.ComponentProps<typeof motion.div>)}
+          initial={{ opacity: 1, y: 0 }}
+          animate={{ opacity: 1, y: 0 }}
           style={isTouch ? {} : { rotateX, rotateY }}
           whileHover={isTouch ? {} : { y: -4 }}
           onMouseMove={handleMouseMove}
@@ -123,6 +117,7 @@ export function TabCard({
             <div className='aspect-video relative bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/30 dark:to-zinc-900'>
               {tab.photo_url ? (
                 <Image
+                  key={tab.id}
                   src={tab.photo_url}
                   alt={title}
                   fill

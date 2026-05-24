@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Loader2, Music, ArrowLeft } from 'lucide-react';
 import { Header } from '@/components/shared/Header';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { TABLE_TABS } from '@/lib/constants';
 import { useAdmin } from '@/context/AdminContext';
+import { toast } from 'sonner';
 import { Field, inputCls, DropZone, FORMAT_ACCEPT } from '@/components/admin/AdminFormFields';
 import type { Tab } from '@/types';
 import { FORMATS } from '@/types';
@@ -16,8 +17,9 @@ export default function EditTabPage() {
   const params = useParams();
   const locale = params.locale as string;
   const tabId = params.id as string;
+  const router = useRouter();
 
-  const { isAdmin: authed } = useAdmin();
+  const { isAdmin: authed, isLoading } = useAdmin();
   const [tab, setTab] = useState<Tab | null>(null);
   const [loadingTab, setLoadingTab] = useState(true);
 
@@ -29,34 +31,57 @@ export default function EditTabPage() {
   const [price, setPrice] = useState('');
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [photo, setPhoto] = useState<File | null>(null);
+  const [deletePhoto, setDeletePhoto] = useState(false);
   const [files, setFiles] = useState<Partial<Record<(typeof FORMATS)[number], File>>>({});
   const [deletedFormats, setDeletedFormats] = useState<string[]>([]);
+  const [fileNames, setFileNames] = useState<Record<string, string>>({}); // fmt -> filename
 
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
 
   useEffect(() => {
-    if (!authed) return;
-    supabase
-      .from(TABLE_TABS)
-      .select('*')
-      .eq('id', tabId)
-      .single()
-      .then(({ data }) => {
-        if (data) {
-          const t = data as Tab;
-          setTab(t);
-          setTitleRu(t.title_ru);
-          setTitleEn(t.title_en);
-          setDescRu(t.description_ru ?? '');
-          setDescEn(t.description_en ?? '');
-          setDifficulty(t.difficulty);
-          setPrice(String(t.price));
-          setYoutubeUrl(t.youtube_url ?? '');
+    if (isLoading) return;
+    if (!authed) {
+      toast.error('Требуется авторизация');
+      router.push(`/${locale}`);
+      return;
+    }
+    Promise.all([
+      supabase.from(TABLE_TABS).select('*').eq('id', tabId).single(),
+      fetch(`/api/files/${tabId}/list`).then(r => r.json()).catch(() => [])
+    ]).then(([{ data }, fileNames]) => {
+      if (data) {
+        const t = data as Tab;
+        setTab(t);
+        setTitleRu(t.title_ru);
+        setTitleEn(t.title_en);
+        setDescRu(t.description_ru ?? '');
+        setDescEn(t.description_en ?? '');
+        setDifficulty(t.difficulty);
+        setPrice(String(t.price));
+        setYoutubeUrl(t.youtube_url ?? '');
+        // Build fileNames map from tab.files (which formats exist)
+        const names: Record<string, string> = {};
+        for (const [fmt, exists] of Object.entries(t.files || {})) {
+          if (exists) {
+            // Find filename from fileNames array
+            const f = (fileNames as any[]).find((f: any) => f.format === fmt);
+            if (f) names[fmt] = f.filename;
+          }
         }
-        setLoadingTab(false);
-      });
-  }, [authed, tabId]);
+        setFileNames(names);
+      }
+      setLoadingTab(false);
+    });
+  }, [authed, isLoading, tabId, router, locale]);
+
+  if (isLoading) {
+    return (
+      <div className='min-h-screen bg-secondary/20 flex items-center justify-center'>
+        <Loader2 className='h-8 w-8 animate-spin text-amber-500' />
+      </div>
+    );
+  }
 
   if (!authed) return null;
 
@@ -76,6 +101,7 @@ export default function EditTabPage() {
     formData.append('youtube_url', youtubeUrl);
     formData.append('existing_files', JSON.stringify(tab?.files ?? {}));
     formData.append('formats_to_delete', JSON.stringify(deletedFormats));
+    formData.append('delete_photo', String(deletePhoto));
     if (photo) formData.append('photo', photo);
     for (const [fmt, file] of Object.entries(files)) {
       if (file) formData.append(fmt, file);
@@ -222,13 +248,34 @@ export default function EditTabPage() {
               </Field>
 
               <Field label='Фото обложки'>
-                <DropZone
-                  label='Выберите изображение'
-                  accept={{ 'image/*': ['.jpg', '.jpeg', '.png', '.webp'] }}
-                  file={photo}
-                  onFile={setPhoto}
-                  existingLabel={tab.photo_url ? 'Есть обложка' : undefined}
-                />
+                <div className='flex items-end gap-3'>
+                  <div className='flex-1'>
+                    <DropZone
+                      label='Выберите изображение'
+                      accept={{ 'image/*': ['.jpg', '.jpeg', '.png', '.webp'] }}
+                      file={photo}
+                      onFile={setPhoto}
+                      existingLabel={tab.photo_url && !deletePhoto ? 'Есть обложка' : undefined}
+                    />
+                  </div>
+                  {tab.photo_url && !deletePhoto && (
+                    <button
+                      type='button'
+                      onClick={() => setDeletePhoto(true)}
+                      className='flex items-center justify-center w-10 h-10 rounded-full border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-colors cursor-pointer mb-1'
+                      title='Удалить обложку'
+                    >
+                      <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16' />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+                {deletePhoto && (
+                  <p className='text-xs text-amber-500 mt-1'>
+                    Обложка будет удалена после сохранения
+                  </p>
+                )}
               </Field>
 
               <div className='flex flex-col gap-2'>
@@ -252,7 +299,7 @@ export default function EditTabPage() {
                         }
                         existingLabel={
                           tab.files[fmt] && !deletedFormats.includes(fmt)
-                            ? tab.files[fmt]!.split('/').pop()
+                            ? fileNames[fmt]
                             : undefined
                         }
                         onDeleteExisting={

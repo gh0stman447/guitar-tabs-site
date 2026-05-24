@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { TABLE_TABS, TABLE_CUSTOMERS, TABLE_PURCHASES, BUCKET_TAB_FILES } from '@/lib/constants';
+import { TABLE_TABS, TABLE_CUSTOMERS, TABLE_PURCHASES } from '@/lib/constants';
 
 export async function POST(req: NextRequest) {
   const { tab_id, tab_ids, firstname, email: rawEmail, newsletter, test } = await req.json();
@@ -23,17 +23,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Один или несколько табов не найдены' }, { status: 404 });
   }
 
-  const tabsData = tabs as Array<{ id: string; files: Record<string, string>; price: number; title_ru: string }>;
+  const tabsData = tabs as Array<{
+    id: string;
+    files: Record<string, boolean>;
+    price: number;
+    title_ru: string;
+  }>;
 
-  // Validate files exist in storage
+  // Validate files exist in tab_files table
   for (const tab of tabsData) {
-    const files = tab.files;
-    for (const [format, path] of Object.entries(files)) {
-      const { error: downloadError } = await supabaseAdmin.storage
-        .from(BUCKET_TAB_FILES)
-        .download(path);
-      if (downloadError) {
-        console.error(`File missing for format ${format}: ${path}`);
+    console.log(`[payment/create] Validating tab ${tab.id}, files:`, tab.files);
+    // Check file exists in tab_files
+    const listUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/files/${tab.id}/list`;
+    console.log(`[payment/create] Fetching file list from: ${listUrl}`);
+    const result = await fetch(listUrl);
+    const fileNames = (await result.json()) as { format: string; filename: string }[];
+    console.log(`[payment/create] File list for tab ${tab.id}:`, fileNames);
+
+    for (const [format, exists] of Object.entries(tab.files)) {
+      if (!exists) continue;
+      const fileExists = fileNames.some((f) => f.format === format);
+      console.log(`[payment/create] Format ${format}: exists=${exists}, found=${fileExists}`);
+      if (!fileExists) {
+        console.error(`[payment/create] File missing for format ${format} in tab ${tab.id}`);
         return NextResponse.json(
           { error: 'Файлы таба временно недоступны. Попробуйте позже или свяжитесь со мной.' },
           { status: 500 },
@@ -47,38 +59,46 @@ export async function POST(req: NextRequest) {
   const totalAmount = subtotal - Math.round(subtotal * discountRate);
 
   // 2. Upsert customer
+  console.log('[payment/create] Creating customer:', { firstname, email, newsletter });
   const { data: customer, error: customerError } = await supabaseAdmin
     .from(TABLE_CUSTOMERS)
     .upsert({ firstname, email, newsletter: newsletter ?? false }, { onConflict: 'email' })
     .select('id')
     .single();
 
+  console.log('[payment/create] Customer result:', { customer, customerError });
   if (customerError || !customer) {
+    console.error('[payment/create] Customer error:', customerError);
     return NextResponse.json({ error: 'Ошибка создания покупателя' }, { status: 500 });
   }
 
   // 3. Create pending purchase
+  console.log('[payment/create] Creating purchase:', {
+    customer_id: customer.id,
+    tab_ids: ids,
+    amount: totalAmount,
+  });
   const { data: purchase, error: purchaseError } = await supabaseAdmin
     .from(TABLE_PURCHASES)
     .insert({
       customer_id: customer.id,
-      tab_ids: ids,
+      tab_ids: JSON.stringify(ids),
       amount: totalAmount,
       status: 'pending',
     })
     .select('id')
     .single();
 
+  console.log('[payment/create] Purchase result:', { purchase, purchaseError });
   if (purchaseError || !purchase) {
+    console.error('[payment/create] Purchase error:', purchaseError);
     return NextResponse.json({ error: 'Ошибка создания заказа' }, { status: 500 });
   }
 
   // 4. Create YooKassa payment
   const shopId = test ? process.env.YUKASSA_TEST_SHOP_ID : process.env.YUKASSA_SHOP_ID;
   const secretKey = test ? process.env.YUKASSA_TEST_SECRET_KEY : process.env.YUKASSA_SECRET_KEY;
-  const appUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : (process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000');
+  const appUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 
   if (!shopId || !secretKey) {
     return NextResponse.json({
@@ -108,6 +128,9 @@ export async function POST(req: NextRequest) {
         type: 'redirect',
         return_url: `${appUrl}/ru/payment/success?purchase_id=${purchase.id}`,
       },
+      cancellation_details: {
+        cancel_url: `${appUrl}/ru/payment/canceled`,
+      },
       description,
       metadata: {
         purchase_id: purchase.id,
@@ -124,10 +147,16 @@ export async function POST(req: NextRequest) {
   }
 
   // 5. Save payment_id to purchase
-  await supabaseAdmin
+  const { data: paymentIdResult, error: paymentIdError } = await supabaseAdmin
     .from(TABLE_PURCHASES)
     .update({ payment_id: payment.id })
     .eq('id', purchase.id);
+
+  if (paymentIdError) {
+    console.error('[payment/create] Failed to save payment_id:', paymentIdError);
+  } else {
+    console.log('[payment/create] payment_id saved:', paymentIdResult);
+  }
 
   return NextResponse.json({
     confirmation_url: payment.confirmation.confirmation_url,

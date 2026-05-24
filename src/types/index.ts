@@ -2,10 +2,10 @@ export const FORMATS = ['pdf', 'gp5', 'gpx', 'mp3'] as const;
 export type TabFileFormat = (typeof FORMATS)[number];
 
 export interface TabFiles {
-  pdf?: string
-  gp5?: string
-  gpx?: string
-  mp3?: string
+  pdf?: boolean
+  gp5?: boolean
+  gpx?: boolean
+  mp3?: boolean
 }
 
 export interface Tab {
@@ -32,14 +32,22 @@ export function getTabDescription(tab: Tab, locale: string): string {
 
 export interface Customer {
   id: string
-  name: string
+  created_at: string
+  firstname: string
   email: string
-  subscribed: boolean
+  newsletter: boolean
 }
 
 export interface Purchase {
   id: string
+  created_at: string
   customer_id: string
-  tab_id: string
-  paid_at: string
+  tab_id: string | null
+  tab_ids: string[] | null
+  amount: number
+  payment_id: string | null
+  status: string
+  resend_email_id: string | null
+  email_status: string | null
+  receipt_url: string | null
 }

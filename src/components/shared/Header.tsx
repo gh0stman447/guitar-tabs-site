@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Menu, ShoppingCart, X } from 'lucide-react';
+import { Menu, ShoppingCart, X, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTranslations, useLocale } from 'next-intl';
 import { ThemeToggle } from './ThemeToggle';
@@ -23,7 +23,14 @@ export function Header() {
   const [hidden, setHidden] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
-  const { isAdmin } = useAdmin();
+  const { isAdmin, setIsAdmin } = useAdmin();
+
+  function handleLogout() {
+    fetch('/api/admin/logout', { method: 'POST' }).then(() => {
+      setIsAdmin(false);
+      router.push(`/${locale}`);
+    });
+  }
 
   const isTouch = useIsTouch();
   const { count } = useCart();
@@ -130,7 +137,7 @@ export function Header() {
                     Черновики
                   </Link>
                   <Link
-                    href={`/${locale}/admin`}
+                    href={`/${locale}/admin/create-tab`}
                     className='text-xs font-medium px-2 py-1 rounded border border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white transition-colors'
                   >
                     Добавить таб
@@ -141,6 +148,13 @@ export function Header() {
                   >
                     Рассылка
                   </Link>
+                  <button
+                    onClick={handleLogout}
+                    className='flex items-center gap-1 text-xs font-medium px-2 py-1 rounded border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-colors'
+                  >
+                    <LogOut className='h-3 w-3' />
+                    Выйти
+                  </button>
                 </div>
               )}
               {isTouch && (
@@ -228,7 +242,7 @@ export function Header() {
                             Черновики
                           </Link>
                           <Link
-                            href={`/${locale}/admin`}
+                            href={`/${locale}/admin/create-tab`}
                             onClick={() => setSheetOpen(false)}
                             className='text-base font-medium px-2 py-2.5 rounded-lg text-amber-500 hover:bg-amber-500/10 transition-colors'
                           >
@@ -241,6 +255,16 @@ export function Header() {
                           >
                             Рассылка
                           </Link>
+                          <button
+                            onClick={() => {
+                              handleLogout();
+                              setSheetOpen(false);
+                            }}
+                            className='w-full text-left text-base font-medium px-2 py-2.5 rounded-lg text-red-500 hover:bg-red-500/10 transition-colors flex items-center gap-2'
+                          >
+                            <LogOut className='h-4 w-4' />
+                            Выйти
+                          </button>
                         </div>
                       </>
                     )}

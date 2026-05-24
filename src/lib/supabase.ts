@@ -28,7 +28,6 @@ export const supabase = {
           let orderBy: { column?: string; direction?: OrderDirection } = {};
           let limitValue: number | undefined;
           let singleResult = false;
-          const useAdminEndpoint = false;
 
           // Handle both select('*') and select({ count: 'exact', head: true })
           const selectOptions = typeof optionsOrFields === 'object' ? optionsOrFields : options || {};
@@ -45,7 +44,7 @@ export const supabase = {
                   limitValue = n;
                   return {
                     then: (resolve: (value: SupabaseResponse<unknown[]>) => void) => {
-                      fetchTabs(publishedOnly, orderBy, limitValue, useAdminEndpoint, countOnly, singleResult).then(resolve);
+                      fetchTabs(publishedOnly, orderBy, limitValue, countOnly, singleResult).then(resolve);
                     },
                   };
                 },
@@ -53,12 +52,12 @@ export const supabase = {
                   singleResult = true;
                   return {
                     then: (resolve: (value: SupabaseResponse<unknown>) => void) => {
-                      fetchTabs(publishedOnly, orderBy, limitValue, useAdminEndpoint, countOnly, singleResult).then(resolve as (value: SupabaseResponse<unknown[]>) => void);
+                      fetchTabs(publishedOnly, orderBy, limitValue, countOnly, singleResult).then(resolve as (value: SupabaseResponse<unknown[]>) => void);
                     },
                   };
                 },
                 then: (resolve: (value: SupabaseResponse<unknown[]>) => void) => {
-                  fetchTabs(publishedOnly, orderBy, limitValue, useAdminEndpoint, countOnly, singleResult).then(resolve);
+                  fetchTabs(publishedOnly, orderBy, limitValue, countOnly, singleResult).then(resolve);
                 },
               };
             },
@@ -77,7 +76,7 @@ export const supabase = {
                       limitValue = n;
                       return {
                         then: (resolve: (value: SupabaseResponse<unknown[]>) => void) => {
-                          fetchTabs(publishedOnly, orderBy, limitValue, useAdminEndpoint, countOnly, singleResult).then(resolve);
+                          fetchTabs(publishedOnly, orderBy, limitValue, countOnly, singleResult).then(resolve);
                         },
                       };
                     },
@@ -85,12 +84,12 @@ export const supabase = {
                       singleResult = true;
                       return {
                         then: (resolve: (value: SupabaseResponse<unknown>) => void) => {
-                          fetchTabs(publishedOnly, orderBy, limitValue, useAdminEndpoint, countOnly, singleResult).then(resolve as (value: SupabaseResponse<unknown[]>) => void);
+                          fetchTabs(publishedOnly, orderBy, limitValue, countOnly, singleResult).then(resolve as (value: SupabaseResponse<unknown[]>) => void);
                         },
                       };
                     },
                     then: (resolve: (value: SupabaseResponse<unknown[]>) => void) => {
-                      fetchTabs(publishedOnly, orderBy, limitValue, useAdminEndpoint, countOnly, singleResult).then(resolve);
+                      fetchTabs(publishedOnly, orderBy, limitValue, countOnly, singleResult).then(resolve);
                     },
                   };
                 },
@@ -98,12 +97,12 @@ export const supabase = {
                   singleResult = true;
                   return {
                     then: (resolve: (value: SupabaseResponse<unknown>) => void) => {
-                      fetchTabs(publishedOnly, orderBy, limitValue, useAdminEndpoint, countOnly, singleResult).then(resolve as (value: SupabaseResponse<unknown[]>) => void);
+                      fetchTabs(publishedOnly, orderBy, limitValue, countOnly, singleResult).then(resolve as (value: SupabaseResponse<unknown[]>) => void);
                     },
                   };
                 },
                 then: (resolve: (value: SupabaseResponse<unknown[]>) => void) => {
-                  fetchTabs(publishedOnly, orderBy, limitValue, useAdminEndpoint, countOnly, singleResult).then(resolve);
+                  fetchTabs(publishedOnly, orderBy, limitValue, countOnly, singleResult).then(resolve);
                 },
               };
             },
@@ -111,12 +110,12 @@ export const supabase = {
               singleResult = true;
               return {
                 then: (resolve: (value: SupabaseResponse<unknown>) => void) => {
-                  fetchTabs(publishedOnly, orderBy, limitValue, useAdminEndpoint, countOnly, singleResult).then(resolve as (value: SupabaseResponse<unknown[]>) => void);
+                  fetchTabs(publishedOnly, orderBy, limitValue, countOnly, singleResult).then(resolve as (value: SupabaseResponse<unknown[]>) => void);
                 },
               };
             },
             then: (resolve: (value: SupabaseResponse<unknown[]>) => void) => {
-              fetchTabs(publishedOnly, orderBy, limitValue, useAdminEndpoint, countOnly, singleResult).then(resolve);
+              fetchTabs(publishedOnly, orderBy, limitValue, countOnly, singleResult).then(resolve);
             },
           };
 
@@ -132,21 +131,24 @@ async function fetchTabs(
   publishedOnly: boolean | null,
   orderBy: { column?: string; direction?: OrderDirection },
   limit?: number,
-  useAdminEndpoint: boolean = false,
   countOnly: boolean = false,
   singleResult: boolean = false,
 ): Promise<SupabaseResponse<unknown[]>> {
   try {
     const params = new URLSearchParams();
+
+    // Use admin endpoint for drafts (is_published = false)
+    const isDrafts = publishedOnly === false;
+    const endpoint = isDrafts ? `${API_BASE}/admin/tabs` : `${API_BASE}/tabs`;
+
     if (publishedOnly === true) params.set('published', 'true');
-    if (publishedOnly === false) params.set('drafts', 'true');
+    if (isDrafts) params.set('drafts', 'true');
     if (countOnly) params.set('count', 'true');
     if (singleResult) params.set('single', 'true');
     if (orderBy.column) params.set('order', orderBy.column);
     if (orderBy.direction) params.set('dir', orderBy.direction);
     if (limit) params.set('limit', limit.toString());
 
-    const endpoint = useAdminEndpoint ? `${API_BASE}/admin/tabs` : `${API_BASE}/tabs`;
     const res = await fetch(`${endpoint}?${params.toString()}`);
     const data = await res.json();
 
@@ -167,6 +169,7 @@ async function fetchTabs(
 
     return { data: Array.isArray(data) ? data : [], error: null };
   } catch (error) {
+    console.error('fetchTabs error:', error);
     return {
       data: null,
       error: error instanceof Error ? error : new Error('Unknown error'),

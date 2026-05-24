@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { requireAdminSession } from '@/lib/admin-auth';
-import { TABLE_TABS, BUCKET_TAB_FILES } from '@/lib/constants';
+import { TABLE_TABS } from '@/lib/constants';
+import { query } from '@/lib/db';
 
 export async function POST(req: NextRequest) {
   const authError = requireAdminSession(req);
@@ -21,14 +22,8 @@ export async function POST(req: NextRequest) {
   if (tab.is_published)
     return NextResponse.json({ error: 'Cannot delete published tab' }, { status: 403 });
 
-  // Delete entire folder from storage by listing all files in it
-  const { data: storageFiles } = await supabaseAdmin.storage.from(BUCKET_TAB_FILES).list(id);
-  console.log(`Deleting tab ${id}, found ${storageFiles?.length ?? 0} files in storage`);
-  console.log(storageFiles);
-  if (storageFiles && storageFiles.length > 0) {
-    const paths = storageFiles.map((f) => `${id}/${f.name}`);
-    await supabaseAdmin.storage.from(BUCKET_TAB_FILES).remove(paths);
-  }
+  // Delete files from tab_files table (storage handles cleanup automatically)
+  await query('DELETE FROM tab_files WHERE tab_id = $1', [id]);
 
   const { error } = await supabaseAdmin.from(TABLE_TABS).delete().eq('id', id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

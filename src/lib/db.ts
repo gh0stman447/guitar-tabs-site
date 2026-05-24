@@ -184,7 +184,6 @@ export const db = {
               );
               return { data: result.rows[0], error: null };
             } catch (err) {
-              console.error('[db.update] Error:', err);
               return { data: null, error: err instanceof Error ? err : new Error('Update failed') };
             }
           },

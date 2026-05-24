@@ -20,12 +20,6 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     [id, 'pdf']
   );
 
-  console.log('Preview result:', {
-    tabId: id,
-    hasRows: result.rows.length > 0,
-    rowCount: result.rows.length,
-  });
-
   if (result.rows.length === 0) {
     return NextResponse.json({ error: 'No PDF' }, { status: 404 });
   }

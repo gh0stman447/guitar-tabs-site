@@ -87,22 +87,15 @@ export function requireAdminSession(req: NextRequest): NextResponse | null {
   const token = req.cookies.get('admin_session')?.value;
 
   if (!token) {
-    console.log('[admin-auth] requireAdminSession: no token');
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
     const isValid = validateAdminSession(token);
-    console.log('[admin-auth] requireAdminSession:', {
-      hasToken: true,
-      tokenPrefix: token.substring(0, 8),
-      isValid,
-    });
     if (!isValid) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-  } catch (err) {
-    console.error('[admin-auth] requireAdminSession error:', err);
+  } catch {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

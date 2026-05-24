@@ -32,18 +32,13 @@ export async function POST(req: NextRequest) {
 
   // Validate files exist in tab_files table
   for (const tab of tabsData) {
-    console.log(`[payment/create] Validating tab ${tab.id}, files:`, tab.files);
-    // Check file exists in tab_files
     const listUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/files/${tab.id}/list`;
-    console.log(`[payment/create] Fetching file list from: ${listUrl}`);
     const result = await fetch(listUrl);
     const fileNames = (await result.json()) as { format: string; filename: string }[];
-    console.log(`[payment/create] File list for tab ${tab.id}:`, fileNames);
 
     for (const [format, exists] of Object.entries(tab.files)) {
       if (!exists) continue;
       const fileExists = fileNames.some((f) => f.format === format);
-      console.log(`[payment/create] Format ${format}: exists=${exists}, found=${fileExists}`);
       if (!fileExists) {
         console.error(`[payment/create] File missing for format ${format} in tab ${tab.id}`);
         return NextResponse.json(
@@ -59,25 +54,18 @@ export async function POST(req: NextRequest) {
   const totalAmount = subtotal - Math.round(subtotal * discountRate);
 
   // 2. Upsert customer
-  console.log('[payment/create] Creating customer:', { firstname, email, newsletter });
   const { data: customer, error: customerError } = await supabaseAdmin
     .from(TABLE_CUSTOMERS)
     .upsert({ firstname, email, newsletter: newsletter ?? false }, { onConflict: 'email' })
     .select('id')
     .single();
 
-  console.log('[payment/create] Customer result:', { customer, customerError });
   if (customerError || !customer) {
     console.error('[payment/create] Customer error:', customerError);
     return NextResponse.json({ error: 'Ошибка создания покупателя' }, { status: 500 });
   }
 
   // 3. Create pending purchase
-  console.log('[payment/create] Creating purchase:', {
-    customer_id: customer.id,
-    tab_ids: ids,
-    amount: totalAmount,
-  });
   const { data: purchase, error: purchaseError } = await supabaseAdmin
     .from(TABLE_PURCHASES)
     .insert({
@@ -89,7 +77,6 @@ export async function POST(req: NextRequest) {
     .select('id')
     .single();
 
-  console.log('[payment/create] Purchase result:', { purchase, purchaseError });
   if (purchaseError || !purchase) {
     console.error('[payment/create] Purchase error:', purchaseError);
     return NextResponse.json({ error: 'Ошибка создания заказа' }, { status: 500 });
@@ -147,15 +134,13 @@ export async function POST(req: NextRequest) {
   }
 
   // 5. Save payment_id to purchase
-  const { data: paymentIdResult, error: paymentIdError } = await supabaseAdmin
+  const { error: paymentIdError } = await supabaseAdmin
     .from(TABLE_PURCHASES)
     .update({ payment_id: payment.id })
     .eq('id', purchase.id);
 
   if (paymentIdError) {
     console.error('[payment/create] Failed to save payment_id:', paymentIdError);
-  } else {
-    console.log('[payment/create] payment_id saved:', paymentIdResult);
   }
 
   return NextResponse.json({

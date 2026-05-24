@@ -169,7 +169,6 @@ async function fetchTabs(
 
     return { data: Array.isArray(data) ? data : [], error: null };
   } catch (error) {
-    console.error('fetchTabs error:', error);
     return {
       data: null,
       error: error instanceof Error ? error : new Error('Unknown error'),

@@ -29,7 +29,6 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
   const ru = locale !== 'en';
   const [publishedCount, setPublishedCount] = useState(0);
 
-  console.log(testMode, 'testMode');
   useEffect(() => {
     supabase
       .from(TABLE_TABS)

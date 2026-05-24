@@ -41,7 +41,6 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(result.rows);
   } catch (error) {
-    console.error('Error fetching tabs:', error);
     return NextResponse.json({ error: 'Failed to fetch tabs' }, { status: 500 });
   }
 }

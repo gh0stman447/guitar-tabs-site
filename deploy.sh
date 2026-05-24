@@ -8,7 +8,7 @@ git pull origin migrate-from-supabase
 rm -rf node_modules .next
 npm ci
 npm run build
-pm2 restart guitar-tabs
+pm2 restart olegguitar
 
 
 
@@ -19,4 +19,4 @@ pm2 restart guitar-tabs
 # rm -rf node_modules .next
 # npm ci
 # npm run build
-# pm2 restart guitar-tabs
+# pm2 restart olegguitar

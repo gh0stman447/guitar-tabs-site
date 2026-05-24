@@ -218,24 +218,14 @@ export function TabPreviewDialog({
               <canvas ref={canvasRef} className='w-full block' />
 
               <div
-                className='absolute inset-x-0 bottom-0 pointer-events-none'
-                style={{
-                  height: '30%',
-                  opacity: 1,
-                  background: isDark
-                    ? 'linear-gradient(to bottom, transparent 0%, rgba(24,24,27,0.1) 20%, rgba(24,24,27,0.4) 50%, rgba(24,24,27,0.7) 80%, rgba(24,24,27, 1) 100%)'
-                    : 'linear-gradient(to bottom, transparent 0%, rgba(250,250,250,0.4) 40%, rgba(255,255,255,0.85) 70%, rgba(255,255,255,1) 100%)',
-                }}
-              />
-              <div
                 className='absolute inset-x-0 bottom-0 flex flex-col items-center justify-end pb-8 gap-1.5 pointer-events-none'
                 style={{ height: '55%' }}
               >
-                <p className={`text-sm font-medium ${isDark ? 'text-zinc-200' : 'text-zinc-800'}`}>
+                <p className='text-sm font-medium text-zinc-800'>
                   {locale === 'en' ? 'First page only' : 'Только первая страница'}
                 </p>
                 {onBuy ? (
-                  <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
+                  <p className='text-xs text-zinc-600'>
                     <button
                       className='text-amber-500 pointer-events-auto cursor-pointer hover:scale-105 transition-transform inline-block'
                       onClick={() => {
@@ -248,7 +238,7 @@ export function TabPreviewDialog({
                     {locale === 'en' ? ' to get the full file' : ', чтобы получить полный файл'}
                   </p>
                 ) : (
-                  <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
+                  <p className='text-xs text-zinc-600'>
                     {locale === 'en'
                       ? 'Buy the tab to get the full file'
                       : 'Купите таб, чтобы получить полный файл'}

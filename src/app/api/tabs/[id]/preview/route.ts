@@ -4,13 +4,13 @@ import { query } from '@/lib/db';
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  // Check if tab exists and is published
+  // Check if tab exists
   const tabResult = await query(
-    'SELECT id, is_published FROM "guitar-tabs" WHERE id = $1',
+    'SELECT id FROM "guitar-tabs" WHERE id = $1',
     [id]
   );
 
-  if (tabResult.rows.length === 0 || tabResult.rows[0].is_published !== true) {
+  if (tabResult.rows.length === 0) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 

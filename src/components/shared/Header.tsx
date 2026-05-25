@@ -2,7 +2,15 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Menu, ShoppingCart, X, LogOut } from 'lucide-react';
+import { Menu, ShoppingCart, X, LogOut, Settings } from 'lucide-react';
+import { Tooltip as ReactTooltip } from 'react-tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { useTranslations, useLocale } from 'next-intl';
 import { ThemeToggle } from './ThemeToggle';
@@ -52,7 +60,8 @@ export function Header() {
     const next = locale === 'ru' ? 'en' : 'ru';
     const segments = pathname.split('/');
     segments[1] = next;
-    router.push(segments.join('/') || '/');
+    const search = window.location.search;
+    router.push((segments.join('/') || '/') + search);
   }
 
   const isAdminRoute = pathname.includes('/admin');
@@ -123,39 +132,41 @@ export function Header() {
 
             <div className='flex items-center gap-2'>
               {isAdmin && (
-                <div className='hidden md:flex items-center gap-2'>
-                  <Link
-                    href={`/${locale}/admin/published`}
-                    className='text-xs font-medium px-2 py-1 rounded border border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white transition-colors'
-                  >
-                    Опубликованные
-                  </Link>
-                  <Link
-                    href={`/${locale}/admin/drafts`}
-                    className='text-xs font-medium px-2 py-1 rounded border border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white transition-colors'
-                  >
-                    Черновики
-                  </Link>
-                  <Link
-                    href={`/${locale}/admin/create-tab`}
-                    className='text-xs font-medium px-2 py-1 rounded border border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white transition-colors'
-                  >
-                    Добавить таб
-                  </Link>
-                  <Link
-                    href={`/${locale}/admin/newsletter`}
-                    className='text-xs font-medium px-2 py-1 rounded border border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white transition-colors'
-                  >
-                    Рассылка
-                  </Link>
-                  <button
-                    onClick={handleLogout}
-                    className='flex items-center gap-1 text-xs font-medium px-2 py-1 rounded border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-colors'
-                  >
-                    <LogOut className='h-3 w-3' />
-                    Выйти
-                  </button>
-                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className='hidden md:flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-full border border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white transition-colors cursor-pointer'>
+                      <Settings className='h-3.5 w-3.5' />
+                      Админ
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align='end' className='w-48'>
+                    <DropdownMenuItem asChild>
+                      <Link href={`/${locale}/admin/published`} className='cursor-pointer'>
+                        Опубликованные
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href={`/${locale}/admin/drafts`} className='cursor-pointer'>
+                        Черновики
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href={`/${locale}/admin/create-tab`} className='cursor-pointer'>
+                        Добавить таб
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href={`/${locale}/admin/newsletter`} className='cursor-pointer'>
+                        Рассылка
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout} className='text-red-500 cursor-pointer'>
+                      <LogOut className='h-3.5 w-3.5 mr-2' />
+                      Выйти
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
               {isTouch && (
                 <button
@@ -170,7 +181,23 @@ export function Header() {
                   )}
                 </button>
               )}
-              {!isAdminRoute && (
+              {!isAdminRoute && !isTouch && (
+                <>
+                  <Button
+                    data-tooltip-id='locale-toggle'
+                    data-tooltip-content={locale === 'ru' ? 'English' : 'Русский'}
+                    variant='ghost'
+                    size='icon'
+                    onClick={switchLocale}
+                    aria-label='Переключить язык'
+                    className='text-xs font-semibold text-muted-foreground'
+                  >
+                    {locale === 'ru' ? 'EN' : 'RU'}
+                  </Button>
+                  <ReactTooltip id='locale-toggle' place='bottom' opacity={1} delayShow={350} />
+                </>
+              )}
+              {!isAdminRoute && isTouch && (
                 <Button
                   variant='ghost'
                   size='icon'

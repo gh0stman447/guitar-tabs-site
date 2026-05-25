@@ -2,9 +2,12 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useTheme } from 'next-themes';
-import { Loader2, X } from 'lucide-react';
+import { Download, Loader2, X } from 'lucide-react';
+import { Tooltip as ReactTooltip } from 'react-tooltip';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useIsTouch } from '@/hooks/useIsTouch';
+import { useDelayedRender } from '@/hooks/useDelayedRender';
 import type { Tab } from '@/types';
 
 interface TabPreviewDialogProps {
@@ -25,12 +28,39 @@ export function TabPreviewDialog({
   const title = locale === 'en' ? tab.title_en : tab.title_ru;
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
+  const isTouch = useIsTouch();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const pageRef = useRef<import('pdfjs-dist/types/src/display/api').PDFPageProxy | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const autoScrollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const userScrolledRef = useRef(false);
   const [loading, setLoading] = useState(true);
+  const tooltipsReady = useDelayedRender(0, open);
+
+  async function handleDownload() {
+    try {
+      const response = await fetch(`/api/tabs/${tab.id}/preview?t=${Date.now()}`, {
+        cache: 'no-store',
+      });
+      if (!response.ok) throw new Error('Failed to download');
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${title}_preview.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('[TabPreview] download error:', e);
+      toast.error(
+        locale === 'en'
+          ? 'Failed to download preview. Try again.'
+          : 'Не удалось скачать превью. Попробуйте ещё раз.',
+      );
+    }
+  }
 
   function renderPage(containerWidth: number) {
     const page = pageRef.current;
@@ -180,15 +210,48 @@ export function TabPreviewDialog({
       >
         <DialogHeader
           style={{ backgroundColor: isDark ? undefined : 'rgba(68,77,86,0.1)' }}
-          className='px-6 pt-4 pb-4 flex flex-row items-center justify-between shrink-0'
+          className='px-6 pt-4 pb-4 flex flex-row items-center justify-between shrink-0 gap-2'
         >
-          <DialogTitle className='text-base font-semibold'>{title}</DialogTitle>
-          <button
-            onClick={() => onOpenChange(false)}
-            className='rounded-full w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer'
-          >
-            <X className='h-4 w-4' />
-          </button>
+          <DialogTitle className='text-base font-semibold flex-1'>{title}</DialogTitle>
+          {!isTouch ? (
+            <div className='flex items-center gap-1'>
+              <button
+                data-tooltip-id='preview-download'
+                data-tooltip-content={locale === 'en' ? 'Download preview' : 'Скачать превью'}
+                onClick={handleDownload}
+                className='rounded-full w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-amber-500 hover:bg-accent transition-colors cursor-pointer'
+              >
+                <Download className='h-4 w-4' />
+              </button>
+              {tooltipsReady && (
+                <ReactTooltip id='preview-download' place='bottom' opacity={1} delayShow={350} />
+              )}
+              <button
+                data-tooltip-id='preview-close'
+                data-tooltip-content={locale === 'en' ? 'Close' : 'Закрыть'}
+                onClick={() => onOpenChange(false)}
+                className='rounded-full w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer'
+              >
+                <X className='h-4 w-4' />
+              </button>
+              <ReactTooltip id='preview-close' place='bottom' opacity={1} delayShow={350} />
+            </div>
+          ) : (
+            <div className='flex items-center gap-1'>
+              <button
+                onClick={handleDownload}
+                className='rounded-full w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-amber-500 hover:bg-accent transition-colors cursor-pointer'
+              >
+                <Download className='h-4 w-4' />
+              </button>
+              <button
+                onClick={() => onOpenChange(false)}
+                className='rounded-full w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer'
+              >
+                <X className='h-4 w-4' />
+              </button>
+            </div>
+          )}
         </DialogHeader>
 
         {/* Канвас — скролл если не помещается */}

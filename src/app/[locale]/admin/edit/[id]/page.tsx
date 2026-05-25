@@ -10,6 +10,7 @@ import { TABLE_TABS } from '@/lib/constants';
 import { useAdmin } from '@/context/AdminContext';
 import { toast } from 'sonner';
 import { Field, inputCls, DropZone, FORMAT_ACCEPT } from '@/components/admin/AdminFormFields';
+import { LoadingPage } from '@/components/shared/LoadingPage';
 import type { Tab } from '@/types';
 import { FORMATS } from '@/types';
 
@@ -76,11 +77,7 @@ export default function EditTabPage() {
   }, [authed, isLoading, tabId, router, locale]);
 
   if (isLoading) {
-    return (
-      <div className='min-h-screen bg-secondary/20 flex items-center justify-center'>
-        <Loader2 className='h-8 w-8 animate-spin text-amber-500' />
-      </div>
-    );
+    return <LoadingPage />;
   }
 
   if (!authed) return null;

@@ -37,7 +37,7 @@ export function ContactsSection() {
   const t = useTranslations('contacts');
 
   return (
-    <section id='contacts' className='py-24'>
+    <section id='contacts' className='py-12 sm:py-24'>
       <div className='max-w-6xl mx-auto px-4 sm:px-6 lg:px-8'>
         <motion.div
           initial={{ opacity: 0, y: 20 }}

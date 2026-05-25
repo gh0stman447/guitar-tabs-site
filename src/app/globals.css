@@ -26,6 +26,7 @@ html {
   --ring: 240 5.9% 10%;
   --radius: 0.5rem;
   --amber: 43 96% 56%;
+  --bestseller-bg: rgba(230, 230, 230, 0.25);
 }
 
 .dark {
@@ -48,6 +49,7 @@ html {
   --border: 240 3.7% 15.9%;
   --input: 240 3.7% 15.9%;
   --ring: 240 4.9% 83.9%;
+  --bestseller-bg: rgba(24, 24, 27, 0.3);
 }
 
 @theme inline {

@@ -86,7 +86,8 @@ src/
 │   ├── CartAnimationContext.tsx
 │   └── AdminContext.tsx
 ├── hooks/
-│   └── useIsTouch.ts
+│   ├── useIsTouch.ts
+│   └── useDelayedRender.ts
 ├── i18n/
 │   ├── request.ts
 │   └── routing.ts
@@ -290,11 +291,14 @@ interface Purchase {
 - Выезжающая панель с товарами
 - Отображение оптовой скидки (10% от 2 шт, 15% от 3 шт)
 - Интегрированная форма заказа
+- Tooltip'ы с задержкой (через useDelayedRender)
 
 ### TabPreviewDialog (`src/components/shared/TabPreviewDialog.tsx`)
 - PDF.js рендеринг
 - Auto-scroll анимация
 - Превью первой страницы
+- Кнопка скачивания PDF
+- Tooltip'ы с задержкой (через useDelayedRender)
 
 ---
 
@@ -478,6 +482,27 @@ await query('UPDATE "guitar-tabs" SET "purchase_count" = "purchase_count" + 1 WH
 - Эффект полёта частиц при добавлении
 - Framer Motion + React Portal
 - Траектория по дуге
+
+---
+
+## Хуки
+
+### useDelayedRender (`src/hooks/useDelayedRender.ts`)
+
+Отложенный рендер компонентов после срабатывания триггера. Используется для tooltip'ов в диалогах/шторках.
+
+```typescript
+const tooltipsReady = useDelayedRender(0, open);
+// Рендерит tooltip только после открытия (tooltipsReady && <Tooltip />)
+```
+
+**Параметры:**
+- `delay` (default: 50) — задержка в мс перед рендером
+- `trigger` (default: true) — триггер для начала отсчёта
+
+**Особенности:**
+- Использует `queueMicrotask` для избежания ESLint предупреждений
+- Автоматически очищает таймер при размонтировании или смене trigger
 
 ---
 

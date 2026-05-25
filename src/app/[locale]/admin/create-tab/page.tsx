@@ -9,6 +9,7 @@ import { Field, inputCls, DropZone, FORMAT_ACCEPT } from '@/components/admin/Adm
 import { FORMATS } from '@/types';
 import { useAdmin } from '@/context/AdminContext';
 import { toast } from 'sonner';
+import { LoadingPage } from '@/components/shared/LoadingPage';
 
 export default function CreateTabPage() {
   const params = useParams();
@@ -37,11 +38,7 @@ export default function CreateTabPage() {
   }, [authed, isLoading, router, locale]);
 
   if (isLoading) {
-    return (
-      <div className='min-h-screen bg-secondary/20 flex items-center justify-center'>
-        <Loader2 className='h-8 w-8 animate-spin text-amber-500' />
-      </div>
-    );
+    return <LoadingPage />;
   }
 
   if (!authed) {

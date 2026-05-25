@@ -16,5 +16,5 @@ export async function GET(req: NextRequest) {
   const locale = acceptLang.startsWith('en') ? 'en' : 'ru';
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!;
-  return NextResponse.redirect(new URL(`/${locale}/unsubscribe`, siteUrl));
+  return NextResponse.redirect(new URL(`/${locale}/unsubscribe?email=${encodeURIComponent(email)}`, siteUrl));
 }

@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { Tooltip as ReactTooltip } from 'react-tooltip';
 import { useIsTouch } from '@/hooks/useIsTouch';
+import { useTheme } from 'next-themes';
 import Image from 'next/image';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -65,8 +66,11 @@ export function TabCard({
   const cardRef = useRef<HTMLDivElement>(null);
   const { addItem, removeItem, hasItem } = useCart();
   const { flyToCart } = useCartAnimation();
+  const { theme } = useTheme();
   const inCart = hasItem(tab.id);
   const [cartHovered, setCartHovered] = useState(false);
+  const [justAdded, setJustAdded] = useState(false);
+  const isDark = theme === 'dark';
 
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -107,7 +111,16 @@ export function TabCard({
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
         >
-          <Card className='overflow-hidden h-full flex flex-col border-border hover:border-amber-300 dark:hover:border-amber-700 transition-colors relative'>
+          <Card
+            style={justAdded ? { boxShadow: isDark ? '0 0 15px 3px rgba(245,158,11,0.5)' : '0 0 12px 3px rgba(245,158,11,0.5), 0 0 20px 6px rgba(0,0,0,0.15)' } : inCart ? { boxShadow: isDark ? '0 0 15px 2px rgba(245,158,11,0.2)' : '0 0 10px 2px rgba(245,158,11,0.35), 0 0 16px 4px rgba(0,0,0,0.12)' } : {}}
+            className={`overflow-hidden h-full flex flex-col transition-all duration-500 relative ${
+              justAdded
+                ? isDark ? 'border-amber-500/50' : 'border-amber-500/60'
+                : inCart
+                  ? isDark ? 'border-amber-500/30' : 'border-amber-500/40'
+                  : 'border-border hover:border-amber-300 dark:hover:border-amber-700'  
+            }`}
+          >
             {showRank && (
               <div className='absolute top-3 left-3 z-10 bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded-full'>
                 #1
@@ -203,12 +216,12 @@ export function TabCard({
                     <>
                       <a
                         data-tooltip-id={`yt-${tp}${tab.id}`}
-                        data-tooltip-content='Смотреть видео аранжировки'
+                        data-tooltip-content={locale === 'en' ? 'Watch arrangement video' : 'Смотреть видео аранжировки'}
                         href={tab.youtube_url}
                         target='_blank'
                         rel='noopener noreferrer'
                         className={`flex items-center justify-center w-9 h-9 rounded-full border transition-colors cursor-pointer ${isTouch ? 'border-red-500 text-red-500' : 'border-border text-muted-foreground dark:text-foreground hover:border-red-500 hover:text-red-500'}`}
-                        aria-label='Смотреть на YouTube'
+                        aria-label={locale === 'en' ? 'Watch on YouTube' : 'Смотреть на YouTube'}
                       >
                         <YouTubeIcon />
                       </a>
@@ -236,7 +249,7 @@ export function TabCard({
                         }
                         size='sm'
                         variant='outline'
-                        className={`rounded-full w-9 h-9 p-0 shrink-0 transition-colors bg-transparent hover:bg-transparent dark:bg-transparent dark:hover:bg-transparent ${
+                        className={`rounded-full w-9 h-9 p-0 shrink-0 transition-all duration-300 bg-transparent hover:bg-transparent dark:bg-transparent dark:hover:bg-transparent ${
                           inCart
                             ? cartHovered
                               ? 'border-red-500 text-red-500'
@@ -244,7 +257,7 @@ export function TabCard({
                             : isTouch
                               ? 'border-amber-500 text-amber-500'
                               : 'hover:border-amber-500 hover:text-amber-500'
-                        }`}
+                        } ${justAdded ? 'shadow-[0_0_20px_3px_rgba(245,158,11,0.6)]' : ''}`}
                         onClick={() => {
                           if (inCart) {
                             removeItem(tab.id);
@@ -255,6 +268,8 @@ export function TabCard({
                             });
                           } else {
                             addItem(tab);
+                            setJustAdded(true);
+                            setTimeout(() => setJustAdded(false), 650);
                             toast(title, {
                               description:
                                 locale === 'en' ? 'Added to cart' : 'Добавлено в корзину',

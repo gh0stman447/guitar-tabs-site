@@ -12,6 +12,7 @@ import { useAdmin } from '@/context/AdminContext';
 import { TabCard } from '@/components/shared/TabCard/TabCard';
 import { useCart } from '@/context/CartContext';
 import { toast } from 'sonner';
+import { LoadingPage } from '@/components/shared/LoadingPage';
 import {
   Dialog,
   DialogContent,
@@ -85,11 +86,7 @@ export default function DraftsPage() {
   }
 
   if (isLoading) {
-    return (
-      <div className='min-h-screen bg-secondary/20 flex items-center justify-center'>
-        <Loader2 className='h-8 w-8 animate-spin text-amber-500' />
-      </div>
-    );
+    return <LoadingPage />;
   }
 
   if (!authed) return null;

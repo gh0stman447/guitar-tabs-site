@@ -9,6 +9,7 @@ import { SITE_URL } from '@/lib/constants';
 import { Field, inputCls } from '@/components/admin/AdminFormFields';
 import { useAdmin } from '@/context/AdminContext';
 import { toast } from 'sonner';
+import { LoadingPage } from '@/components/shared/LoadingPage';
 
 export default function NewsletterPage() {
   const params = useParams();
@@ -34,11 +35,7 @@ export default function NewsletterPage() {
   }, [authed, router, locale, isLoading]);
 
   if (isLoading) {
-    return (
-      <div className='min-h-screen bg-secondary/20 flex items-center justify-center'>
-        <Loader2 className='h-8 w-8 animate-spin text-amber-500' />
-      </div>
-    );
+    return <LoadingPage />;
   }
 
   if (!authed) return null;

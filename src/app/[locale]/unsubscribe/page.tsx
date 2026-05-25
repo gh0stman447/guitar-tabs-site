@@ -6,11 +6,18 @@ import { Button } from '@/components/ui/button';
 
 export default async function UnsubscribePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ email?: string }>;
 }) {
   const { locale } = await params;
+  const { email } = await searchParams;
   const isRu = locale === 'ru';
+
+  const resubscribeUrl = email
+    ? `/api/resubscribe?email=${encodeURIComponent(email)}`
+    : `/${locale}`;
 
   return (
     <>
@@ -34,9 +41,19 @@ export default async function UnsubscribePage({
             </p>
           </div>
 
-          <Button asChild className='bg-amber-500 hover:bg-amber-600 text-white rounded-full px-8'>
-            <Link href={`/${locale}`}>{isRu ? 'Вернуться на сайт' : 'Back to site'}</Link>
-          </Button>
+          <div className='space-y-4'>
+            <Button asChild className='bg-amber-500 hover:bg-amber-600 text-white rounded-full px-8 w-full'>
+              <Link href={`/${locale}`}>{isRu ? 'Вернуться на сайт' : 'Back to site'}</Link>
+            </Button>
+
+            {email && (
+              <Button asChild variant='outline' className='border-border rounded-full px-8 w-full'>
+                <Link href={resubscribeUrl}>
+                  {isRu ? 'Подписаться заново' : 'Resubscribe'}
+                </Link>
+              </Button>
+            )}
+          </div>
         </div>
       </main>
       <Footer />

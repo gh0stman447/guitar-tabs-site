@@ -4,9 +4,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckCircle2 } from 'lucide-react';
 import { Header } from '@/components/shared/Header';
 import { Footer } from '@/components/shared/Footer';
+import { LoadingPage } from '@/components/shared/LoadingPage';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 
 export default function PaymentStubPage() {
   const router = useRouter();
@@ -14,14 +16,18 @@ export default function PaymentStubPage() {
   const purchase_id = searchParams?.get('purchase_id');
   const locale = searchParams?.get('locale') || 'ru';
 
-  const [purchase, setPurchase] = useState<{ id: string; status: string; amount: number } | null>(null);
+  const [purchase, setPurchase] = useState<{ id: string; status: string; amount: number } | null>(
+    null,
+  );
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
 
   const isRu = locale === 'ru';
 
   useEffect(() => {
     // Block in production
     if (typeof window !== 'undefined' && !window.location.hostname.includes('localhost')) {
+      toast.error('Доступно только на localhost');
       router.push('/');
       return;
     }
@@ -34,8 +40,15 @@ export default function PaymentStubPage() {
     // Fetch purchase info
     fetch(`/api/purchases/${purchase_id}`, { cache: 'no-store' })
       .then((res) => res.json())
-      .then(setPurchase)
-      .catch(console.error);
+      .then((data) => {
+        setPurchase(data);
+        setFetching(false);
+      })
+      .catch((err) => {
+        console.error(err);
+        setFetching(false);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [purchase_id, router]);
 
   async function handleSimulatePayment() {
@@ -52,14 +65,18 @@ export default function PaymentStubPage() {
         router.push(`/${locale}/payment/success?purchase_id=${purchase_id}`);
       } else {
         const error = await res.json();
-        alert('Ошибка: ' + error.error);
+        toast.error(error.error || 'Ошибка оплаты');
       }
     } catch (err) {
       console.error(err);
-      alert('Ошибка симуляции оплаты');
+      toast.error('Ошибка симуляции оплаты');
     } finally {
       setLoading(false);
     }
+  }
+
+  if (fetching) {
+    return <LoadingPage />;
   }
 
   return (
@@ -86,9 +103,15 @@ export default function PaymentStubPage() {
 
           {purchase && (
             <div className='rounded-xl border border-border bg-muted/30 p-4 text-sm text-left space-y-2'>
-              <p><strong>Purchase ID:</strong> {purchase.id}</p>
-              <p><strong>Status:</strong> {purchase.status}</p>
-              <p><strong>Amount:</strong> {purchase.amount} RUB</p>
+              <p>
+                <strong>Purchase ID:</strong> {purchase.id}
+              </p>
+              <p>
+                <strong>Status:</strong> {purchase.status}
+              </p>
+              <p>
+                <strong>Amount:</strong> {purchase.amount} RUB
+              </p>
             </div>
           )}
 
@@ -99,8 +122,12 @@ export default function PaymentStubPage() {
               className='bg-green-500 hover:bg-green-600 text-white rounded-full px-8 w-full'
             >
               {loading
-                ? (isRu ? 'Обработка...' : 'Processing...')
-                : (isRu ? '✅ Подтвердить оплату' : '✅ Confirm Payment')}
+                ? isRu
+                  ? 'Обработка...'
+                  : 'Processing...'
+                : isRu
+                  ? '✅ Подтвердить оплату'
+                  : '✅ Confirm Payment'}
             </Button>
 
             <Button

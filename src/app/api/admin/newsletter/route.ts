@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db, { query } from '@/lib/db';
 import { TABLE_CUSTOMERS, TABLE_NEWSLETTER_LOGS } from '@/lib/constants';
+import { validateAdminSession } from '@/lib/admin-auth';
 
 export async function POST(req: NextRequest) {
   const adminSession = req.cookies.get('admin_session')?.value;
-  if (adminSession !== process.env.ADMIN_PASSWORD) {
+  if (!adminSession || !validateAdminSession(adminSession)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -61,12 +62,19 @@ export async function POST(req: NextRequest) {
   }
 
   const data = await res.json();
+  console.log('[newsletter] Resend response:', JSON.stringify(data, null, 2));
 
   // Save email IDs to newsletter_logs
-  if (data?.data?.length) {
-    for (const item of data.data) {
-      const recipient = emails.find((e) => e.to === item.to);
-      if (recipient) {
+  // Resend batch API returns [{ id: '...' }, { id: '...' }] in same order as emails array
+  const emailData = Array.isArray(data?.data) ? data.data : [];
+  console.log('[newsletter] Email data to save:', emailData.length);
+
+  if (emailData.length) {
+    for (let i = 0; i < emailData.length; i++) {
+      const item = emailData[i];
+      const recipient = emails[i];
+      if (recipient && item.id) {
+        console.log('[newsletter] Inserting log for:', recipient.to, item.id);
         await query(
           `INSERT INTO "${TABLE_NEWSLETTER_LOGS}" (email, resend_email_id, subject, status)
            VALUES ($1, $2, $3, $4)`,

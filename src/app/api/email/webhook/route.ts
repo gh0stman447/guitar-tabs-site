@@ -14,6 +14,8 @@ export async function POST(req: NextRequest) {
   const type = body.type as string;
   const emailId = body.data?.email_id as string | undefined;
 
+  console.log('[webhook] Received event:', { type, emailId });
+
   if (!emailId) return NextResponse.json({ ok: true });
 
   let newStatus: string | null = null;
@@ -29,6 +31,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
   }
 
+  console.log('[webhook] New status:', newStatus);
+
   // Try to find in purchases first
   const purchaseResult = await query(
     `SELECT email_status FROM "${TABLE_PURCHASES}" WHERE resend_email_id = $1`,
@@ -40,11 +44,13 @@ export async function POST(req: NextRequest) {
     const currentPriority = STATUS_PRIORITY[purchase.email_status ?? ''] ?? 0;
     const newPriority = STATUS_PRIORITY[newStatus] ?? 0;
 
+    console.log('[webhook] purchases:', { currentPriority, newPriority, emailId });
+
     if (newPriority > currentPriority) {
-      await query(
-        `UPDATE "${TABLE_PURCHASES}" SET email_status = $1 WHERE resend_email_id = $2`,
-        [newStatus, emailId],
-      );
+      const timestampField = newStatus === 'delivered' ? 'delivered_at' : 'opened_at';
+      const sql = `UPDATE "${TABLE_PURCHASES}" SET email_status = $1, "${timestampField}" = NOW() WHERE resend_email_id = $2`;
+      console.log('[webhook] Executing update:', sql);
+      await query(sql, [newStatus, emailId]);
     }
     return NextResponse.json({ ok: true });
   }
@@ -60,11 +66,13 @@ export async function POST(req: NextRequest) {
     const currentPriority = STATUS_PRIORITY[newsletter.status ?? ''] ?? 0;
     const newPriority = STATUS_PRIORITY[newStatus] ?? 0;
 
+    console.log('[webhook] newsletter_logs:', { currentPriority, newPriority, emailId });
+
     if (newPriority > currentPriority) {
-      await query(
-        `UPDATE "${TABLE_NEWSLETTER_LOGS}" SET status = $1 WHERE resend_email_id = $2`,
-        [newStatus, emailId],
-      );
+      const timestampField = newStatus === 'delivered' ? 'delivered_at' : 'opened_at';
+      const sql = `UPDATE "${TABLE_NEWSLETTER_LOGS}" SET status = $1, "${timestampField}" = NOW() WHERE resend_email_id = $2`;
+      console.log('[webhook] Executing update:', sql);
+      await query(sql, [newStatus, emailId]);
     }
   }
 

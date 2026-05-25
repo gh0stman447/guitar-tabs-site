@@ -20,6 +20,12 @@ export default function PaymentStubPage() {
   const isRu = locale === 'ru';
 
   useEffect(() => {
+    // Block in production
+    if (typeof window !== 'undefined' && !window.location.hostname.includes('localhost')) {
+      router.push('/');
+      return;
+    }
+
     if (!purchase_id) {
       router.push('/');
       return;

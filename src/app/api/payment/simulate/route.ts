@@ -9,6 +9,12 @@ import { query } from '@/lib/db';
  * Обновляет статус заказа, отправляет email, инкрементирует purchase_count
  */
 export async function POST(req: NextRequest) {
+  // Block in production
+  const host = req.headers.get('host') || '';
+  if (!host.includes('localhost') && !host.includes('127.0.0.1')) {
+    return NextResponse.json({ error: 'Available only on localhost' }, { status: 403 });
+  }
+
   const { purchase_id } = await req.json();
 
   if (!purchase_id) {

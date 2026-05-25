@@ -11,5 +11,10 @@ export async function GET(req: NextRequest) {
 
   await db.from(TABLE_CUSTOMERS).update({ newsletter: false }).eq('email', email);
 
-  return NextResponse.redirect(new URL('/ru/unsubscribe', req.url));
+  // Determine locale from Accept-Language header
+  const acceptLang = req.headers.get('accept-language') || '';
+  const locale = acceptLang.startsWith('en') ? 'en' : 'ru';
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!;
+  return NextResponse.redirect(new URL(`/${locale}/unsubscribe`, siteUrl));
 }

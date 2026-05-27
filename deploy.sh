@@ -2,8 +2,8 @@
 set -e
 
 git fetch origin
-git checkout migrate-from-supabase
-git pull origin migrate-from-supabase
+git checkout main
+git pull origin main
 
 rm -rf node_modules .next
 npm ci

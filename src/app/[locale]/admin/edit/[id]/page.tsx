@@ -49,7 +49,9 @@ export default function EditTabPage() {
     }
     Promise.all([
       supabase.from(TABLE_TABS).select('*').eq('id', tabId).single(),
-      fetch(`/api/files/${tabId}/list`).then(r => r.json()).catch(() => [])
+      fetch(`/api/files/${tabId}/list`)
+        .then((r) => r.json())
+        .catch(() => []),
     ]).then(([{ data }, fileNames]) => {
       if (data) {
         const t = data as Tab;
@@ -66,7 +68,9 @@ export default function EditTabPage() {
         for (const [fmt, exists] of Object.entries(t.files || {})) {
           if (exists) {
             // Find filename from fileNames array
-            const f = (fileNames as any[]).find((f: any) => f.format === fmt);
+            const f = (fileNames as Array<{ format: string; filename: string }>).find(
+              (item) => item.format === fmt,
+            );
             if (f) names[fmt] = f.filename;
           }
         }
@@ -109,13 +113,28 @@ export default function EditTabPage() {
       const data = await res.json();
       if (res.ok) {
         setResult({ ok: true, message: 'Таб обновлён!' });
-        // Refresh tab data
-        const { data: updated } = await supabase
-          .from(TABLE_TABS)
-          .select('*')
-          .eq('id', tabId)
-          .single();
-        if (updated) setTab(updated as Tab);
+        // Refresh tab data and file names
+        Promise.all([
+          supabase.from(TABLE_TABS).select('*').eq('id', tabId).single(),
+          fetch(`/api/files/${tabId}/list`)
+            .then((r) => r.json())
+            .catch(() => []),
+        ]).then(([{ data: updatedTab }, fileNamesData]) => {
+          if (updatedTab) {
+            setTab(updatedTab as Tab);
+            // Build fileNames map
+            const names: Record<string, string> = {};
+            for (const [fmt, exists] of Object.entries((updatedTab as Tab).files || {})) {
+              if (exists) {
+                const f = (fileNamesData as Array<{ format: string; filename: string }>).find(
+                  (item) => item.format === fmt,
+                );
+                if (f) names[fmt] = f.filename;
+              }
+            }
+            setFileNames(names);
+          }
+        });
         setFiles({});
         setPhoto(null);
         setDeletedFormats([]);
@@ -262,8 +281,18 @@ export default function EditTabPage() {
                       className='flex items-center justify-center w-10 h-10 rounded-full border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-colors cursor-pointer mb-1'
                       title='Удалить обложку'
                     >
-                      <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                        <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16' />
+                      <svg
+                        className='w-4 h-4'
+                        fill='none'
+                        stroke='currentColor'
+                        viewBox='0 0 24 24'
+                      >
+                        <path
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                          strokeWidth={2}
+                          d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'
+                        />
                       </svg>
                     </button>
                   )}

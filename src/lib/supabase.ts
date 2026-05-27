@@ -25,6 +25,7 @@ export const supabase = {
       return {
         select: (optionsOrFields?: string | SelectOptions, options?: SelectOptions) => {
           let publishedOnly: boolean | null = null;
+          let filterId: string | null = null;
           let orderBy: { column?: string; direction?: OrderDirection } = {};
           let limitValue: number | undefined;
           let singleResult = false;
@@ -44,7 +45,7 @@ export const supabase = {
                   limitValue = n;
                   return {
                     then: (resolve: (value: SupabaseResponse<unknown[]>) => void) => {
-                      fetchTabs(publishedOnly, orderBy, limitValue, countOnly, singleResult).then(resolve);
+                      fetchTabs(publishedOnly, filterId, orderBy, limitValue, countOnly, singleResult).then(resolve);
                     },
                   };
                 },
@@ -52,18 +53,20 @@ export const supabase = {
                   singleResult = true;
                   return {
                     then: (resolve: (value: SupabaseResponse<unknown>) => void) => {
-                      fetchTabs(publishedOnly, orderBy, limitValue, countOnly, singleResult).then(resolve as (value: SupabaseResponse<unknown[]>) => void);
+                      fetchTabs(publishedOnly, filterId, orderBy, limitValue, countOnly, singleResult).then(resolve as (value: SupabaseResponse<unknown[]>) => void);
                     },
                   };
                 },
                 then: (resolve: (value: SupabaseResponse<unknown[]>) => void) => {
-                  fetchTabs(publishedOnly, orderBy, limitValue, countOnly, singleResult).then(resolve);
+                  fetchTabs(publishedOnly, filterId, orderBy, limitValue, countOnly, singleResult).then(resolve);
                 },
               };
             },
             eq(column: string, value: unknown) {
               if (column === 'is_published') {
                 publishedOnly = value === true;
+              } else if (column === 'id') {
+                filterId = value as string;
               }
               return {
                 order: (column: string, options: QueryOrder) => {
@@ -76,7 +79,7 @@ export const supabase = {
                       limitValue = n;
                       return {
                         then: (resolve: (value: SupabaseResponse<unknown[]>) => void) => {
-                          fetchTabs(publishedOnly, orderBy, limitValue, countOnly, singleResult).then(resolve);
+                          fetchTabs(publishedOnly, filterId, orderBy, limitValue, countOnly, singleResult).then(resolve);
                         },
                       };
                     },
@@ -84,12 +87,12 @@ export const supabase = {
                       singleResult = true;
                       return {
                         then: (resolve: (value: SupabaseResponse<unknown>) => void) => {
-                          fetchTabs(publishedOnly, orderBy, limitValue, countOnly, singleResult).then(resolve as (value: SupabaseResponse<unknown[]>) => void);
+                          fetchTabs(publishedOnly, filterId, orderBy, limitValue, countOnly, singleResult).then(resolve as (value: SupabaseResponse<unknown[]>) => void);
                         },
                       };
                     },
                     then: (resolve: (value: SupabaseResponse<unknown[]>) => void) => {
-                      fetchTabs(publishedOnly, orderBy, limitValue, countOnly, singleResult).then(resolve);
+                      fetchTabs(publishedOnly, filterId, orderBy, limitValue, countOnly, singleResult).then(resolve);
                     },
                   };
                 },
@@ -97,12 +100,12 @@ export const supabase = {
                   singleResult = true;
                   return {
                     then: (resolve: (value: SupabaseResponse<unknown>) => void) => {
-                      fetchTabs(publishedOnly, orderBy, limitValue, countOnly, singleResult).then(resolve as (value: SupabaseResponse<unknown[]>) => void);
+                      fetchTabs(publishedOnly, filterId, orderBy, limitValue, countOnly, singleResult).then(resolve as (value: SupabaseResponse<unknown[]>) => void);
                     },
                   };
                 },
                 then: (resolve: (value: SupabaseResponse<unknown[]>) => void) => {
-                  fetchTabs(publishedOnly, orderBy, limitValue, countOnly, singleResult).then(resolve);
+                  fetchTabs(publishedOnly, filterId, orderBy, limitValue, countOnly, singleResult).then(resolve);
                 },
               };
             },
@@ -110,12 +113,12 @@ export const supabase = {
               singleResult = true;
               return {
                 then: (resolve: (value: SupabaseResponse<unknown>) => void) => {
-                  fetchTabs(publishedOnly, orderBy, limitValue, countOnly, singleResult).then(resolve as (value: SupabaseResponse<unknown[]>) => void);
+                  fetchTabs(publishedOnly, filterId, orderBy, limitValue, countOnly, singleResult).then(resolve as (value: SupabaseResponse<unknown[]>) => void);
                 },
               };
             },
             then: (resolve: (value: SupabaseResponse<unknown[]>) => void) => {
-              fetchTabs(publishedOnly, orderBy, limitValue, countOnly, singleResult).then(resolve);
+              fetchTabs(publishedOnly, filterId, orderBy, limitValue, countOnly, singleResult).then(resolve);
             },
           };
 
@@ -129,6 +132,7 @@ export const supabase = {
 
 async function fetchTabs(
   publishedOnly: boolean | null,
+  filterId: string | null,
   orderBy: { column?: string; direction?: OrderDirection },
   limit?: number,
   countOnly: boolean = false,
@@ -137,9 +141,14 @@ async function fetchTabs(
   try {
     const params = new URLSearchParams();
 
+    // If filtering by ID, use the single tab endpoint with query param
+    if (filterId) {
+      params.set('id', filterId);
+    }
+
     // Use admin endpoint for drafts (is_published = false)
     const isDrafts = publishedOnly === false;
-    const endpoint = isDrafts ? `${API_BASE}/admin/tabs` : `${API_BASE}/tabs`;
+    const endpoint = isDrafts || filterId ? `${API_BASE}/admin/tabs` : `${API_BASE}/tabs`;
 
     if (publishedOnly === true) params.set('published', 'true');
     if (isDrafts) params.set('drafts', 'true');
@@ -160,7 +169,7 @@ async function fetchTabs(
       };
     }
 
-    if (singleResult) {
+    if (singleResult || filterId) {
       return {
         data: Array.isArray(data) ? (data[0] || null) : (data || null),
         error: null,

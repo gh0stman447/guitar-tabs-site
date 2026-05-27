@@ -12,6 +12,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const countOnly = searchParams.get('count') === 'true';
     const singleOnly = searchParams.get('single') === 'true';
+    const id = searchParams.get('id');
     const published = searchParams.get('published') === 'true';
     const drafts = searchParams.get('drafts') === 'true';
     const order = searchParams.get('order') || 'created_at';
@@ -19,7 +20,13 @@ export async function GET(req: NextRequest) {
 
     let sql = `SELECT * FROM ${TABLE_TABS_QUOTED}`;
     const conditions: string[] = [];
+    const values: unknown[] = [];
+    let paramIndex = 1;
 
+    if (id) {
+      conditions.push(`id = $${paramIndex++}`);
+      values.push(id);
+    }
     if (published) {
       conditions.push('is_published = true');
     } else if (drafts) {
@@ -33,13 +40,13 @@ export async function GET(req: NextRequest) {
     if (countOnly) {
       // Return just count
       const countSql = sql.replace('SELECT *', 'SELECT COUNT(*)');
-      const result = await dbQuery(countSql);
+      const result = await dbQuery(countSql, values);
       return NextResponse.json({ count: parseInt(result.rows[0].count, 10) });
     }
 
     sql += ` ORDER BY ${order} ${dir}`;
 
-    const result = await dbQuery(sql);
+    const result = await dbQuery(sql, values);
 
     if (singleOnly) {
       return NextResponse.json(result.rows[0] || null);

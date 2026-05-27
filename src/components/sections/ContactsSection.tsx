@@ -1,7 +1,8 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, useAnimation } from 'framer-motion';
 import { useTranslations } from 'next-intl';
+import { useIsTouch } from '@/hooks/useIsTouch';
 import { Card, CardContent } from '@/components/ui/card';
 import { Send, Mail } from 'lucide-react';
 import { FaVk } from 'react-icons/fa';
@@ -13,7 +14,8 @@ const contacts = [
     value: '@MalyginOleg',
     href: 'https://t.me/MalyginOleg',
     color: 'text-blue-500',
-    bg: 'bg-blue-50 dark:bg-blue-950/20',
+    border: 'border-blue-500/30',
+    shadow: 'shadow-blue-500/20',
   },
   {
     icon: () => <FaVk className='h-6 w-6' />,
@@ -21,7 +23,8 @@ const contacts = [
     value: 'malyginoleg',
     href: 'https://vk.com/malyginoleg',
     color: 'text-indigo-500',
-    bg: 'bg-indigo-50 dark:bg-indigo-950/20',
+    border: 'border-indigo-500/30',
+    shadow: 'shadow-indigo-500/20',
   },
   {
     icon: () => <Mail className='h-6 w-6' />,
@@ -29,21 +32,74 @@ const contacts = [
     value: 'o_malygin@bk.ru',
     href: 'mailto:o_malygin@bk.ru',
     color: 'text-amber-500',
-    bg: 'bg-indigo-50 dark:bg-indigo-950/20',
+    border: 'border-amber-500/30',
+    shadow: 'shadow-amber-500/20',
   },
 ];
 
+function ContactCard({
+  href,
+  Icon,
+  label,
+  value,
+  color,
+  border,
+  shadow,
+  isTouch,
+}: {
+  href: string;
+  Icon: () => React.ReactNode;
+  label: string;
+  value: string;
+  color: string;
+  border: string;
+  shadow: string;
+  isTouch: boolean;
+}) {
+  const controls = useAnimation();
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      whileHover={!isTouch ? { scale: 1.08, rotateY: 10, rotateX: -5 } : undefined}
+      onHoverStart={!isTouch ? () => controls.start({ rotate: 360, scale: 1.15 }) : undefined}
+      onHoverEnd={!isTouch ? () => controls.start({ rotate: 0, scale: 1 }) : undefined}
+      transition={{ duration: 0.4 }}
+      className='block cursor-pointer'
+      onClick={() => window.open(href, '_blank', 'noopener,noreferrer')}
+    >
+      <Card className={`h-full transition-all ${border} ${shadow} ${!isTouch ? 'hover:shadow-lg' : ''}`}>
+        <CardContent className='flex flex-col items-center justify-center text-center p-6 h-full'>
+          <motion.div
+            className={`w-12 h-12 rounded-full border-2 ${border} flex items-center justify-center ${color}`}
+            animate={controls}
+            transition={{ duration: 0.5 }}
+          >
+            <Icon />
+          </motion.div>
+          <h3 className='mt-4 text-sm font-medium text-muted-foreground'>{label}</h3>
+          <p className='mt-1 text-sm font-semibold text-foreground'>{value}</p>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
+
 export function ContactsSection() {
   const t = useTranslations('contacts');
+  const isTouch = useIsTouch();
+  const duration = isTouch ? 0.5 / 1.5 : 0.5;
 
   return (
     <section id='contacts' className='py-12 sm:py-24'>
       <div className='max-w-6xl mx-auto px-4 sm:px-6 lg:px-8'>
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration }}
           className='text-center mb-12'
         >
           <span className='text-amber-500 text-sm font-medium tracking-widest uppercase'>
@@ -54,32 +110,25 @@ export function ContactsSection() {
         </motion.div>
 
         <div className='grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-2xl mx-auto'>
-          {contacts.map(({ icon: Icon, label, value, href, color, bg }, i) => (
-            <motion.a
+          {contacts.map(({ icon: Icon, label, value, href, color, border, shadow }, i) => (
+            <motion.div
               key={label}
-              href={href}
-              target='_blank'
-              rel='noopener noreferrer'
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: i * 0.1 }}
-              whileHover={{ y: -4 }}
+              transition={{ duration, delay: i * 0.1 }}
             >
-              <Card className='border-border hover:border-amber-300 dark:hover:border-amber-700 transition-colors cursor-pointer h-full'>
-                <CardContent className='p-6 flex flex-col items-center text-center gap-3'>
-                  <div
-                    className={`w-12 h-12 rounded-full ${bg} flex items-center justify-center ${color}`}
-                  >
-                    <Icon />
-                  </div>
-                  <div>
-                    <div className='font-semibold text-sm'>{label}</div>
-                    <div className='text-xs text-muted-foreground mt-1'>{value}</div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.a>
+              <ContactCard
+                href={href}
+                Icon={Icon}
+                label={label}
+                value={value}
+                color={color}
+                border={border}
+                shadow={shadow}
+                isTouch={isTouch}
+              />
+            </motion.div>
           ))}
         </div>
       </div>

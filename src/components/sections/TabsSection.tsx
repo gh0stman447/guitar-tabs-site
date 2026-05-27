@@ -8,6 +8,7 @@ import { Search, ChevronUp, ChevronDown, X } from 'lucide-react';
 import type { Tab } from '@/types';
 import { TabCard, TabCardSkeleton } from '@/components/shared/TabCard';
 import { supabase } from '@/lib/supabase';
+import { usePreviewBlock } from '@/context/PreviewBlockContext';
 import {
   TABLE_TABS,
   DISCOUNT_TIER_1_MIN,
@@ -21,11 +22,15 @@ type SortKey = 'title' | 'difficulty' | 'price' | 'popular';
 export function TabsSection() {
   const t = useTranslations('tabs');
   const locale = useLocale();
+  const isTouch = useIsTouch();
+  const headerDuration = isTouch ? 0.5 / 1.5 : 0.5;
+  const cardDuration = 0.2;
   const [tabs, setTabs] = useState<Tab[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortKey>('popular');
   const [asc, setAsc] = useState(false);
+  const { flippingTabId } = usePreviewBlock();
 
   useEffect(() => {
     supabase
@@ -45,7 +50,6 @@ export function TabsSection() {
     { value: 'price', label: t('sortPrice') },
   ];
 
-  const isTouch = useIsTouch();
   const isDirty = search !== '' || sort !== 'popular' || asc;
 
   function reset() {
@@ -90,7 +94,7 @@ export function TabsSection() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: headerDuration }}
           className='text-center mb-12'
         >
           <span className='text-amber-500 text-sm font-medium tracking-widest uppercase'>
@@ -105,7 +109,7 @@ export function TabsSection() {
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.4, delay: 0.15 }}
+          transition={{ duration: headerDuration * 0.8, delay: 0.15 }}
           className='flex flex-col gap-3 mb-8'
         >
           <div className='relative'>
@@ -188,40 +192,29 @@ export function TabsSection() {
           </div>
         ) : filtered.length === 0 && !search ? (
           <p className='text-center text-muted-foreground py-12'>{t('empty')}</p>
-        ) : isTouch ? (
-          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
-            {filtered.map((tab, i) => (
-              <div key={tab.id}>
-                <TabCard
-                  tab={tab}
-                  locale={locale}
-                  buyLabel={t('buy')}
-                  showDetails
-                  index={i}
-                  tooltipPrefix='catalog'
-                />
-              </div>
-            ))}
-          </div>
         ) : (
           <motion.div layout className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
             <AnimatePresence>
-              {filtered.map((tab, i) => (
+              {filtered.map((tab) => (
                 <motion.div
                   key={tab.id}
                   layout
-                  initial={{ opacity: 0, scale: 0.95 }}
+                  initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ duration: cardDuration }}
+                  style={{
+                    zIndex: flippingTabId === `catalog-${tab.id}` ? 100 : 0,
+                  }}
                 >
                   <TabCard
                     tab={tab}
                     locale={locale}
                     buyLabel={t('buy')}
                     showDetails
-                    index={i}
+                    index={filtered.indexOf(tab)}
                     tooltipPrefix='catalog'
+                    sectionPrefix='catalog'
                   />
                 </motion.div>
               ))}

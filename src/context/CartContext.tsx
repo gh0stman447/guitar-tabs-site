@@ -41,11 +41,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(storageKey);
-      setItems(raw ? JSON.parse(raw) : []);
+      queueMicrotask(() => {
+        setItems(raw ? JSON.parse(raw) : []);
+        setLoaded(true);
+      });
     } catch {
-      setItems([]);
+      queueMicrotask(() => {
+        setItems([]);
+        setLoaded(true);
+      });
     }
-    setLoaded(true);
   }, [storageKey]);
 
   // Save to storage on items change

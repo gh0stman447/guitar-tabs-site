@@ -5,7 +5,7 @@ import { Tooltip as ReactTooltip } from 'react-tooltip';
 import { useIsTouch } from '@/hooks/useIsTouch';
 import { useTheme } from 'next-themes';
 import Image from 'next/image';
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { motion, useMotionValue, useSpring, useTransform, useAnimation } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Music, ShoppingCart, Check, Trash2, Eye } from 'lucide-react';
@@ -14,6 +14,7 @@ import { BuyDialog } from '@/components/shared/BuyDialog';
 import { TabPreviewDialog } from '@/components/shared/TabPreviewDialog';
 import { useCart } from '@/context/CartContext';
 import { useCartAnimation } from '@/context/CartAnimationContext';
+import { usePreviewBlock } from '@/context/PreviewBlockContext';
 import { toast } from 'sonner';
 import type { Tab } from '@/types';
 
@@ -46,18 +47,20 @@ interface TabCardProps {
   adminActions?: React.ReactNode;
   /** Префикс для уникальности id тултипов (если компонент используется в нескольких секциях) */
   tooltipPrefix?: string;
+  /** Префикс секции для уникальности flippingTabId (catalog, bestseller) */
+  sectionPrefix?: string;
 }
 
 export function TabCard({
   tab,
   locale,
   buyLabel,
-  index,
   showRank,
   adminActions,
   purchasesLabel,
   showDetails = true,
   tooltipPrefix = '',
+  sectionPrefix = '',
 }: TabCardProps) {
   const [buyOpen, setBuyOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -65,13 +68,17 @@ export function TabCard({
   const tp = tooltipPrefix ? `${tooltipPrefix}-` : '';
   const cardRef = useRef<HTMLDivElement>(null);
   const { addItem, removeItem, hasItem } = useCart();
-  const { flyToCart } = useCartAnimation();
+  const { flyToCart, flyFromCart } = useCartAnimation();
   const { theme } = useTheme();
   const inCart = hasItem(tab.id);
   const [cartHovered, setCartHovered] = useState(false);
   const [justAdded, setJustAdded] = useState(false);
   const isDark = theme === 'dark';
+  const justAddedClass = isTouch ? '' : justAdded;
+  const inCartClass = isTouch ? '' : inCart;
 
+  const flipControls = useAnimation();
+  const { isPreviewBlocking, startPreviewBlock, endPreviewBlock } = usePreviewBlock();
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
   const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [6, -6]), {
@@ -96,6 +103,67 @@ export function TabCard({
     mouseX.set(0);
     mouseY.set(0);
   }
+
+  function handlePreviewClick() {
+    if (isPreviewBlocking || previewOpen) return;
+    // Skip flip animation on touch devices
+    if (isTouch) {
+      setPreviewOpen(true);
+      return;
+    }
+    // Use section prefix to create unique flippingTabId
+    const uniqueTabId = sectionPrefix ? `${sectionPrefix}-${tab.id}` : tab.id;
+    startPreviewBlock(uniqueTabId);
+    // Disable tilt during flip
+    mouseX.set(0);
+    mouseY.set(0);
+
+    // Get card position and calculate center offset
+    const rect = cardRef.current?.getBoundingClientRect();
+    if (rect) {
+      const centerX = window.innerWidth / 2 - rect.left - rect.width / 2;
+      const centerY = window.innerHeight / 2 - rect.top - rect.height / 2;
+
+      // Fly to center of screen with flip
+      flipControls.start({
+        x: centerX,
+        y: centerY,
+        rotateY: 180,
+        scale: 2.5,
+        z: 500,
+        opacity: [1, 1, 0],
+        transition: { duration: 0.6, ease: 'easeInOut' },
+      }).then(() => {
+        setPreviewOpen(true);
+        // Keep card in "flown" state until preview closes
+        flipControls.set({
+          x: centerX,
+          y: centerY,
+          rotateY: 180,
+          scale: 2.5,
+          z: 500,
+          opacity: 0,
+        });
+      });
+    }
+  }
+
+  function handlePreviewClose() {
+    setPreviewOpen(false);
+    // Animate back to original position
+    flipControls.start({
+      x: 0,
+      y: 0,
+      rotateY: 0,
+      scale: 1,
+      z: 0,
+      opacity: 1,
+      transition: { duration: 0.6, ease: 'easeInOut' },
+    }).then(() => {
+      // End preview block after animation completes
+      endPreviewBlock();
+    });
+  }
   const title = locale === 'en' ? tab.title_en : tab.title_ru;
   const description = locale === 'en' ? tab.description_en : tab.description_ru;
 
@@ -111,16 +179,72 @@ export function TabCard({
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
         >
+          <motion.div
+            animate={flipControls}
+            style={{
+              transformStyle: 'preserve-3d',
+              transformOrigin: 'center center',
+              zIndex: 99999,
+            }}
+          >
           <Card
-            style={justAdded ? { boxShadow: isDark ? '0 0 15px 3px rgba(245,158,11,0.5)' : '0 0 12px 3px rgba(245,158,11,0.5), 0 0 20px 6px rgba(0,0,0,0.15)' } : inCart ? { boxShadow: isDark ? '0 0 15px 2px rgba(245,158,11,0.2)' : '0 0 10px 2px rgba(245,158,11,0.35), 0 0 16px 4px rgba(0,0,0,0.12)' } : {}}
-            className={`overflow-hidden h-full flex flex-col transition-all duration-500 relative ${
-              justAdded
-                ? isDark ? 'border-amber-500/50' : 'border-amber-500/60'
-                : inCart
-                  ? isDark ? 'border-amber-500/30' : 'border-amber-500/40'
-                  : 'border-border hover:border-amber-300 dark:hover:border-amber-700'  
+            style={{
+              transformStyle: 'preserve-3d',
+              backfaceVisibility: 'hidden',
+              WebkitBackfaceVisibility: 'hidden',
+              ...(isTouch
+                ? {}
+                : justAddedClass
+                  ? {
+                      boxShadow: isDark
+                        ? '0 0 15px 3px rgba(245,158,11,0.5)'
+                        : '0 0 12px 3px rgba(245,158,11,0.5), 0 0 20px 6px rgba(0,0,0,0.15)',
+                    }
+                  : inCartClass
+                    ? {
+                        boxShadow: isDark
+                          ? '0 0 15px 2px rgba(245,158,11,0.2)'
+                          : '0 0 10px 2px rgba(245,158,11,0.35), 0 0 16px 4px rgba(0,0,0,0.12)',
+                      }
+                    : {}),
+            }}
+            className={`overflow-hidden h-full flex flex-col relative transition-all duration-500 ${
+              isTouch
+                ? 'border-border'
+                : justAddedClass
+                  ? isDark
+                    ? 'border-amber-500/50'
+                    : 'border-amber-500/60'
+                  : inCartClass
+                    ? isDark
+                      ? 'border-amber-500/30'
+                      : 'border-amber-500/40'
+                    : 'border-border hover:border-amber-300 dark:hover:border-amber-700'
             }`}
           >
+            {/* Card back / Рубашка - visible when flipped */}
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                border: '2px solid rgba(245, 158, 11, 0.3)',
+                borderRadius: '12px',
+                backgroundImage: `repeating-linear-gradient(45deg, rgba(245, 158, 11, 0.05) 0px, rgba(245, 158, 11, 0.05) 2px, transparent 2px, transparent 4px)`,
+                transform: 'rotateY(180deg)',
+                backfaceVisibility: 'hidden',
+                WebkitBackfaceVisibility: 'hidden',
+                zIndex: 50,
+              }}
+            />
+
+            {/* Wrapper for front content with backface hidden */}
+            <div
+              style={{
+                backfaceVisibility: 'hidden',
+                WebkitBackfaceVisibility: 'hidden',
+              }}
+            >
             {showRank && (
               <div className='absolute top-3 left-3 z-10 bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded-full'>
                 #1
@@ -199,7 +323,7 @@ export function TabCard({
                         size='sm'
                         variant='outline'
                         className={`rounded-full w-9 h-9 p-0 shrink-0 transition-colors bg-transparent hover:bg-transparent dark:bg-transparent dark:hover:bg-transparent ${isTouch ? 'border-border text-foreground' : 'hover:border-amber-500 hover:text-amber-500'}`}
-                        onClick={() => setPreviewOpen(true)}
+                        onClick={handlePreviewClick}
                       >
                         <Eye className='h-4 w-4' />
                       </Button>
@@ -249,15 +373,21 @@ export function TabCard({
                         }
                         size='sm'
                         variant='outline'
-                        className={`rounded-full w-9 h-9 p-0 shrink-0 transition-all duration-300 bg-transparent hover:bg-transparent dark:bg-transparent dark:hover:bg-transparent ${
-                          inCart
-                            ? cartHovered
-                              ? 'border-red-500 text-red-500'
+                        className={`rounded-full w-9 h-9 p-0 shrink-0 ${
+                          isTouch
+                            ? inCart
+                              ? cartHovered
+                                ? 'border-red-500 text-red-500'
+                                : 'border-amber-500 text-amber-500'
                               : 'border-amber-500 text-amber-500'
-                            : isTouch
-                              ? 'border-amber-500 text-amber-500'
-                              : 'hover:border-amber-500 hover:text-amber-500'
-                        } ${justAdded ? 'shadow-[0_0_20px_3px_rgba(245,158,11,0.6)]' : ''}`}
+                            : 'transition-all duration-300 bg-transparent hover:bg-transparent dark:bg-transparent dark:hover:bg-transparent ' +
+                              (inCartClass
+                                ? cartHovered
+                                  ? 'border-red-500 text-red-500'
+                                  : 'border-amber-500 text-amber-500'
+                                : 'hover:border-amber-500 hover:text-amber-500') +
+                              (justAddedClass ? ' shadow-[0_0_10px_1px_rgba(245,158,11,0.6)]' : '')
+                        }`}
                         onClick={() => {
                           if (inCart) {
                             removeItem(tab.id);
@@ -266,17 +396,25 @@ export function TabCard({
                                 locale === 'en' ? 'Removed from cart' : 'Убрано из корзины',
                               icon: '🗑️',
                             });
+                            if (!isTouch) {
+                              const el = cardRef.current;
+                              if (el) flyFromCart(el.getBoundingClientRect(), el);
+                            }
                           } else {
                             addItem(tab);
-                            setJustAdded(true);
-                            setTimeout(() => setJustAdded(false), 650);
+                            if (!isTouch) {
+                              setJustAdded(true);
+                              setTimeout(() => setJustAdded(false), 650);
+                            }
                             toast(title, {
                               description:
                                 locale === 'en' ? 'Added to cart' : 'Добавлено в корзину',
                               icon: '🛒',
                             });
-                            const el = cardRef.current;
-                            if (el) flyToCart(el.getBoundingClientRect(), el);
+                            if (!isTouch) {
+                              const el = cardRef.current;
+                              if (el) flyToCart(el.getBoundingClientRect(), el);
+                            }
                           }
                         }}
                         onMouseEnter={() => setCartHovered(true)}
@@ -313,7 +451,9 @@ export function TabCard({
                 </div>
               </div>
             </CardContent>
+            </div>
           </Card>
+          </motion.div>
         </motion.div>
       </div>
       <BuyDialog tab={tab} locale={locale} open={buyOpen} onOpenChange={setBuyOpen} />
@@ -321,7 +461,10 @@ export function TabCard({
         tab={tab}
         locale={locale}
         open={previewOpen}
-        onOpenChange={setPreviewOpen}
+        onOpenChange={(open) => {
+          if (!open) handlePreviewClose();
+          else setPreviewOpen(open);
+        }}
         onBuy={() => setBuyOpen(true)}
       />
     </>

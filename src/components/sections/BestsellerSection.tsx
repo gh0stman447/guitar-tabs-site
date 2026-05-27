@@ -3,18 +3,24 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslations, useLocale } from 'next-intl';
+import { useIsTouch } from '@/hooks/useIsTouch';
 import { TrendingUp } from 'lucide-react';
 import { TabCard } from '@/components/shared/TabCard';
 import { TabCardSkeleton } from '@/components/shared/TabCard/TabCardSkeleton';
 import { supabase } from '@/lib/supabase';
+import { usePreviewBlock } from '@/context/PreviewBlockContext';
 import { TABLE_TABS } from '@/lib/constants';
 import type { Tab } from '@/types';
 
 export function BestsellerSection() {
   const t = useTranslations('bestseller');
   const locale = useLocale();
+  const isTouch = useIsTouch();
+  const duration = isTouch ? 0.5 / 1.5 : 0.5;
+  const cardDuration = isTouch ? 0.7 / 1.5 : 0.7;
   const [topTabs, setTopTabs] = useState<Tab[]>([]);
   const [loading, setLoading] = useState(true);
+  const { flippingTabId } = usePreviewBlock();
 
   useEffect(() => {
     supabase
@@ -41,7 +47,7 @@ export function BestsellerSection() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration }}
           className='text-center mb-12'
         >
           <div className='flex items-center justify-center gap-2 mb-2'>
@@ -64,17 +70,31 @@ export function BestsellerSection() {
         ) : (
           <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
             {topTabs.map((tab, i) => (
-              <TabCard
+              <motion.div
                 key={tab.id}
-                tab={tab}
-                index={i}
-                locale={locale}
-                buyLabel={t('buy')}
-                showRank={i === 0}
-                purchasesLabel={t('purchases', { count: tab.purchase_count })}
-                showDetails={false}
-                tooltipPrefix='bestseller'
-              />
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{
+                  duration: cardDuration,
+                  delay: i * 0.1,
+                }}
+                style={{
+                  zIndex: flippingTabId === `bestseller-${tab.id}` ? 100 : 0,
+                }}
+              >
+                <TabCard
+                  tab={tab}
+                  index={i}
+                  locale={locale}
+                  buyLabel={t('buy')}
+                  showRank={i === 0}
+                  purchasesLabel={t('purchases', { count: tab.purchase_count })}
+                  showDetails={false}
+                  tooltipPrefix='bestseller'
+                  sectionPrefix='bestseller'
+                />
+              </motion.div>
             ))}
           </div>
         )}

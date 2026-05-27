@@ -100,7 +100,7 @@ export function CheckoutForm({ locale, price, onSubmit }: CheckoutFormProps) {
           type='text'
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder={ru ? 'ваш@email.com' : 'your@email.com'}
+          placeholder={ru ? 'Ваш email' : 'Your email'}
           className={inputCls(!!errors.email)}
         />
         {submitted && errors.email ? (

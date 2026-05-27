@@ -8,7 +8,9 @@ import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useIsTouch } from '@/hooks/useIsTouch';
 import { useDelayedRender } from '@/hooks/useDelayedRender';
+import { usePreviewBlock } from '@/context/PreviewBlockContext';
 import type { Tab } from '@/types';
+import { motion } from 'framer-motion';
 
 interface TabPreviewDialogProps {
   tab: Tab;
@@ -35,24 +37,52 @@ export function TabPreviewDialog({
   const autoScrollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const userScrolledRef = useRef(false);
   const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
+  const { endPreviewBlock } = usePreviewBlock();
   const tooltipsReady = useDelayedRender(0, open);
 
   async function handleDownload() {
+    if (downloading) return;
+    setDownloading(true);
+    setDownloadProgress(0);
+
+    // Animate progress from 0 to 100%
+    const progressInterval = setInterval(() => {
+      setDownloadProgress((prev) => {
+        if (prev >= 95) return prev;
+        return prev + 5;
+      });
+    }, 100);
+
     try {
       const response = await fetch(`/api/tabs/${tab.id}/preview?t=${Date.now()}`, {
         cache: 'no-store',
       });
       if (!response.ok) throw new Error('Failed to download');
       const blob = await response.blob();
+
+      clearInterval(progressInterval);
+      setDownloadProgress(100);
+
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${title}_preview.pdf`;
+      const safeTitle = title.replace(/\s+/g, '_');
+      a.download = `${safeTitle}_preview.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
+
+      setTimeout(() => {
+        setDownloading(false);
+        setDownloadProgress(0);
+      }, 500);
     } catch (e) {
+      clearInterval(progressInterval);
+      setDownloading(false);
+      setDownloadProgress(0);
       console.error('[TabPreview] download error:', e);
       toast.error(
         locale === 'en'
@@ -207,6 +237,7 @@ export function TabPreviewDialog({
         className='max-w-2xl w-full p-0 gap-0 overflow-hidden flex flex-col'
         style={{ maxHeight: '90dvh' }}
         showCloseButton={false}
+        onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <DialogHeader
           style={{ backgroundColor: isDark ? undefined : 'rgba(68,77,86,0.1)' }}
@@ -215,15 +246,55 @@ export function TabPreviewDialog({
           <DialogTitle className='text-base font-semibold flex-1'>{title}</DialogTitle>
           {!isTouch ? (
             <div className='flex items-center gap-1'>
-              <button
-                data-tooltip-id='preview-download'
-                data-tooltip-content={locale === 'en' ? 'Download preview' : 'Скачать превью'}
-                onClick={handleDownload}
-                className='rounded-full w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-amber-500 hover:bg-accent transition-colors cursor-pointer'
-              >
-                <Download className='h-4 w-4' />
-              </button>
-              {tooltipsReady && (
+              <div className='relative'>
+                <button
+                  data-tooltip-id='preview-download'
+                  data-tooltip-content={locale === 'en' ? 'Download preview' : 'Скачать превью'}
+                  onClick={handleDownload}
+                  disabled={downloading}
+                  className={`rounded-full w-7 h-7 flex items-center justify-center transition-colors ${
+                    downloading
+                      ? 'text-amber-500 cursor-not-allowed'
+                      : 'text-muted-foreground hover:text-amber-500 hover:bg-accent cursor-pointer'
+                  }`}
+                >
+                  <Download className={`h-4 w-4 ${downloading ? 'opacity-50' : ''}`} />
+                </button>
+                {/* Circular progress */}
+                {downloading && (
+                  <svg
+                    className='absolute inset-0 w-7 h-7 -rotate-90 pointer-events-none'
+                    viewBox='0 0 28 28'
+                  >
+                    <circle
+                      cx='14'
+                      cy='14'
+                      r='12'
+                      fill='none'
+                      stroke='currentColor'
+                      strokeWidth='2'
+                      className='text-zinc-200 dark:text-zinc-700'
+                    />
+                    <motion.circle
+                      cx='14'
+                      cy='14'
+                      r='12'
+                      fill='none'
+                      stroke='currentColor'
+                      strokeWidth='2'
+                      strokeLinecap='round'
+                      className='text-amber-500'
+                      strokeDasharray={75.4}
+                      strokeDashoffset={75.4}
+                      animate={{
+                        strokeDashoffset: 75.4 - (downloadProgress / 100) * 75.4,
+                      }}
+                      transition={{ duration: 0.1 }}
+                    />
+                  </svg>
+                )}
+              </div>
+              {tooltipsReady && !downloading && (
                 <ReactTooltip id='preview-download' place='bottom' opacity={1} delayShow={350} />
               )}
               <button
@@ -238,12 +309,50 @@ export function TabPreviewDialog({
             </div>
           ) : (
             <div className='flex items-center gap-1'>
-              <button
-                onClick={handleDownload}
-                className='rounded-full w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-amber-500 hover:bg-accent transition-colors cursor-pointer'
-              >
-                <Download className='h-4 w-4' />
-              </button>
+              <div className='relative'>
+                <button
+                  onClick={handleDownload}
+                  disabled={downloading}
+                  className={`rounded-full w-7 h-7 flex items-center justify-center transition-colors cursor-pointer ${
+                    downloading ? 'text-amber-500' : 'text-muted-foreground hover:text-amber-500 hover:bg-accent'
+                  }`}
+                >
+                  <Download className={`h-4 w-4 ${downloading ? 'opacity-50' : ''}`} />
+                </button>
+                {/* Circular progress */}
+                {downloading && (
+                  <svg
+                    className='absolute inset-0 w-7 h-7 -rotate-90 pointer-events-none'
+                    viewBox='0 0 28 28'
+                  >
+                    <circle
+                      cx='14'
+                      cy='14'
+                      r='12'
+                      fill='none'
+                      stroke='currentColor'
+                      strokeWidth='2'
+                      className='text-zinc-200 dark:text-zinc-700'
+                    />
+                    <motion.circle
+                      cx='14'
+                      cy='14'
+                      r='12'
+                      fill='none'
+                      stroke='currentColor'
+                      strokeWidth='2'
+                      strokeLinecap='round'
+                      className='text-amber-500'
+                      strokeDasharray={75.4}
+                      strokeDashoffset={75.4}
+                      animate={{
+                        strokeDashoffset: 75.4 - (downloadProgress / 100) * 75.4,
+                      }}
+                      transition={{ duration: 0.1 }}
+                    />
+                  </svg>
+                )}
+              </div>
               <button
                 onClick={() => onOpenChange(false)}
                 className='rounded-full w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer'

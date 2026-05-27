@@ -7,6 +7,7 @@ import { routing } from '@/i18n/routing';
 import { ScrollProgress } from '@/components/shared/ScrollProgress';
 import { CartProvider } from '@/context/CartContext';
 import { CartAnimationProvider } from '@/context/CartAnimationContext';
+import { PreviewBlockProvider } from '@/context/PreviewBlockContext';
 import { AdminProvider } from '@/context/AdminContext';
 import { ThemedToaster } from '@/components/shared/ThemedToaster';
 import { FloatingCart } from '@/components/shared/FloatingCart';
@@ -114,11 +115,13 @@ export default async function LocaleLayout({
             <AdminProvider>
               <CartProvider>
                 <CartAnimationProvider>
-                  <ScrollProgress />
-                  {children}
-                  <FloatingCart />
-                  <NoteParticles />
-                  <ThemedToaster />
+                  <PreviewBlockProvider>
+                    <ScrollProgress />
+                    {children}
+                    <FloatingCart />
+                    <NoteParticles />
+                    <ThemedToaster />
+                  </PreviewBlockProvider>
                 </CartAnimationProvider>
               </CartProvider>
             </AdminProvider>

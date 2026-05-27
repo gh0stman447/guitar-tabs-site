@@ -1,12 +1,13 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { ArrowDown } from 'lucide-react';
 import { useIsTouch } from '@/hooks/useIsTouch';
 import { NOTES } from '@/lib/notes';
+import { cn } from '@/lib/utils';
 
 const floatingNotes = Array.from({ length: 18 }, (_, i) => ({
   id: i,
@@ -24,6 +25,21 @@ export function HeroSection() {
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
 
   const isMobile = useIsTouch();
+  const duration = isMobile ? 0.7 / 1.5 : 0.7;
+
+  const [viewportHeight, setViewportHeight] = useState(
+    typeof window !== 'undefined' ? window.innerHeight : 768,
+  );
+
+  useEffect(() => {
+    const handleResize = () => setViewportHeight(window.innerHeight);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Компактный режим для маленьких экранов в landscape (iPhone SE и т.д.)
+  const isCompact = isMobile && viewportHeight < 520;
 
   const blobY1 = useTransform(scrollYProgress, [0, 1], isMobile ? ['0%', '0%'] : ['0%', '-40%']);
   const blobY2 = useTransform(scrollYProgress, [0, 1], isMobile ? ['0%', '0%'] : ['0%', '-20%']);
@@ -79,40 +95,57 @@ export function HeroSection() {
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7 }}
+          transition={{ duration }}
         >
-          <span className='inline-block text-amber-500 text-sm font-medium tracking-widest uppercase mb-4'>
+          <span
+            className={cn(
+              'inline-block text-amber-500 font-medium tracking-widest uppercase mb-4',
+              isCompact ? 'text-xs' : 'text-sm',
+            )}
+          >
             {t('badge')}
           </span>
-          <h1 className='text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight mb-6 leading-tight'>
+          <h1
+            className={cn(
+              'font-bold tracking-tight leading-tight mb-6',
+              isCompact ? 'text-4xl sm:text-5xl' : 'text-5xl sm:text-6xl lg:text-7xl',
+            )}
+          >
             {t('title')}
             <br />
             <span className='text-amber-500'>{t('titleAccent')}</span>
           </h1>
-          <p className='text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10'>
+          <p
+            className={cn(
+              'text-muted-foreground max-w-2xl mx-auto',
+              isCompact ? 'mb-0' : 'text-lg sm:text-xl mb-10',
+            )}
+          >
             {t('description')}
           </p>
-          <div className='flex flex-col sm:flex-row items-center justify-center gap-4'>
-            <Button
-              size='lg'
-              className='bg-amber-500 hover:bg-amber-600 text-white font-medium px-8 h-12 rounded-full'
-              onClick={() =>
-                document.getElementById('tabs')?.scrollIntoView({ behavior: 'smooth' })
-              }
-            >
-              {t('ctaTabs')}
-            </Button>
-            <Button
-              variant='outline'
-              size='lg'
-              className='h-12 px-8 rounded-full'
-              onClick={() =>
-                document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })
-              }
-            >
-              {t('ctaAbout')}
-            </Button>
-          </div>
+          {!isCompact && (
+            <div className='flex flex-col sm:flex-row items-center justify-center gap-4'>
+              <Button
+                size='lg'
+                className='bg-amber-500 hover:bg-amber-600 text-white font-medium px-8 h-12 rounded-full'
+                onClick={() =>
+                  document.getElementById('tabs')?.scrollIntoView({ behavior: 'smooth' })
+                }
+              >
+                {t('ctaTabs')}
+              </Button>
+              <Button
+                variant='outline'
+                size='lg'
+                className='h-12 px-8 rounded-full'
+                onClick={() =>
+                  document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })
+                }
+              >
+                {t('ctaAbout')}
+              </Button>
+            </div>
+          )}
         </motion.div>
       </motion.div>
 

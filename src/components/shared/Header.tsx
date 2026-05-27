@@ -31,6 +31,7 @@ export function Header() {
   const [hidden, setHidden] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
+  const [adminMenuOpen, setAdminMenuOpen] = useState(false);
   const { isAdmin, setIsAdmin } = useAdmin();
 
   function handleLogout() {
@@ -132,12 +133,16 @@ export function Header() {
 
             <div className='flex items-center gap-2'>
               {isAdmin && (
-                <DropdownMenu>
+                <DropdownMenu open={adminMenuOpen} onOpenChange={setAdminMenuOpen}>
                   <DropdownMenuTrigger asChild>
-                    <button className='hidden md:flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-full border border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white transition-colors cursor-pointer'>
+                    <div
+                      className='hidden md:flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-full border border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white transition-colors cursor-pointer'
+                      onPointerDown={(e) => e.preventDefault()}
+                      onClick={() => setAdminMenuOpen(true)}
+                    >
                       <Settings className='h-3.5 w-3.5' />
                       Админ
-                    </button>
+                    </div>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align='end' className='w-48'>
                     <DropdownMenuItem asChild>
@@ -161,7 +166,10 @@ export function Header() {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout} className='text-red-500 cursor-pointer'>
+                    <DropdownMenuItem
+                      onClick={handleLogout}
+                      className='text-red-500 cursor-pointer'
+                    >
                       <LogOut className='h-3.5 w-3.5 mr-2' />
                       Выйти
                     </DropdownMenuItem>

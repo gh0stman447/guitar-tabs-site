@@ -84,10 +84,12 @@ src/
 ├── context/
 │   ├── CartContext.tsx
 │   ├── CartAnimationContext.tsx
-│   └── AdminContext.tsx
+│   ├── AdminContext.tsx
+│   └── PreviewBlockContext.tsx    # Блокировка превью + flip анимация
 ├── hooks/
 │   ├── useIsTouch.ts
-│   └── useDelayedRender.ts
+│   ├── useDelayedRender.ts
+│   └── useOrientation.ts
 ├── i18n/
 │   ├── request.ts
 │   └── routing.ts
@@ -279,7 +281,15 @@ interface Purchase {
 - Бейдж сложности с цветовой кодировкой
 - Бейджи форматов (PDF, GP5, GPX, MP3)
 - Добавление/удаление из корзины
+- Flip-анимация при превью (полёт в центр экрана с переворотом)
+- Отключение анимаций на touch-устройствах
 - Превью диалог
+
+### TabPreviewDialog (`src/components/shared/TabPreviewDialog.tsx`)
+- PDF.js рендеринг первой страницы
+- Auto-scroll анимация
+- Кнопка скачивания PDF с circular progress анимацией
+- Tooltip'ы с задержкой (через useDelayedRender)
 
 ### CheckoutForm (`src/components/shared/CheckoutForm.tsx`)
 - Валидация имени, email
@@ -293,14 +303,6 @@ interface Purchase {
 - Интегрированная форма заказа
 - Tooltip'ы с задержкой (через useDelayedRender)
 
-### TabPreviewDialog (`src/components/shared/TabPreviewDialog.tsx`)
-- PDF.js рендеринг
-- Auto-scroll анимация
-- Превью первой страницы
-- Кнопка скачивания PDF
-- Tooltip'ы с задержкой (через useDelayedRender)
-
----
 
 ## Аутентификация админа
 
@@ -464,7 +466,7 @@ await query('UPDATE "guitar-tabs" SET "purchase_count" = "purchase_count" + 1 WH
 ## Доступность (Accessibility)
 
 - Детекция touch-устройств (`useIsTouch` hook)
-- Отключённые анимации на touch
+- Отключённые анимации на touch (flip, cart fly, justAdded glow)
 - Поддержка клавиатурной навигации
 
 ---
@@ -482,6 +484,29 @@ await query('UPDATE "guitar-tabs" SET "purchase_count" = "purchase_count" + 1 WH
 - Эффект полёта частиц при добавлении
 - Framer Motion + React Portal
 - Траектория по дуге
+
+---
+
+## PreviewBlockContext
+
+**Файл:** `src/context/PreviewBlockContext.tsx`
+
+Контекст для управления состоянием flip-анимации карточек.
+
+```typescript
+interface PreviewBlockContextValue {
+  isPreviewBlocking: boolean;      // Активна ли анимация превью
+  flippingTabId: string | null;    // ID карточки, которая флиппится
+  startPreviewBlock: (tabId: string) => void;
+  endPreviewBlock: () => void;
+}
+```
+
+**Использование:**
+- При клике на превью вызывается `startPreviewBlock(tab.id)`
+- Устанавливается `zIndex: 100` для активной карточки в `TabsSection`/`BestsellerSection`
+- У остальных карточек `zIndex: 1` и `pointerEvents: 'none'`
+- Это решает проблему перекрытия карточек во время flip-анимации
 
 ---
 
@@ -503,6 +528,19 @@ const tooltipsReady = useDelayedRender(0, open);
 **Особенности:**
 - Использует `queueMicrotask` для избежания ESLint предупреждений
 - Автоматически очищает таймер при размонтировании или смене trigger
+
+### useOrientation (`src/hooks/useOrientation.ts`)
+
+Хук для определения ориентации устройства (landscape/portrait).
+
+```typescript
+const isLandscape = useOrientation();
+```
+
+**Особенности:**
+- Использует `window.screen.orientation` API (с fallback)
+- Слушает события `resize` и `orientationchange`
+- Возвращает `true` для landscape ориентации
 
 ---
 
@@ -536,7 +574,9 @@ npm run lint
 | Admin auth | `src/lib/admin-auth.ts` |
 | i18n config | `src/i18n/routing.ts`, `src/i18n/request.ts` |
 | Cart context | `src/context/CartContext.tsx` |
+| Cart animation context | `src/context/CartAnimationContext.tsx` |
 | Admin context | `src/context/AdminContext.tsx` |
+| PreviewBlock context | `src/context/PreviewBlockContext.tsx` |
 | Payment webhook | `src/app/api/payment/webhook/route.ts` |
 | Payment simulate | `src/app/api/payment/simulate/route.ts` |
 | Payment create | `src/app/api/payment/create/route.ts` |
@@ -545,3 +585,5 @@ npm run lint
 | Main page | `src/app/[locale]/page.tsx` |
 | Admin page | `src/app/[locale]/admin/page.tsx` |
 | Payment stub | `src/app/[locale]/payment-stub/page.tsx` |
+| PreviewBlock context | `src/context/PreviewBlockContext.tsx` |
+| useOrientation hook | `src/hooks/useOrientation.ts` |

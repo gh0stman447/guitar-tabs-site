@@ -6,10 +6,12 @@ import { Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
 import { useLocale } from 'next-intl';
+import { useIsTouch } from '@/hooks/useIsTouch';
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
   const locale = useLocale();
+  const isTouch = useIsTouch();
   const [mounted, setMounted] = useState(false);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -19,6 +21,19 @@ export function ThemeToggle() {
 
   const isDark = theme === 'dark';
   const isRu = locale === 'ru';
+
+  if (isTouch) {
+    return (
+      <Button
+        variant='ghost'
+        size='icon'
+        onClick={() => setTheme(isDark ? 'light' : 'dark')}
+        aria-label='Переключить тему'
+      >
+        {isDark ? <Sun className='h-4 w-4' /> : <Moon className='h-4 w-4' />}
+      </Button>
+    );
+  }
 
   return (
     <>

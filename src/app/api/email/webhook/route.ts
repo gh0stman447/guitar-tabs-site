@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { TABLE_PURCHASES, TABLE_NEWSLETTER_LOGS } from '@/lib/constants';
 
-// Resend event priority: opened > delivered > sent
+// Resend event priority: opened > delivered > bounced > sent
 const STATUS_PRIORITY: Record<string, number> = {
   sent: 1,
-  delivered: 2,
-  opened: 3,
+  bounced: 2,
+  delivered: 3,
+  opened: 4,
 };
 
 export async function POST(req: NextRequest) {
@@ -26,6 +27,9 @@ export async function POST(req: NextRequest) {
       break;
     case 'email.opened':
       newStatus = 'opened';
+      break;
+    case 'email.bounced':
+      newStatus = 'bounced';
       break;
     default:
       return NextResponse.json({ ok: true });
@@ -47,10 +51,20 @@ export async function POST(req: NextRequest) {
     console.log('[webhook] purchases:', { currentPriority, newPriority, emailId });
 
     if (newPriority > currentPriority) {
-      const timestampField = newStatus === 'delivered' ? 'delivered_at' : 'opened_at';
-      const sql = `UPDATE "${TABLE_PURCHASES}" SET email_status = $1, "${timestampField}" = NOW() WHERE resend_email_id = $2`;
-      console.log('[webhook] Executing update:', sql);
-      await query(sql, [newStatus, emailId]);
+      let timestampField: string | null = null;
+      if (newStatus === 'delivered') timestampField = 'delivered_at';
+      else if (newStatus === 'opened') timestampField = 'opened_at';
+      // For 'bounced' - just update status without timestamp
+
+      if (timestampField) {
+        const sql = `UPDATE "${TABLE_PURCHASES}" SET email_status = $1, "${timestampField}" = NOW() WHERE resend_email_id = $2`;
+        console.log('[webhook] Executing update:', sql);
+        await query(sql, [newStatus, emailId]);
+      } else {
+        const sql = `UPDATE "${TABLE_PURCHASES}" SET email_status = $1 WHERE resend_email_id = $2`;
+        console.log('[webhook] Executing update:', sql);
+        await query(sql, [newStatus, emailId]);
+      }
     }
     return NextResponse.json({ ok: true });
   }
@@ -69,10 +83,20 @@ export async function POST(req: NextRequest) {
     console.log('[webhook] newsletter_logs:', { currentPriority, newPriority, emailId });
 
     if (newPriority > currentPriority) {
-      const timestampField = newStatus === 'delivered' ? 'delivered_at' : 'opened_at';
-      const sql = `UPDATE "${TABLE_NEWSLETTER_LOGS}" SET status = $1, "${timestampField}" = NOW() WHERE resend_email_id = $2`;
-      console.log('[webhook] Executing update:', sql);
-      await query(sql, [newStatus, emailId]);
+      let timestampField: string | null = null;
+      if (newStatus === 'delivered') timestampField = 'delivered_at';
+      else if (newStatus === 'opened') timestampField = 'opened_at';
+      // For 'bounced' - just update status without timestamp
+
+      if (timestampField) {
+        const sql = `UPDATE "${TABLE_NEWSLETTER_LOGS}" SET status = $1, "${timestampField}" = NOW() WHERE resend_email_id = $2`;
+        console.log('[webhook] Executing update:', sql);
+        await query(sql, [newStatus, emailId]);
+      } else {
+        const sql = `UPDATE "${TABLE_NEWSLETTER_LOGS}" SET status = $1 WHERE resend_email_id = $2`;
+        console.log('[webhook] Executing update:', sql);
+        await query(sql, [newStatus, emailId]);
+      }
     }
   }
 

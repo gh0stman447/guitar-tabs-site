@@ -143,6 +143,18 @@ async function handlePaymentSucceeded(payment: YookassaPayment) {
     return NextResponse.json({ error: 'Missing metadata' }, { status: 400 });
   }
 
+  // 0. Idempotency check - skip if already processed
+  const { data: existingPurchase } = await supabaseAdmin
+    .from(TABLE_PURCHASES)
+    .select('status, resend_email_id')
+    .eq('id', purchaseId)
+    .single();
+
+  if (existingPurchase?.status === 'succeeded' && existingPurchase.resend_email_id) {
+    console.log('[webhook] Purchase already processed, skipping:', purchaseId);
+    return NextResponse.json({ ok: true });
+  }
+
   // 1. Update purchase status
   const { error: updateError } = await supabaseAdmin
     .from(TABLE_PURCHASES)
@@ -206,7 +218,19 @@ async function handlePaymentSucceeded(payment: YookassaPayment) {
     console.error('[webhook] ZIP build error:', zipError);
   }
 
-   // 6. Send email
+  // 6. Idempotency check (race condition protection)
+  const { data: latestPurchase } = await supabaseAdmin
+    .from(TABLE_PURCHASES)
+    .select('resend_email_id')
+    .eq('id', purchaseId)
+    .single();
+
+  if (latestPurchase?.resend_email_id) {
+    console.log('[webhook] Email already sent, skipping:', purchaseId);
+    return NextResponse.json({ ok: true });
+  }
+
+  // 7. Send email
   const tabTitles = tabsWithTitles.map((t) => t.title_ru).join(', ');
   const emailId = await sendEmail({ to: customerEmail, tabTitles, attachments, receiptUrl });
 

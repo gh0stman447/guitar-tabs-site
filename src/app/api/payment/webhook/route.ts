@@ -16,7 +16,7 @@ interface YookassaPayment {
 /**
  * Запрос чека на российский сервер (Мой Налог)
  */
-async function createReceipt(amount: number, customerName: string): Promise<string | null> {
+async function createReceipt(amount: number, customerName: string, purchaseId: string): Promise<string | null> {
   const proxyUrl = process.env.NALOG_PROXY_URL;
   const proxyKey = process.env.NALOG_PROXY_KEY;
 
@@ -35,6 +35,7 @@ async function createReceipt(amount: number, customerName: string): Promise<stri
       body: JSON.stringify({
         amount: amount,
         name: customerName || 'Покупатель',
+        purchase_id: purchaseId,  // Уникальный идентификатор для чека
       }),
     });
 
@@ -195,7 +196,7 @@ async function handlePaymentSucceeded(payment: YookassaPayment) {
     tabsWithTitles.length === 1
       ? tabsWithTitles[0].title_ru
       : `Гитарные табы (${tabsWithTitles.length} шт.)`;
-  const receiptUrl = await createReceipt(purchase.amount, serviceName);
+  const receiptUrl = await createReceipt(purchase.amount, serviceName, purchaseId);
 
   // 5. Build zip archive
   let attachments: { filename: string; content: string }[] = [];
@@ -205,7 +206,7 @@ async function handlePaymentSucceeded(payment: YookassaPayment) {
     console.error('[webhook] ZIP build error:', zipError);
   }
 
-  // 6. Send email
+   // 6. Send email
   const tabTitles = tabsWithTitles.map((t) => t.title_ru).join(', ');
   const emailId = await sendEmail({ to: customerEmail, tabTitles, attachments, receiptUrl });
 

@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { TABLE_TABS, TABLE_CUSTOMERS, TABLE_PURCHASES } from '@/lib/constants';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function POST(req: NextRequest) {
   const { tab_id, tab_ids, firstname, email: rawEmail, newsletter, test } = await req.json();
   const email = rawEmail?.trim().toLowerCase();

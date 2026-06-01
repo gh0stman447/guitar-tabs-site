@@ -70,7 +70,9 @@ function ContactCard({
       className='block cursor-pointer'
       onClick={() => window.open(href, '_blank', 'noopener,noreferrer')}
     >
-      <Card className={`h-full transition-all ${border} ${shadow} ${!isTouch ? 'hover:shadow-lg' : ''}`}>
+      <Card
+        className={`h-full transition-all ${border} ${shadow} ${!isTouch ? 'hover:shadow-lg' : ''}`}
+      >
         <CardContent className='flex flex-col items-center justify-center text-center p-6 h-full'>
           <motion.div
             className={`w-12 h-12 rounded-full border-2 ${border} flex items-center justify-center ${color}`}
@@ -93,7 +95,7 @@ export function ContactsSection() {
   const duration = isTouch ? 0.5 / 1.5 : 0.5;
 
   return (
-    <section id='contacts' className='py-12 sm:py-24'>
+    <section id='contacts' className='py-12 sm:py-24 overflow-hidden'>
       <div className='max-w-6xl mx-auto px-4 sm:px-6 lg:px-8'>
         <motion.div
           initial={{ opacity: 0, y: 30 }}

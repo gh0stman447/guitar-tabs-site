@@ -10,6 +10,7 @@ import { Field, inputCls } from '@/components/admin/AdminFormFields';
 import { useAdmin } from '@/context/AdminContext';
 import { toast } from 'sonner';
 import { LoadingPage } from '@/components/shared/LoadingPage';
+import { Tooltip as ReactTooltip } from 'react-tooltip';
 
 export default function NewsletterPage() {
   const params = useParams();
@@ -25,6 +26,21 @@ export default function NewsletterPage() {
 
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
+
+  // Проверка обязательных полей
+  const hasSubject = subject.trim();
+  const hasTabTitle = tabTitle.trim();
+  const hasTabUrl = tabUrl.trim();
+  const hasText = text.trim();
+  const allRequiredFilled = hasSubject && hasTabTitle && hasTabUrl && hasText;
+  const isSubmitDisabled = loading || !allRequiredFilled;
+
+  // Формируем сообщение о незаполненных обязательных полях
+  const missingFields: string[] = [];
+  if (!hasSubject) missingFields.push('Тема письма');
+  if (!hasTabTitle) missingFields.push('Название таба');
+  if (!hasTabUrl) missingFields.push('Ссылка на таб');
+  if (!hasText) missingFields.push('Текст письма');
 
   useEffect(() => {
     if (isLoading) return;
@@ -147,9 +163,15 @@ export default function NewsletterPage() {
             )}
 
             <button
+              data-tooltip-id={allRequiredFilled ? undefined : 'submit-disabled-tooltip'}
+              data-tooltip-content={
+                allRequiredFilled
+                  ? undefined
+                  : `Заполните все обязательные поля: ${missingFields.join(', ')}`
+              }
               type='submit'
-              disabled={loading}
-              className='w-full bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white rounded-full py-2.5 text-sm font-medium transition-colors flex items-center justify-center gap-2 cursor-pointer'
+              disabled={isSubmitDisabled}
+              className={`w-full bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white rounded-full py-2.5 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${isSubmitDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
             >
               {loading ? (
                 <>
@@ -163,6 +185,14 @@ export default function NewsletterPage() {
                 </>
               )}
             </button>
+            <ReactTooltip
+              id='submit-disabled-tooltip'
+              place='top'
+              hidden={Boolean(allRequiredFilled || loading)}
+              opacity={1}
+              delayShow={500}
+              style={{ fontSize: 13, maxWidth: 300, textAlign: 'center' }}
+            />
           </form>
 
           <div className='mt-4 text-center'>

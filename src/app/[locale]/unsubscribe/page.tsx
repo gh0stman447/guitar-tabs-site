@@ -48,7 +48,7 @@ export default async function UnsubscribePage({
 
             {email && (
               <Button asChild variant='outline' className='border-border rounded-full px-8 w-full'>
-                <Link href={resubscribeUrl}>
+я                 <Link href={resubscribeUrl} prefetch={false}>
                   {isRu ? 'Подписаться заново' : 'Resubscribe'}
                 </Link>
               </Button>

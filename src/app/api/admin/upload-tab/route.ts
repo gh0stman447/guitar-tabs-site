@@ -25,10 +25,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Заполните обязательные поля' }, { status: 400 });
   }
 
+  // Validate at least one tab file is provided BEFORE creating DB record
+  const files: Record<string, boolean> = {};
+  for (const fmt of FORMATS) {
+    const file = formData.get(fmt) as File | null;
+    if (file && file.size > 0) {
+      files[fmt] = true;
+    }
+  }
+
+  if (Object.keys(files).length === 0) {
+    return NextResponse.json({ error: 'Загрузите хотя бы один файл таба' }, { status: 400 });
+  }
+
   const tabId = randomUUID();
   const folder = tabId;
 
-  // First, create the tab record in DB (without files)
+  // Create the tab record in DB
   const { data: tabData, error: createError } = await supabaseAdmin
     .from(TABLE_TABS)
     .insert({
@@ -53,7 +66,6 @@ export async function POST(req: NextRequest) {
   }
 
   // Upload tab files
-  const files: Record<string, boolean> = {};
   for (const fmt of FORMATS) {
     const file = formData.get(fmt) as File | null;
     if (!file || file.size === 0) continue;
@@ -72,11 +84,6 @@ export async function POST(req: NextRequest) {
     const buffer = await file.arrayBuffer();
 
     await uploadFile(path, buffer, file.type);
-    files[fmt] = true;
-  }
-
-  if (Object.keys(files).length === 0) {
-    return NextResponse.json({ error: 'Загрузите хотя бы один файл таба' }, { status: 400 });
   }
 
   // Upload photo
@@ -94,7 +101,7 @@ export async function POST(req: NextRequest) {
   // Update tab with files and photo_url
   const { error: updateError } = await supabaseAdmin
     .from(TABLE_TABS)
-    .update({ files, photo_url })
+    .update({ files: Object.fromEntries(Object.keys(files).map((k) => [k, true])), photo_url })
     .eq('id', tabId);
 
   if (updateError) {

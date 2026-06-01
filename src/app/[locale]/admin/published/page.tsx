@@ -97,6 +97,7 @@ export default function PublishedPage() {
                 buyLabel=''
                 index={i}
                 purchasesLabel={`${tab.purchase_count ?? 0} покупок`}
+                disableAnimations
                 adminActions={
                   <div className='flex items-center gap-1.5'>
                     <Link
@@ -119,7 +120,7 @@ export default function PublishedPage() {
                       data-tooltip-content='Снять с публикации'
                       onClick={() => setConfirmTab(tab)}
                       disabled={unpublishing === tab.id}
-                      className={`flex items-center justify-center w-8 h-8 rounded-full border disabled:opacity-60 transition-colors cursor-pointer ${isTouch ? 'border-red-400 text-red-500' : 'border-border text-muted-foreground hover:border-red-400 hover:text-red-500'}`}
+                      className={`flex items-center justify-center w-8 h-8 rounded-full border disabled:opacity-60 transition-colors ${unpublishing === tab.id ? 'cursor-not-allowed' : 'cursor-pointer'} ${isTouch ? 'border-red-400 text-red-500' : 'border-border text-muted-foreground hover:border-red-400 hover:text-red-500'}`}
                     >
                       {unpublishing === tab.id ? (
                         <Loader2 className='h-3.5 w-3.5 animate-spin' />

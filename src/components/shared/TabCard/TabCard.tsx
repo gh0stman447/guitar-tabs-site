@@ -49,6 +49,8 @@ interface TabCardProps {
   tooltipPrefix?: string;
   /** Префикс секции для уникальности flippingTabId (catalog, bestseller) */
   sectionPrefix?: string;
+  /** Отключить все анимации (tilt, flip, fly-to-cart, justAdded glow) */
+  disableAnimations?: boolean;
 }
 
 export function TabCard({
@@ -61,6 +63,7 @@ export function TabCard({
   showDetails = true,
   tooltipPrefix = '',
   sectionPrefix = '',
+  disableAnimations = false,
 }: TabCardProps) {
   const [buyOpen, setBuyOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -74,8 +77,8 @@ export function TabCard({
   const [cartHovered, setCartHovered] = useState(false);
   const [justAdded, setJustAdded] = useState(false);
   const isDark = theme === 'dark';
-  const justAddedClass = isTouch ? '' : justAdded;
-  const inCartClass = isTouch ? '' : inCart;
+  const justAddedClass = disableAnimations ? '' : justAdded;
+  const inCartClass = disableAnimations ? '' : inCart;
 
   const flipControls = useAnimation();
   const { isPreviewBlocking, startPreviewBlock, endPreviewBlock } = usePreviewBlock();
@@ -91,7 +94,7 @@ export function TabCard({
   });
 
   function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
-    if (isTouch) return;
+    if (disableAnimations) return;
     const rect = cardRef.current?.getBoundingClientRect();
     if (!rect) return;
     mouseX.set((e.clientX - rect.left) / rect.width - 0.5);
@@ -99,15 +102,15 @@ export function TabCard({
   }
 
   function handleMouseLeave() {
-    if (isTouch) return;
+    if (disableAnimations) return;
     mouseX.set(0);
     mouseY.set(0);
   }
 
   function handlePreviewClick() {
     if (isPreviewBlocking || previewOpen) return;
-    // Skip flip animation on touch devices
-    if (isTouch) {
+    // Skip flip animation when disabled (admin pages)
+    if (disableAnimations) {
       setPreviewOpen(true);
       return;
     }
@@ -174,8 +177,8 @@ export function TabCard({
           ref={cardRef}
           initial={{ opacity: 1, y: 0 }}
           animate={{ opacity: 1, y: 0 }}
-          style={isTouch ? {} : { rotateX, rotateY }}
-          whileHover={isTouch ? {} : { y: -4 }}
+          style={disableAnimations ? {} : { rotateX, rotateY }}
+          whileHover={disableAnimations ? {} : { y: -4 }}
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
         >
@@ -192,7 +195,7 @@ export function TabCard({
               transformStyle: 'preserve-3d',
               backfaceVisibility: 'hidden',
               WebkitBackfaceVisibility: 'hidden',
-              ...(isTouch
+              ...(disableAnimations
                 ? {}
                 : justAddedClass
                   ? {
@@ -209,7 +212,7 @@ export function TabCard({
                     : {}),
             }}
             className={`overflow-hidden h-full flex flex-col relative transition-all duration-500 ${
-              isTouch
+              disableAnimations
                 ? 'border-border'
                 : justAddedClass
                   ? isDark
@@ -374,7 +377,7 @@ export function TabCard({
                         size='sm'
                         variant='outline'
                         className={`rounded-full w-9 h-9 p-0 shrink-0 ${
-                          isTouch
+                          disableAnimations
                             ? inCart
                               ? cartHovered
                                 ? 'border-red-500 text-red-500'
@@ -396,13 +399,13 @@ export function TabCard({
                                 locale === 'en' ? 'Removed from cart' : 'Убрано из корзины',
                               icon: '🗑️',
                             });
-                            if (!isTouch) {
+                            if (!disableAnimations) {
                               const el = cardRef.current;
                               if (el) flyFromCart(el.getBoundingClientRect(), el);
                             }
                           } else {
                             addItem(tab);
-                            if (!isTouch) {
+                            if (!disableAnimations) {
                               setJustAdded(true);
                               setTimeout(() => setJustAdded(false), 650);
                             }
@@ -411,7 +414,7 @@ export function TabCard({
                                 locale === 'en' ? 'Added to cart' : 'Добавлено в корзину',
                               icon: '🛒',
                             });
-                            if (!isTouch) {
+                            if (!disableAnimations) {
                               const el = cardRef.current;
                               if (el) flyToCart(el.getBoundingClientRect(), el);
                             }

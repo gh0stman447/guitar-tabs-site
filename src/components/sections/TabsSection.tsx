@@ -192,6 +192,27 @@ export function TabsSection() {
           </div>
         ) : filtered.length === 0 && !search ? (
           <p className='text-center text-muted-foreground py-12'>{t('empty')}</p>
+        ) : isTouch ? (
+          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
+            {filtered.map((tab) => (
+              <div
+                key={tab.id}
+                style={{
+                  zIndex: flippingTabId === `catalog-${tab.id}` ? 100 : 0,
+                }}
+              >
+                <TabCard
+                  tab={tab}
+                  locale={locale}
+                  buyLabel={t('buy')}
+                  showDetails
+                  index={filtered.indexOf(tab)}
+                  tooltipPrefix='catalog'
+                  sectionPrefix='catalog'
+                />
+              </div>
+            ))}
+          </div>
         ) : (
           <motion.div layout className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
             <AnimatePresence>

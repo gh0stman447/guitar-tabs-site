@@ -118,6 +118,7 @@ export default function DraftsPage() {
                 buyLabel=''
                 index={i}
                 purchasesLabel={`${tab.purchase_count ?? 0} покупок`}
+                disableAnimations
                 adminActions={
                   <div className='flex items-center gap-1.5'>
                     <Link
@@ -173,7 +174,7 @@ export default function DraftsPage() {
                       data-tooltip-content='Удалить'
                       onClick={() => setConfirmDelete(tab)}
                       disabled={deleting === tab.id}
-                      className={`flex items-center justify-center w-8 h-8 rounded-full border disabled:opacity-60 transition-colors cursor-pointer ${isTouch ? 'border-red-400 text-red-500' : 'border-border text-muted-foreground hover:border-red-400 hover:text-red-500'}`}
+                      className={`flex items-center justify-center w-8 h-8 rounded-full border disabled:opacity-60 transition-colors ${deleting === tab.id ? 'cursor-not-allowed' : 'cursor-pointer'} ${isTouch ? 'border-red-400 text-red-500' : 'border-border text-muted-foreground hover:border-red-400 hover:text-red-500'}`}
                     >
                       {deleting === tab.id ? (
                         <Loader2 className='h-3.5 w-3.5 animate-spin' />
@@ -190,10 +191,10 @@ export default function DraftsPage() {
                     />
                     <button
                       data-tooltip-id={`dft-pub-${tab.id}`}
-                      data-tooltip-content='Опубликовать'
+                      data-tooltip-content={tab.files.pdf ? 'Опубликовать' : 'Нельзя опубликовать: нет PDF файла'}
                       onClick={() => setConfirmTab(tab)}
-                      disabled={publishing === tab.id}
-                      className='flex items-center justify-center w-8 h-8 rounded-full bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white transition-colors cursor-pointer'
+                      disabled={publishing === tab.id || !tab.files.pdf}
+                      className={`flex items-center justify-center w-8 h-8 rounded-full bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white transition-colors ${publishing === tab.id || !tab.files.pdf ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                     >
                       {publishing === tab.id ? (
                         <Loader2 className='h-3.5 w-3.5 animate-spin' />

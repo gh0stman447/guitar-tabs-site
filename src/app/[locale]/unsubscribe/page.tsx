@@ -31,9 +31,7 @@ export default async function UnsubscribePage({
           </div>
 
           <div className='space-y-2'>
-            <h1 className='text-2xl font-bold'>
-              {isRu ? 'Вы отписались' : 'Unsubscribed'}
-            </h1>
+            <h1 className='text-2xl font-bold'>{isRu ? 'Вы отписались' : 'Unsubscribed'}</h1>
             <p className='text-muted-foreground'>
               {isRu
                 ? 'Вы больше не будете получать письма о новых табах.'
@@ -42,13 +40,16 @@ export default async function UnsubscribePage({
           </div>
 
           <div className='space-y-4'>
-            <Button asChild className='bg-amber-500 hover:bg-amber-600 text-white rounded-full px-8 w-full'>
+            <Button
+              asChild
+              className='bg-amber-500 hover:bg-amber-600 text-white rounded-full px-8 w-full'
+            >
               <Link href={`/${locale}`}>{isRu ? 'Вернуться на сайт' : 'Back to site'}</Link>
             </Button>
 
             {email && (
               <Button asChild variant='outline' className='border-border rounded-full px-8 w-full'>
-я                 <Link href={resubscribeUrl} prefetch={false}>
+                <Link href={resubscribeUrl} prefetch={false}>
                   {isRu ? 'Подписаться заново' : 'Resubscribe'}
                 </Link>
               </Button>

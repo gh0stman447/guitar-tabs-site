@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { query } from '@/lib/db';
 import { TABLE_CUSTOMERS } from '@/lib/constants';
 
 export async function GET(req: NextRequest) {
@@ -9,29 +9,16 @@ export async function GET(req: NextRequest) {
     return new NextResponse('Неверная ссылка', { status: 400 });
   }
 
-  console.log('[unsubscribe] Processing email:', email);
-
-  // Сначала проверяем, существует ли customer
-  const customer = await db
-    .from(TABLE_CUSTOMERS)
-    .select('id, newsletter')
-    .eq('email', email)
-    .single();
-
-  console.log('[unsubscribe] Customer before update:', JSON.stringify(customer));
-
-  if (!customer.data) {
-    console.error('[unsubscribe] Customer not found:', email);
-    return new NextResponse('Email не найден', { status: 404 });
+  try {
+    // Обновляем статус рассылки через прямой SQL запрос
+    await query(
+      `UPDATE "${TABLE_CUSTOMERS}" SET newsletter = false WHERE email = $1`,
+      [email]
+    );
+  } catch (err) {
+    console.error('[unsubscribe] Error:', err);
+    return new NextResponse('Ошибка сервера', { status: 500 });
   }
-
-  // Обновляем статус рассылки
-  const result = await db
-    .from(TABLE_CUSTOMERS)
-    .update({ newsletter: false })
-    .eq('email', email);
-
-  console.log('[unsubscribe] Update result:', JSON.stringify(result));
 
   // Determine locale from Accept-Language header
   const acceptLang = req.headers.get('accept-language') || '';

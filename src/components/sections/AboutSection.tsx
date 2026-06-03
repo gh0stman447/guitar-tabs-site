@@ -52,9 +52,9 @@ export function AboutSection() {
               {t('badge')}
             </span>
             <h2 className='text-3xl sm:text-4xl font-bold mt-2 mb-6'>{t('title')}</h2>
-            <p className='text-muted-foreground leading-relaxed mb-6'>{t('text1')}</p>
-            <p className='text-muted-foreground leading-relaxed mb-6'>{t('text2')}</p>
-            <p className='text-muted-foreground leading-relaxed mb-8'>{t('text3')}</p>
+            <p className='text-muted-foreground leading-relaxed mb-2 sm:mb-6'>{t('text1')}</p>
+            <p className='text-muted-foreground leading-relaxed mb-2 sm:mb-6'>{t('text2')}</p>
+            <p className='text-muted-foreground leading-relaxed mb-6 sm:mb-8'>{t('text3')}</p>
 
             <div className='flex flex-col gap-3'>
               {facts.map(({ icon: Icon, label, desc }, i) => (

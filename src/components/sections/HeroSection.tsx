@@ -27,9 +27,7 @@ export function HeroSection() {
   const isMobile = useIsTouch();
   const duration = isMobile ? 0.7 / 1.5 : 0.7;
 
-  const [viewportHeight, setViewportHeight] = useState(
-    typeof window !== 'undefined' ? window.innerHeight : 768,
-  );
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
 
   useEffect(() => {
     const handleResize = () => setViewportHeight(window.innerHeight);
@@ -39,7 +37,8 @@ export function HeroSection() {
   }, []);
 
   // Компактный режим для маленьких экранов в landscape (iPhone SE и т.д.)
-  const isCompact = isMobile && viewportHeight < 520;
+  // Используем null check чтобы избежать гидратационных ошибок
+  const isCompact = isMobile && viewportHeight !== null && viewportHeight < 570;
 
   const blobY1 = useTransform(scrollYProgress, [0, 1], isMobile ? ['0%', '0%'] : ['0%', '-40%']);
   const blobY2 = useTransform(scrollYProgress, [0, 1], isMobile ? ['0%', '0%'] : ['0%', '-20%']);
@@ -118,7 +117,7 @@ export function HeroSection() {
           <p
             className={cn(
               'text-muted-foreground max-w-2xl mx-auto',
-              isCompact ? 'mb-0' : 'text-lg sm:text-xl mb-10',
+              isCompact ? 'mb-0 text-sm' : 'text-lg sm:text-xl mb-10',
             )}
           >
             {t('description')}

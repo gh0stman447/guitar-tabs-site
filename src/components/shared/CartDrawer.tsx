@@ -195,6 +195,7 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
             isSmallHeight ? 'overflow-visible' : 'overflow-y-auto',
             'flex-1',
             'min-w-0',
+            isLandscapeMobile && 'overflow-auto',
           )}
         >
           {items.length === 0 ? (

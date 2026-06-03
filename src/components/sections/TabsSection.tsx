@@ -209,6 +209,7 @@ export function TabsSection() {
                   index={filtered.indexOf(tab)}
                   tooltipPrefix='catalog'
                   sectionPrefix='catalog'
+                  disableAnimations={isTouch}
                 />
               </div>
             ))}

@@ -37,6 +37,10 @@ export async function generateMetadata({
   return {
     title: meta.title,
     description: meta.description,
+    icons: {
+      icon: '/icon.svg',
+      apple: '/icon.svg',
+    },
     alternates: {
       canonical: url,
       languages: {

@@ -93,6 +93,7 @@ export function BestsellerSection() {
                   showDetails={false}
                   tooltipPrefix='bestseller'
                   sectionPrefix='bestseller'
+                  disableAnimations={isTouch}
                 />
               </motion.div>
             ))}

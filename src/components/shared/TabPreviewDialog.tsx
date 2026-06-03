@@ -39,7 +39,6 @@ export function TabPreviewDialog({
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
-  const { endPreviewBlock } = usePreviewBlock();
   const tooltipsReady = useDelayedRender(0, open);
 
   async function handleDownload() {
@@ -314,7 +313,9 @@ export function TabPreviewDialog({
                   onClick={handleDownload}
                   disabled={downloading}
                   className={`rounded-full w-7 h-7 flex items-center justify-center transition-colors cursor-pointer ${
-                    downloading ? 'text-amber-500' : 'text-muted-foreground hover:text-amber-500 hover:bg-accent'
+                    downloading
+                      ? 'text-amber-500'
+                      : 'text-muted-foreground hover:text-amber-500 hover:bg-accent'
                   }`}
                 >
                   <Download className={`h-4 w-4 ${downloading ? 'opacity-50' : ''}`} />

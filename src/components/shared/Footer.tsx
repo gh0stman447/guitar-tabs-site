@@ -1,6 +1,5 @@
 'use client';
 
-import { Guitar } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -15,7 +14,7 @@ export function Footer() {
         <div className='flex items-center gap-2'>
           <span>{t('name')}</span>
         </div>
-        <div className='flex flex-col sm:flex-row items-center gap-3'>
+        <div className='flex flex-col sm:flex-row items-center gap-3 text-center'>
           <span>{t('inn')}</span>
           <Link
             href={`/${locale}/legal`}

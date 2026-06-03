@@ -184,3 +184,23 @@ body {
   font-family: var(--font-sans), Arial, sans-serif;
   overflow-x: hidden;
 }
+
+/* Уменьшаем ширину контейнеров на экранах от 640px до 1024px */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .max-w-4xl,
+  .max-w-5xl,
+  .max-w-6xl,
+  .max-w-7xl {
+    max-width: 48rem; /* max-w-3xl = 768px */
+  }
+}
+
+/* Увеличиваем контейнер на экранах ≤640px (чуть больше sm) */
+@media (max-width: 639px) {
+  .max-w-4xl,
+  .max-w-5xl,
+  .max-w-6xl,
+  .max-w-7xl {
+    max-width: 32rem; /* sm = 30rem (480px), делаем 32rem (512px) */
+  }
+}

@@ -4,6 +4,7 @@ import { CheckCircle2 } from 'lucide-react';
 import { Header } from '@/components/shared/Header';
 import { Footer } from '@/components/shared/Footer';
 import { Button } from '@/components/ui/button';
+import { PurchaseTracker } from './PurchaseTracker';
 
 export default async function PaymentSuccessPage({
   params,
@@ -38,6 +39,7 @@ export default async function PaymentSuccessPage({
 
   return (
     <>
+      <PurchaseTracker purchase={purchase} locale={locale} />
       <Header />
       <main className='min-h-screen flex items-center justify-center px-4'>
         <div className='max-w-md w-full text-center space-y-6'>

@@ -8,9 +8,9 @@ import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useIsTouch } from '@/hooks/useIsTouch';
 import { useDelayedRender } from '@/hooks/useDelayedRender';
-import { usePreviewBlock } from '@/context/PreviewBlockContext';
 import type { Tab } from '@/types';
 import { motion } from 'framer-motion';
+import { reachGoal } from '@/lib/yandex-metrika';
 
 interface TabPreviewDialogProps {
   tab: Tab;
@@ -40,6 +40,16 @@ export function TabPreviewDialog({
   const [downloading, setDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const tooltipsReady = useDelayedRender(0, open);
+
+  // Yandex Metrika: view tab preview
+  useEffect(() => {
+    if (open) {
+      reachGoal('view_tab', {
+        tab_id: tab.id,
+        title,
+      });
+    }
+  }, [open, tab.id, title]);
 
   async function handleDownload() {
     if (downloading) return;

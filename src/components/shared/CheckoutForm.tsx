@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { reachGoal } from '@/lib/yandex-metrika';
 
 const EMAIL_RE = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
 
@@ -52,6 +53,9 @@ export function CheckoutForm({ locale, price, onSubmit }: CheckoutFormProps) {
     e.preventDefault();
     setSubmitted(true);
     if (Object.keys(errors).length > 0) return;
+
+    // Yandex Metrika: begin_checkout
+    reachGoal('begin_checkout', { price });
 
     setSubmitError('');
     setLoading(true);

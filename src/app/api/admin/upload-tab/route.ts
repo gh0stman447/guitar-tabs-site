@@ -21,22 +21,52 @@ export async function POST(req: NextRequest) {
   const youtube_url = (formData.get('youtube_url') as string) ?? null;
   const photo = formData.get('photo') as File | null;
 
+  // === STEP 1: Validate all input BEFORE any DB/FS operations ===
+
+  // Validate required fields
   if (!title_ru || !title_en || !difficulty || !price) {
     return NextResponse.json({ error: 'Заполните обязательные поля' }, { status: 400 });
   }
 
-  // Validate at least one tab file is provided BEFORE creating DB record
-  const files: Record<string, boolean> = {};
+  // Collect and validate tab files
+  const tabFiles: Array<{ fmt: string; file: File; safeName: string; buffer: ArrayBuffer }> = [];
   for (const fmt of FORMATS) {
     const file = formData.get(fmt) as File | null;
-    if (file && file.size > 0) {
-      files[fmt] = true;
+    if (!file || file.size === 0) continue;
+
+    // Check for Cyrillic in filename
+    if (/[а-яёА-ЯЁ]/.test(file.name)) {
+      return NextResponse.json(
+        { error: `Файл "${file.name}" содержит кириллицу в названии. Переименуйте файл латиницей.` },
+        { status: 400 },
+      );
     }
+
+    const safeName = file.name.replace(/[^\w.\-\s]/g, '_');
+    const buffer = await file.arrayBuffer();
+    tabFiles.push({ fmt, file, safeName, buffer });
   }
 
-  if (Object.keys(files).length === 0) {
+  // Validate at least one tab file
+  if (tabFiles.length === 0) {
     return NextResponse.json({ error: 'Загрузите хотя бы один файл таба' }, { status: 400 });
   }
+
+  // Validate photo if provided
+  let photoData: { ext: string; safeName: string; buffer: ArrayBuffer } | null = null;
+  if (photo && photo.size > 0) {
+    if (/[а-яёА-ЯЁ]/.test(photo.name)) {
+      return NextResponse.json(
+        { error: `Фото "${photo.name}" содержит кириллицу в названии. Переименуйте файл латиницей.` },
+        { status: 400 },
+      );
+    }
+    const ext = photo.name.split('.').pop() ?? 'jpg';
+    const safeName = `cover.${ext}`;
+    photoData = { ext, safeName, buffer: await photo.arrayBuffer() };
+  }
+
+  // === STEP 2: All validation passed, now create DB record and upload files ===
 
   const tabId = randomUUID();
   const folder = tabId;
@@ -65,36 +95,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: createError.message }, { status: 500 });
   }
 
-  // Upload tab files
-  for (const fmt of FORMATS) {
-    const file = formData.get(fmt) as File | null;
-    if (!file || file.size === 0) continue;
-
-    if (/[а-яёА-ЯЁ]/.test(file.name)) {
-      return NextResponse.json(
-        {
-          error: `Файл "${file.name}" содержит кириллицу в названии. Переименуйте файл латиницей.`,
-        },
-        { status: 400 },
-      );
+  // Upload tab files (validation already passed)
+  const files: Record<string, boolean> = {};
+  for (const { fmt, safeName, buffer } of tabFiles) {
+    const key = `${folder}/${safeName}`;
+    try {
+      console.log(`[upload-tab] Uploading ${fmt}: ${key}`);
+      await uploadFile(key, buffer, tabFiles.find(f => f.fmt === fmt)!.file.type);
+      console.log(`[upload-tab] Uploaded successfully: ${key}`);
+      files[fmt] = true;
+    } catch (err) {
+      console.error(`[upload-tab] Failed to upload ${key}:`, err);
+      // Cleanup: delete DB record and any uploaded files
+      await supabaseAdmin.from(TABLE_TABS).delete().eq('id', tabId);
+      return NextResponse.json({ error: `Failed to upload ${fmt}: ${err}` }, { status: 500 });
     }
-
-    const safeName = file.name.replace(/[^\w.\-\s]/g, '_');
-    const path = `${folder}/${safeName}`;
-    const buffer = await file.arrayBuffer();
-
-    await uploadFile(path, buffer, file.type);
   }
 
   // Upload photo
   let photo_url: string | null = null;
-  if (photo && photo.size > 0) {
-    const ext = photo.name.split('.').pop() ?? 'jpg';
-    const safeName = `cover.${ext}`;
-    const path = `${folder}/${safeName}`;
-    const buffer = await photo.arrayBuffer();
-
-    await uploadFile(path, buffer, photo.type);
+  if (photoData) {
+    const path = `${folder}/${photoData.safeName}`;
+    await uploadFile(path, photoData.buffer, `image/${photoData.ext}`);
     photo_url = `/api/files/${tabId}/photo`;
   }
 

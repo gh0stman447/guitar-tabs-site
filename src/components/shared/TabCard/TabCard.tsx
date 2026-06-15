@@ -8,10 +8,11 @@ import Image from 'next/image';
 import { motion, useMotionValue, useSpring, useTransform, useAnimation } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Music, ShoppingCart, Check, Trash2, Eye } from 'lucide-react';
+import { Music, ShoppingCart, Check, Trash2, Eye, Headphones } from 'lucide-react';
 import { MarqueeText } from '@/components/shared/MarqueeText';
 import { BuyDialog } from '@/components/shared/BuyDialog';
 import { TabPreviewDialog } from '@/components/shared/TabPreviewDialog';
+import { AudioPlayerDialog } from '@/components/shared/AudioPlayerDialog';
 import { useCart } from '@/context/CartContext';
 import { useCartAnimation } from '@/context/CartAnimationContext';
 import { usePreviewBlock } from '@/context/PreviewBlockContext';
@@ -67,6 +68,7 @@ export function TabCard({
 }: TabCardProps) {
   const [buyOpen, setBuyOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [audioOpen, setAudioOpen] = useState(false);
   const isTouch = useIsTouch();
   const tp = tooltipPrefix ? `${tooltipPrefix}-` : '';
   const cardRef = useRef<HTMLDivElement>(null);
@@ -442,17 +444,45 @@ export function TabCard({
                       />
                     </>
                   )}
-                  {adminActions ?? (
-                    <Button
-                      size='sm'
-                      className='bg-amber-500 hover:bg-amber-600 text-white rounded-full px-5'
-                      onClick={() => setBuyOpen(true)}
-                    >
-                      {buyLabel}
-                    </Button>
+                  {tab.files.mp3 && (
+                    <>
+                      <Button
+                        data-tooltip-id={`audio-${tp}${tab.id}`}
+                        data-tooltip-content={locale === 'en' ? 'Listen to audio' : 'Слушать аудио'}
+                        size='sm'
+                        variant='outline'
+                        className={`rounded-full w-9 h-9 p-0 shrink-0 transition-colors bg-transparent hover:bg-transparent dark:bg-transparent dark:hover:bg-transparent ${isTouch ? 'border-border text-foreground' : 'hover:border-amber-500 hover:text-amber-500'}`}
+                        onClick={() => setAudioOpen(true)}
+                      >
+                        <Headphones className='h-4 w-4' />
+                      </Button>
+                      <ReactTooltip
+                        id={`audio-${tp}${tab.id}`}
+                        place='top'
+                        hidden={isTouch}
+                        opacity={1}
+                        delayShow={350}
+                      />
+                    </>
+                  )}
+                  {adminActions && (
+                    <div className='flex gap-2'>
+                      {adminActions}
+                    </div>
                   )}
                 </div>
               </div>
+
+              {/* Buy button - full width, below price and action buttons (only for non-admin) */}
+              {!adminActions && (
+                <Button
+                  size='sm'
+                  className='w-full bg-amber-500 hover:bg-amber-600 text-white rounded-full'
+                  onClick={() => setBuyOpen(true)}
+                >
+                  {buyLabel}
+                </Button>
+              )}
             </CardContent>
             </div>
           </Card>
@@ -469,6 +499,12 @@ export function TabCard({
           else setPreviewOpen(open);
         }}
         onBuy={() => setBuyOpen(true)}
+      />
+      <AudioPlayerDialog
+        tab={tab}
+        locale={locale}
+        open={audioOpen}
+        onOpenChange={setAudioOpen}
       />
     </>
   );

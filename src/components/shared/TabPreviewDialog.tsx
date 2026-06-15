@@ -243,7 +243,7 @@ export function TabPreviewDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className='max-w-2xl w-full p-0 gap-0 overflow-hidden flex flex-col'
+        className='max-w-2xl w-[calc(100%-2rem)] p-0 gap-0 overflow-hidden flex flex-col'
         style={{ maxHeight: '90dvh' }}
         showCloseButton={false}
         onOpenAutoFocus={(e) => e.preventDefault()}

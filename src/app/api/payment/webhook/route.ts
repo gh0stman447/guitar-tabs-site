@@ -57,12 +57,12 @@ async function createReceipt(amount: number, customerName: string, purchaseId: s
   }
 }
 
-async function verifyWithYookassa(paymentId: string, test: boolean): Promise<boolean> {
-  const shopId = test ? process.env.YUKASSA_TEST_SHOP_ID : process.env.YUKASSA_SHOP_ID;
-  const secretKey = test ? process.env.YUKASSA_TEST_SECRET_KEY : process.env.YUKASSA_SECRET_KEY;
+async function verifyWithYookassa(paymentId: string): Promise<boolean> {
+  const shopId = process.env.YUKASSA_SHOP_ID;
+  const secretKey = process.env.YUKASSA_SECRET_KEY;
 
-  // Для тестовых платежей или если ключи не настроены - пропускаем верификацию
-  if (test || !shopId || !secretKey) {
+  // Если ключи не настроены - пропускаем верификацию
+  if (!shopId || !secretKey) {
     return true;
   }
 
@@ -99,8 +99,7 @@ export async function POST(req: NextRequest) {
       console.error('[webhook] Missing payment id');
       return NextResponse.json({ error: 'Missing payment id' }, { status: 400 });
     }
-    const isTest = !!body.object?.test;
-    const verified = await verifyWithYookassa(payment.id, isTest);
+    const verified = await verifyWithYookassa(payment.id);
     if (!verified) {
       console.error('[webhook] Payment verification failed');
       return NextResponse.json({ error: 'Payment verification failed' }, { status: 403 });
@@ -268,16 +267,16 @@ async function buildZipAttachments(
     const files = tab.files as Record<string, boolean>;
     const folder = multiTab ? zip.folder(tab.title_ru.replace(/[/\\?%*:|"<>]/g, '_'))! : zip;
 
+    // Get file data from DB
     const fileNamesResult = await supabaseAdmin
       .from(TABLE_TAB_FILES)
-      .select('format, filename, content_type, data')
+      .select('format, filename, data')
       .eq('tab_id', tab.id);
 
     const fileRecords = fileNamesResult.data as Array<{
       format: string;
       filename: string;
-      content_type: string;
-      data: string | Buffer;
+      data: string | Buffer | null;
     }>;
 
     for (const [format, exists] of Object.entries(files)) {
@@ -287,12 +286,30 @@ async function buildZipAttachments(
       if (!fileRecord) continue;
 
       let fileData: Buffer;
-      if (typeof fileRecord.data === 'string') {
-        const hexString = fileRecord.data.replace(/^\\\\x/, '');
-        fileData = Buffer.from(hexString, 'hex');
-      } else if (Buffer.isBuffer(fileRecord.data)) {
-        fileData = fileRecord.data;
+
+      // MP3 files are stored in filesystem, others in database
+      if (format === 'mp3') {
+        const fs = await import('fs');
+        const path = await import('path');
+        const filePath = path.join(process.cwd(), 'public', 'audio', `${tab.id}.mp3`);
+        if (!fs.existsSync(filePath)) {
+          console.error(`[webhook] MP3 file not found: ${filePath}`);
+          continue;
+        }
+        fileData = await fs.promises.readFile(filePath);
+      } else if (fileRecord.data) {
+        // Read from database (bytea)
+        if (typeof fileRecord.data === 'string') {
+          const hexString = fileRecord.data.replace(/^\\x/, '');
+          fileData = Buffer.from(hexString, 'hex');
+        } else if (Buffer.isBuffer(fileRecord.data)) {
+          fileData = fileRecord.data;
+        } else {
+          console.error(`[webhook] Invalid data for ${tab.id}/${format}`);
+          continue;
+        }
       } else {
+        console.error(`[webhook] No data for ${tab.id}/${format}`);
         continue;
       }
 

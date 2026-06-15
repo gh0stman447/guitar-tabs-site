@@ -5,6 +5,7 @@ import { Header } from '@/components/shared/Header';
 import { Footer } from '@/components/shared/Footer';
 import { Button } from '@/components/ui/button';
 import { PurchaseTracker } from './PurchaseTracker';
+import { LOCAL_DEV_URL } from '@/lib/constants';
 
 export default async function PaymentSuccessPage({
   params,
@@ -21,9 +22,12 @@ export default async function PaymentSuccessPage({
   }
 
   // Fetch purchase from API
-  const res = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/purchases/${purchase_id}`, {
-    cache: 'no-store',
-  });
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_SITE_URL ?? LOCAL_DEV_URL}/api/purchases/${purchase_id}`,
+    {
+      cache: 'no-store',
+    },
+  );
 
   if (!res.ok) {
     redirect(`/${locale}`);

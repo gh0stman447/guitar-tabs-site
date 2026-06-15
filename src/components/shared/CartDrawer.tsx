@@ -375,6 +375,7 @@ function CartItem({
               className='object-cover'
               sizes='56px'
               draggable={false}
+              unoptimized
             />
           ) : (
             <div className='flex items-center justify-center w-full h-full'>

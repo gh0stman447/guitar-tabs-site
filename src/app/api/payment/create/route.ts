@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { TABLE_TABS, TABLE_CUSTOMERS, TABLE_PURCHASES } from '@/lib/constants';
+import { TABLE_TABS, TABLE_CUSTOMERS, TABLE_PURCHASES, LOCAL_DEV_URL } from '@/lib/constants';
+import { query } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
-  const { tab_id, tab_ids, firstname, email: rawEmail, newsletter, test } = await req.json();
+  const { tab_id, tab_ids, firstname, email: rawEmail, newsletter } = await req.json();
   const email = rawEmail?.trim().toLowerCase();
 
   // Support both single tab_id and array tab_ids
@@ -34,14 +35,20 @@ export async function POST(req: NextRequest) {
   }>;
 
   // Validate files exist in tab_files table
+  // Use direct DB query instead of HTTP request for local development
   for (const tab of tabsData) {
-    const listUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/files/${tab.id}/list`;
-    const result = await fetch(listUrl);
-    const fileNames = (await result.json()) as { format: string; filename: string }[];
+    const fileResult = await query('SELECT format, filename FROM tab_files WHERE tab_id = $1', [
+      tab.id,
+    ]);
+    const fileNames = fileResult.rows;
+
+    console.log(`[payment/create] Tab ${tab.id}: files=${JSON.stringify(tab.files)}`);
+    console.log(`[payment/create] DB response: ${JSON.stringify(fileNames)}`);
 
     for (const [format, exists] of Object.entries(tab.files)) {
       if (!exists) continue;
-      const fileExists = fileNames.some((f) => f.format === format);
+      const fileExists = fileNames.some((f: { format: string }) => f.format === format);
+      console.log(`[payment/create] Check ${format}: ${fileExists ? 'OK' : 'MISSING'}`);
       if (!fileExists) {
         console.error(`[payment/create] File missing for format ${format} in tab ${tab.id}`);
         return NextResponse.json(
@@ -86,14 +93,15 @@ export async function POST(req: NextRequest) {
   }
 
   // 4. Create YooKassa payment
-  const shopId = test ? process.env.YUKASSA_TEST_SHOP_ID : process.env.YUKASSA_SHOP_ID;
-  const secretKey = test ? process.env.YUKASSA_TEST_SECRET_KEY : process.env.YUKASSA_SECRET_KEY;
-  const appUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
+  const shopId = process.env.YUKASSA_SHOP_ID;
+  const secretKey = process.env.YUKASSA_SECRET_KEY;
+  const appUrl = process.env.NEXT_PUBLIC_SITE_URL ?? LOCAL_DEV_URL;
 
   if (!shopId || !secretKey) {
-    return NextResponse.json({
-      confirmation_url: `${appUrl}/payment-stub?purchase_id=${purchase.id}`,
-    });
+    return NextResponse.json(
+      { error: 'YooKassa не настроена. Проверьте переменные окружения YUKASSA_*' },
+      { status: 500 },
+    );
   }
 
   const idempotenceKey = purchase.id;

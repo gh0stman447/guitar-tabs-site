@@ -43,7 +43,7 @@ src/
 │   │   │   ├── drafts/page.tsx
 │   │   │   ├── newsletter/page.tsx
 │   │   │   └── edit/[id]/page.tsx
-│   │   ├── payment-stub/page.tsx # Тестовая оплата (localhost)
+│   │   ├── payment/
 │   │   ├── payment/success/page.tsx
 │   │   ├── payment/canceled/page.tsx
 │   │   ├── unsubscribe/page.tsx
@@ -53,10 +53,11 @@ src/
 │   │   ├── admin/                # Admin endpoints
 │   │   ├── payment/              # Payment endpoints
 │   │   │   ├── create/route.ts
-│   │   │   ├── webhook/route.ts
-│   │   │   └── simulate/route.ts # Тестовая симуляция оплаты
+│   │   │   └── webhook/route.ts
 │   │   ├── email/webhook/route.ts
 │   │   ├── tabs/[id]/preview/route.ts
+│   │   ├── tabs/[id]/audio/route.ts
+│   │   ├── files/[tabId]/[format]/route.ts
 │   │   └── purchases/[id]/route.ts
 │   ├── globals.css
 │   ├── layout.tsx                # Root layout
@@ -261,13 +262,14 @@ interface Purchase {
 |-------|--------|----------|
 | `/api/payment/create` | POST | Создание платежа YooKassa |
 | `/api/payment/webhook` | POST | Обработка вебхуков YooKassa |
-| `/api/payment/simulate` | POST | Тестовая симуляция оплаты (localhost) |
 
 ### Другие Routes
 
 | Route | Method | Описание |
 |-------|--------|----------|
 | `/api/tabs/[id]/preview` | GET | PDF превью первой страницы |
+| `/api/tabs/[id]/audio` | GET | MP3 аудио из файловой системы |
+| `/api/files/[tabId]/[format]` | GET | PDF/GP5/GPX из базы (bytea) с Range requests |
 | `/api/email/webhook` | POST | События Resend (delivered, opened) |
 | `/api/purchases/[id]` | GET | Получение информации о заказе |
 | `/api/unsubscribe` | GET | Отписка от рассылки |
@@ -283,7 +285,16 @@ interface Purchase {
 - Добавление/удаление из корзины
 - Flip-анимация при превью (полёт в центр экрана с переворотом)
 - Отключение анимаций на touch-устройствах
+- Buy button во всю ширину под ценой и кнопками действий
 - Превью диалог
+
+### AudioPlayerDialog (`src/components/shared/AudioPlayerDialog.tsx`)
+- Аудиоплеер с прогресс-баром и буферизацией
+- Кнопки play/pause, перемотка ±10 сек
+- Регулировка громкости с кнопкой mute
+- Responsive layout: mobile (<640px) space-between, desktop кнопки по центру + громкость справа
+- Скрытие album art на touch устройствах в landscape с высотой < 500px
+- Yandex Metrika событие 'listen_preview'
 
 ### TabPreviewDialog (`src/components/shared/TabPreviewDialog.tsx`)
 - PDF.js рендеринг первой страницы
@@ -446,11 +457,25 @@ await query('UPDATE "guitar-tabs" SET "purchase_count" = "purchase_count" + 1 WH
 
 ## Хранение файлов
 
-Файлы хранятся в таблице `tab_files` как `bytea`:
+### Гибридное хранение
 
-- При загрузке файла → конвертация в Buffer → сохранение в `data`
-- При скачивании → чтение из `data` → генерация ZIP (JSZip)
-- Форматы: PDF, GP5, GPX, MP3
+**MP3 файлы** — в файловой системе `public/audio/{tabId}.mp3`
+- В `tab_files` хранится только метаданные (filename, content_type) с `data = NULL`
+- API `/api/tabs/[id]/audio` отдаёт файл из файловой системы
+- Webhook читает MP3 из ФС при генерации ZIP
+
+**PDF, GP5, GPX** — в PostgreSQL `tab_files.data` (bytea)
+- API `/api/files/[tabId]/[format]` отдаёт файлы из базы
+- Поддержка Range requests для стриминга
+- Webhook читает из БД при генерации ZIP
+
+### API endpoints
+
+| Endpoint | Описание |
+|----------|----------|
+| `/api/tabs/[id]/audio` | GET MP3 из файловой системы |
+| `/api/files/[tabId]/[format]` | GET PDF/GP5/GPX из базы (bytea) |
+| `/api/tabs/[id]/preview` | GET первая страница PDF для превью |
 
 ---
 
@@ -578,12 +603,12 @@ npm run lint
 | Admin context | `src/context/AdminContext.tsx` |
 | PreviewBlock context | `src/context/PreviewBlockContext.tsx` |
 | Payment webhook | `src/app/api/payment/webhook/route.ts` |
-| Payment simulate | `src/app/api/payment/simulate/route.ts` |
 | Payment create | `src/app/api/payment/create/route.ts` |
 | Admin login | `src/app/api/admin/login/route.ts` |
 | Tab upload | `src/app/api/admin/upload-tab/route.ts` |
 | Main page | `src/app/[locale]/page.tsx` |
 | Admin page | `src/app/[locale]/admin/page.tsx` |
-| Payment stub | `src/app/[locale]/payment-stub/page.tsx` |
+| Audio endpoint | `src/app/api/tabs/[id]/audio/route.ts` |
+| Files endpoint | `src/app/api/files/[tabId]/[format]/route.ts` |
 | PreviewBlock context | `src/context/PreviewBlockContext.tsx` |
 | useOrientation hook | `src/hooks/useOrientation.ts` |

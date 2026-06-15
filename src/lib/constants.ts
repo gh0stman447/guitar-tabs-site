@@ -1,4 +1,6 @@
+// Site URLs
 export const SITE_URL = 'https://olegguitar.com';
+export const LOCAL_DEV_URL = 'http://localhost:3000';
 
 // Supabase table names
 export const TABLE_TABS = 'guitar-tabs';

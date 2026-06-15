@@ -5,6 +5,7 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const nextConfig: NextConfig = {
   images: {
+    // Allow local API image URLs with query parameters
     remotePatterns: [
       {
         protocol: 'https',
@@ -14,10 +15,13 @@ const nextConfig: NextConfig = {
       {
         protocol: 'http',
         hostname: 'localhost',
+        port: '3000',
+        pathname: '/api/files/**',
       },
       {
         protocol: 'https',
         hostname: 'olegguitar.com',
+        pathname: '/api/files/**',
       },
     ],
   },

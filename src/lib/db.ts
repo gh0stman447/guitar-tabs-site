@@ -10,6 +10,10 @@ const pool = new Pool({
   max: 20,
   idleTimeoutMillis: 60000,
   connectionTimeoutMillis: 30000,
+  // Keep connections alive for remote DB
+  keepAlive: true,
+  // Retry initial connection
+  maxUses: 100,
 });
 
 // Helper to execute queries with retry logic

@@ -43,13 +43,15 @@ export async function transaction<T>(fn: (client: unknown) => Promise<T>): Promi
 export const db = {
   from(table: string) {
     let selectedFields = '*';
+    // Quote table name if it contains special characters (e.g., "guitar-tabs")
+    const quotedTable = table.includes('-') ? `"${table}"` : table;
 
     return {
       select(fields: string = '*') {
         selectedFields = fields;
         return {
           where: async (condition: string, values: unknown[] = []) => {
-            const result = await query(`SELECT ${selectedFields} FROM ${table} WHERE ${condition}`, values);
+            const result = await query(`SELECT ${selectedFields} FROM ${quotedTable} WHERE ${condition}`, values);
             return { data: result.rows, error: null };
           },
           in: (column: string, values: unknown[]) => {
@@ -57,7 +59,7 @@ export const db = {
               then: async (resolve: (value: { data: unknown[]; error: null }) => void) => {
                 const placeholders = values.map((_, i) => `$${i + 1}`).join(', ');
                 const result = await query(
-                  `SELECT ${selectedFields} FROM ${table} WHERE ${column} IN (${placeholders})`,
+                  `SELECT ${selectedFields} FROM ${quotedTable} WHERE ${column} IN (${placeholders})`,
                   values
                 );
                 resolve({ data: result.rows, error: null });
@@ -68,14 +70,14 @@ export const db = {
             return {
               single: async () => {
                 const result = await query(
-                  `SELECT ${selectedFields} FROM ${table} WHERE ${column} = $1 LIMIT 1`,
+                  `SELECT ${selectedFields} FROM ${quotedTable} WHERE ${column} = $1 LIMIT 1`,
                   [value]
                 );
                 return { data: result.rows[0] || null, error: null };
               },
               then: async (resolve: (value: { data: unknown[]; error: null }) => void) => {
                 const result = await query(
-                  `SELECT ${selectedFields} FROM ${table} WHERE ${column} = $1`,
+                  `SELECT ${selectedFields} FROM ${quotedTable} WHERE ${column} = $1`,
                   [value]
                 );
                 resolve({ data: result.rows, error: null });
@@ -83,11 +85,11 @@ export const db = {
             };
           },
           single: async () => {
-            const result = await query(`SELECT ${selectedFields} FROM ${table} LIMIT 1`);
+            const result = await query(`SELECT ${selectedFields} FROM ${quotedTable} LIMIT 1`);
             return { data: result.rows[0] || null, error: null };
           },
           all: async () => {
-            const result = await query(`SELECT ${selectedFields} FROM ${table}`);
+            const result = await query(`SELECT ${selectedFields} FROM ${quotedTable}`);
             return { data: result.rows, error: null };
           },
         };
@@ -104,7 +106,7 @@ export const db = {
                   const conflictColumn = options?.onConflict || keys[0];
                   const updateClause = keys.filter(k => k !== conflictColumn).map(k => `${k} = EXCLUDED.${k}`).join(', ');
                   const result = await query(
-                    `INSERT INTO ${table} (${keys.join(', ')}) VALUES (${placeholders}) ON CONFLICT (${conflictColumn}) DO UPDATE SET ${updateClause} RETURNING ${fields}`,
+                    `INSERT INTO ${quotedTable} (${keys.join(', ')}) VALUES (${placeholders}) ON CONFLICT (${conflictColumn}) DO UPDATE SET ${updateClause} RETURNING ${fields}`,
                     values
                   );
                   return { data: result.rows[0], error: null };
@@ -126,7 +128,7 @@ export const db = {
                   const values = Object.values(row);
                   const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
                   const result = await query(
-                    `INSERT INTO ${table} (${keys.join(', ')}) VALUES (${placeholders}) RETURNING ${fields}`,
+                    `INSERT INTO ${quotedTable} (${keys.join(', ')}) VALUES (${placeholders}) RETURNING ${fields}`,
                     values
                   );
                   return { data: result.rows[0], error: null };
@@ -146,7 +148,7 @@ export const db = {
               const values = [...Object.values(data), value];
               const setClause = keys.map((k, i) => `${k} = $${i + 1}`).join(', ');
               const result = await query(
-                `UPDATE ${table} SET ${setClause} WHERE ${column} = $${keys.length + 1} RETURNING *`,
+                `UPDATE ${quotedTable} SET ${setClause} WHERE ${column} = $${keys.length + 1} RETURNING *`,
                 values
               );
               return { data: result.rows[0], error: null };
@@ -160,7 +162,7 @@ export const db = {
         return {
           eq: async (column: string, value: unknown) => {
             try {
-              await query(`DELETE FROM ${table} WHERE ${column} = $1`, [value]);
+              await query(`DELETE FROM ${quotedTable} WHERE ${column} = $1`, [value]);
               return { error: null };
             } catch (err) {
               return { error: err instanceof Error ? err : new Error('Delete failed') };

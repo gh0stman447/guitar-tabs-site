@@ -3,9 +3,7 @@
 import { useState, useRef } from 'react';
 import { Tooltip as ReactTooltip } from 'react-tooltip';
 import { useIsTouch } from '@/hooks/useIsTouch';
-import { useTheme } from 'next-themes';
 import Image from 'next/image';
-import { motion, useMotionValue, useSpring, useTransform, useAnimation } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Music, ShoppingCart, Check, Trash2, Eye, Headphones } from 'lucide-react';
@@ -14,8 +12,6 @@ import { BuyDialog } from '@/components/shared/BuyDialog';
 import { TabPreviewDialog } from '@/components/shared/TabPreviewDialog';
 import { AudioPlayerDialog } from '@/components/shared/AudioPlayerDialog';
 import { useCart } from '@/context/CartContext';
-import { useCartAnimation } from '@/context/CartAnimationContext';
-import { usePreviewBlock } from '@/context/PreviewBlockContext';
 import { toast } from 'sonner';
 import type { Tab } from '@/types';
 
@@ -36,22 +32,12 @@ interface TabCardProps {
   tab: Tab;
   locale: string;
   buyLabel: string;
-  /** Анимация: задержка по индексу (для бестселлера) или layout (для каталога) */
   index?: number;
-  /** Показать бейдж #1 */
   showRank?: boolean;
-  /** Текст покупок под заголовком (для бестселлера) */
   purchasesLabel?: string;
-  /** Показать форматы файлов и описание (для каталога) */
   showDetails?: boolean;
-  /** Кнопки админа вместо кнопки "Купить" */
   adminActions?: React.ReactNode;
-  /** Префикс для уникальности id тултипов (если компонент используется в нескольких секциях) */
   tooltipPrefix?: string;
-  /** Префикс секции для уникальности flippingTabId (catalog, bestseller) */
-  sectionPrefix?: string;
-  /** Отключить все анимации (tilt, flip, fly-to-cart, justAdded glow) */
-  disableAnimations?: boolean;
 }
 
 export function TabCard({
@@ -63,8 +49,6 @@ export function TabCard({
   purchasesLabel,
   showDetails = true,
   tooltipPrefix = '',
-  sectionPrefix = '',
-  disableAnimations = false,
 }: TabCardProps) {
   const [buyOpen, setBuyOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -73,431 +57,244 @@ export function TabCard({
   const tp = tooltipPrefix ? `${tooltipPrefix}-` : '';
   const cardRef = useRef<HTMLDivElement>(null);
   const { addItem, removeItem, hasItem } = useCart();
-  const { flyToCart, flyFromCart } = useCartAnimation();
-  const { theme } = useTheme();
   const inCart = hasItem(tab.id);
   const [cartHovered, setCartHovered] = useState(false);
-  const [justAdded, setJustAdded] = useState(false);
-  const isDark = theme === 'dark';
-  const justAddedClass = disableAnimations ? '' : justAdded;
-  const inCartClass = disableAnimations ? '' : inCart;
 
-  const flipControls = useAnimation();
-  const { isPreviewBlocking, startPreviewBlock, endPreviewBlock } = usePreviewBlock();
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [6, -6]), {
-    stiffness: 300,
-    damping: 30,
-  });
-  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-6, 6]), {
-    stiffness: 300,
-    damping: 30,
-  });
-
-  function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
-    if (disableAnimations) return;
-    const rect = cardRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    mouseX.set((e.clientX - rect.left) / rect.width - 0.5);
-    mouseY.set((e.clientY - rect.top) / rect.height - 0.5);
-  }
-
-  function handleMouseLeave() {
-    if (disableAnimations) return;
-    mouseX.set(0);
-    mouseY.set(0);
-  }
-
-  function handlePreviewClick() {
-    if (isPreviewBlocking || previewOpen) return;
-    // Skip flip animation when disabled (admin pages)
-    if (disableAnimations) {
-      setPreviewOpen(true);
-      return;
-    }
-    // Use section prefix to create unique flippingTabId
-    const uniqueTabId = sectionPrefix ? `${sectionPrefix}-${tab.id}` : tab.id;
-    startPreviewBlock(uniqueTabId);
-    // Disable tilt during flip
-    mouseX.set(0);
-    mouseY.set(0);
-
-    // Get card position and calculate center offset
-    const rect = cardRef.current?.getBoundingClientRect();
-    if (rect) {
-      const centerX = window.innerWidth / 2 - rect.left - rect.width / 2;
-      const centerY = window.innerHeight / 2 - rect.top - rect.height / 2;
-
-      // Fly to center of screen with flip
-      flipControls.start({
-        x: centerX,
-        y: centerY,
-        rotateY: 180,
-        scale: 2.5,
-        z: 500,
-        opacity: [1, 1, 0],
-        transition: { duration: 0.6, ease: 'easeInOut' },
-      }).then(() => {
-        setPreviewOpen(true);
-        // Keep card in "flown" state until preview closes
-        flipControls.set({
-          x: centerX,
-          y: centerY,
-          rotateY: 180,
-          scale: 2.5,
-          z: 500,
-          opacity: 0,
-        });
-      });
-    }
-  }
-
-  function handlePreviewClose() {
-    setPreviewOpen(false);
-    // Animate back to original position
-    flipControls.start({
-      x: 0,
-      y: 0,
-      rotateY: 0,
-      scale: 1,
-      z: 0,
-      opacity: 1,
-      transition: { duration: 0.6, ease: 'easeInOut' },
-    }).then(() => {
-      // End preview block after animation completes
-      endPreviewBlock();
-    });
-  }
   const title = locale === 'en' ? tab.title_en : tab.title_ru;
   const description = locale === 'en' ? tab.description_en : tab.description_ru;
 
+  function handlePreviewClick() {
+    setPreviewOpen(true);
+  }
+
   return (
     <>
-      <div style={{ perspective: 1000 }}>
-        <motion.div
-          ref={cardRef}
-          initial={{ opacity: 1, y: 0 }}
-          animate={{ opacity: 1, y: 0 }}
-          style={disableAnimations ? {} : { rotateX, rotateY }}
-          whileHover={disableAnimations ? {} : { y: -4 }}
-          onMouseMove={handleMouseMove}
-          onMouseLeave={handleMouseLeave}
+      <div ref={cardRef}>
+        <Card
+          className={`overflow-hidden h-full flex flex-col relative border-border`}
         >
-          <motion.div
-            animate={flipControls}
-            style={{
-              transformStyle: 'preserve-3d',
-              transformOrigin: 'center center',
-              zIndex: 99999,
-            }}
-          >
-          <Card
-            style={{
-              transformStyle: 'preserve-3d',
-              backfaceVisibility: 'hidden',
-              WebkitBackfaceVisibility: 'hidden',
-              ...(disableAnimations
-                ? {}
-                : justAddedClass
-                  ? {
-                      boxShadow: isDark
-                        ? '0 0 15px 3px rgba(245,158,11,0.5)'
-                        : '0 0 12px 3px rgba(245,158,11,0.5), 0 0 20px 6px rgba(0,0,0,0.15)',
-                    }
-                  : inCartClass
-                    ? {
-                        boxShadow: isDark
-                          ? '0 0 15px 2px rgba(245,158,11,0.2)'
-                          : '0 0 10px 2px rgba(245,158,11,0.35), 0 0 16px 4px rgba(0,0,0,0.12)',
-                      }
-                    : {}),
-            }}
-            className={`overflow-hidden h-full flex flex-col relative transition-all duration-500 ${
-              disableAnimations
-                ? 'border-border'
-                : justAddedClass
-                  ? isDark
-                    ? 'border-amber-500/50'
-                    : 'border-amber-500/60'
-                  : inCartClass
-                    ? isDark
-                      ? 'border-amber-500/30'
-                      : 'border-amber-500/40'
-                    : 'border-border hover:border-amber-300 dark:hover:border-amber-700'
-            }`}
-          >
-            {/* Card back / Рубашка - visible when flipped */}
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                backgroundColor: 'rgba(245, 158, 11, 0.15)',
-                border: '2px solid rgba(245, 158, 11, 0.3)',
-                borderRadius: '12px',
-                backgroundImage: `repeating-linear-gradient(45deg, rgba(245, 158, 11, 0.05) 0px, rgba(245, 158, 11, 0.05) 2px, transparent 2px, transparent 4px)`,
-                transform: 'rotateY(180deg)',
-                backfaceVisibility: 'hidden',
-                WebkitBackfaceVisibility: 'hidden',
-                zIndex: 50,
-              }}
-            />
+          {showRank && (
+            <div className='absolute top-3 left-3 z-10 bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded-full'>
+              #1
+            </div>
+          )}
 
-            {/* Wrapper for front content with backface hidden */}
-            <div
-              style={{
-                backfaceVisibility: 'hidden',
-                WebkitBackfaceVisibility: 'hidden',
-              }}
-            >
-            {showRank && (
-              <div className='absolute top-3 left-3 z-10 bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded-full'>
-                #1
+          <div className='aspect-video relative bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/30 dark:to-zinc-900'>
+            {tab.photo_url ? (
+              <Image
+                key={tab.id}
+                src={tab.photo_url}
+                alt={title}
+                fill
+                draggable={false}
+                className='object-cover pointer-events-none'
+                sizes='(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw'
+              />
+            ) : (
+              <div className='flex items-center justify-center w-full h-full'>
+                <Music className='h-12 w-12 text-amber-400' strokeWidth={1} />
               </div>
             )}
+          </div>
 
-            <div className='aspect-video relative bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/30 dark:to-zinc-900'>
-              {tab.photo_url ? (
-                <Image
-                  key={tab.id}
-                  src={tab.photo_url}
-                  alt={title}
-                  fill
-                  draggable={false}
-                  className='object-cover pointer-events-none'
-                  sizes='(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw'
-                />
-              ) : (
-                <div className='flex items-center justify-center w-full h-full'>
-                  <Music className='h-12 w-12 text-amber-400' strokeWidth={1} />
-                </div>
-              )}
+          <CardContent className='p-5 flex flex-col flex-1 gap-3'>
+            <div className='flex items-start justify-between gap-2'>
+              <MarqueeText
+                text={title}
+                className='font-semibold text-base leading-tight flex-1 min-w-0'
+              />
+              <span
+                data-tooltip-id={`diff-${tp}${tab.id}`}
+                data-tooltip-content='Уровень сложности'
+                className={`shrink-0 text-xs font-medium px-2 py-1 rounded-full cursor-default ${getDifficultyColor(tab.difficulty)}`}
+              >
+                {tab.difficulty}
+              </span>
+              <ReactTooltip
+                id={`diff-${tp}${tab.id}`}
+                place='top'
+                opacity={1}
+                delayShow={isTouch ? 0 : 350}
+                style={{ fontSize: 13 }}
+              />
             </div>
 
-            <CardContent className='p-5 flex flex-col flex-1 gap-3'>
-              <div className='flex items-start justify-between gap-2'>
+            {purchasesLabel && <p className='text-xs text-muted-foreground'>{purchasesLabel}</p>}
+
+            {showDetails && (
+              <>
                 <MarqueeText
-                  text={title}
-                  className='font-semibold text-base leading-tight flex-1 min-w-0'
+                  text={description}
+                  className='text-sm text-muted-foreground flex-1 leading-relaxed'
                 />
-                <span
-                  data-tooltip-id={`diff-${tp}${tab.id}`}
-                  data-tooltip-content='Уровень сложности'
-                  className={`shrink-0 text-xs font-medium px-2 py-1 rounded-full cursor-default ${getDifficultyColor(tab.difficulty)}`}
-                >
-                  {tab.difficulty}
-                </span>
-                <ReactTooltip
-                  id={`diff-${tp}${tab.id}`}
-                  place='top'
-                  opacity={1}
-                  delayShow={isTouch ? 0 : 350}
-                  style={{ fontSize: 13 }}
-                />
-              </div>
-
-              {purchasesLabel && <p className='text-xs text-muted-foreground'>{purchasesLabel}</p>}
-
-              {showDetails && (
-                <>
-                  <MarqueeText
-                    text={description}
-                    className='text-sm text-muted-foreground flex-1 leading-relaxed'
-                  />
-                  <div className='flex flex-wrap gap-1'>
-                    {(Object.keys(tab.files) as Array<keyof typeof tab.files>).map((fmt) => (
-                      <span
-                        key={fmt}
-                        className='text-xs px-2 py-0.5 rounded bg-secondary text-muted-foreground font-mono uppercase'
-                      >
-                        {fmt}
-                      </span>
-                    ))}
-                  </div>
-                </>
-              )}
-
-              <div className='flex items-center justify-between mt-auto pt-3 border-t border-border'>
-                <span className='text-lg font-bold'>{tab.price} ₽</span>
-                <div className='flex items-center gap-2'>
-                  {tab.files.pdf && (
-                    <>
-                      <Button
-                        data-tooltip-id={`prev-${tp}${tab.id}`}
-                        data-tooltip-content={locale === 'en' ? 'Preview' : 'Превью'}
-                        size='sm'
-                        variant='outline'
-                        className={`rounded-full w-9 h-9 p-0 shrink-0 transition-colors bg-transparent hover:bg-transparent dark:bg-transparent dark:hover:bg-transparent ${isTouch ? 'border-border text-foreground' : 'hover:border-amber-500 hover:text-amber-500'}`}
-                        onClick={handlePreviewClick}
-                      >
-                        <Eye className='h-4 w-4' />
-                      </Button>
-                      <ReactTooltip
-                        id={`prev-${tp}${tab.id}`}
-                        place='top'
-                        hidden={isTouch}
-                        opacity={1}
-                        delayShow={350}
-                      />
-                    </>
-                  )}
-                  {tab.youtube_url && (
-                    <>
-                      <a
-                        data-tooltip-id={`yt-${tp}${tab.id}`}
-                        data-tooltip-content={locale === 'en' ? 'Watch arrangement video' : 'Смотреть видео аранжировки'}
-                        href={tab.youtube_url}
-                        target='_blank'
-                        rel='noopener noreferrer'
-                        className={`flex items-center justify-center w-9 h-9 rounded-full border transition-colors cursor-pointer ${isTouch ? 'border-red-500 text-red-500' : 'border-border text-muted-foreground dark:text-foreground hover:border-red-500 hover:text-red-500'}`}
-                        aria-label={locale === 'en' ? 'Watch on YouTube' : 'Смотреть на YouTube'}
-                      >
-                        <YouTubeIcon />
-                      </a>
-                      <ReactTooltip
-                        id={`yt-${tp}${tab.id}`}
-                        place='top'
-                        hidden={isTouch}
-                        opacity={1}
-                        delayShow={isTouch ? 0 : 350}
-                      />
-                    </>
-                  )}
-                  {!adminActions && (
-                    <>
-                      <Button
-                        data-tooltip-id={`cart-${tp}${tab.id}`}
-                        data-tooltip-content={
-                          inCart
-                            ? locale === 'en'
-                              ? 'Remove from cart'
-                              : 'Убрать из корзины'
-                            : locale === 'en'
-                              ? 'Add to cart'
-                              : 'В корзину'
-                        }
-                        size='sm'
-                        variant='outline'
-                        className={`rounded-full w-9 h-9 p-0 shrink-0 ${
-                          disableAnimations
-                            ? inCart
-                              ? cartHovered
-                                ? 'border-red-500 text-red-500'
-                                : 'border-amber-500 text-amber-500'
-                              : 'border-amber-500 text-amber-500'
-                            : 'transition-all duration-300 bg-transparent hover:bg-transparent dark:bg-transparent dark:hover:bg-transparent ' +
-                              (inCartClass
-                                ? cartHovered
-                                  ? 'border-red-500 text-red-500'
-                                  : 'border-amber-500 text-amber-500'
-                                : 'hover:border-amber-500 hover:text-amber-500') +
-                              (justAddedClass ? ' shadow-[0_0_10px_1px_rgba(245,158,11,0.6)]' : '')
-                        }`}
-                        onClick={() => {
-                          if (inCart) {
-                            removeItem(tab.id);
-                            toast(title, {
-                              description:
-                                locale === 'en' ? 'Removed from cart' : 'Убрано из корзины',
-                              icon: '🗑️',
-                            });
-                            if (!disableAnimations) {
-                              const el = cardRef.current;
-                              if (el) flyFromCart(el.getBoundingClientRect(), el);
-                            }
-                          } else {
-                            addItem(tab);
-                            if (!disableAnimations) {
-                              setJustAdded(true);
-                              setTimeout(() => setJustAdded(false), 650);
-                            }
-                            toast(title, {
-                              description:
-                                locale === 'en' ? 'Added to cart' : 'Добавлено в корзину',
-                              icon: '🛒',
-                            });
-                            if (!disableAnimations) {
-                              const el = cardRef.current;
-                              if (el) flyToCart(el.getBoundingClientRect(), el);
-                            }
-                          }
-                        }}
-                        onMouseEnter={() => setCartHovered(true)}
-                        onMouseLeave={() => setCartHovered(false)}
-                      >
-                        {inCart ? (
-                          cartHovered ? (
-                            <Trash2 className='h-4 w-4' />
-                          ) : (
-                            <Check className='h-4 w-4' />
-                          )
-                        ) : (
-                          <ShoppingCart className='h-4 w-4' />
-                        )}
-                      </Button>
-                      <ReactTooltip
-                        id={`cart-${tp}${tab.id}`}
-                        place='top'
-                        hidden={isTouch}
-                        opacity={1}
-                        delayShow={isTouch ? 0 : 350}
-                      />
-                    </>
-                  )}
-                  {tab.files.mp3 && (
-                    <>
-                      <Button
-                        data-tooltip-id={`audio-${tp}${tab.id}`}
-                        data-tooltip-content={locale === 'en' ? 'Listen to audio' : 'Слушать аудио'}
-                        size='sm'
-                        variant='outline'
-                        className={`rounded-full w-9 h-9 p-0 shrink-0 transition-colors bg-transparent hover:bg-transparent dark:bg-transparent dark:hover:bg-transparent ${isTouch ? 'border-border text-foreground' : 'hover:border-amber-500 hover:text-amber-500'}`}
-                        onClick={() => setAudioOpen(true)}
-                      >
-                        <Headphones className='h-4 w-4' />
-                      </Button>
-                      <ReactTooltip
-                        id={`audio-${tp}${tab.id}`}
-                        place='top'
-                        hidden={isTouch}
-                        opacity={1}
-                        delayShow={350}
-                      />
-                    </>
-                  )}
-                  {adminActions && (
-                    <div className='flex gap-2'>
-                      {adminActions}
-                    </div>
-                  )}
+                <div className='flex flex-wrap gap-1'>
+                  {(Object.keys(tab.files) as Array<keyof typeof tab.files>).map((fmt) => (
+                    <span
+                      key={fmt}
+                      className='text-xs px-2 py-0.5 rounded bg-secondary text-muted-foreground font-mono uppercase'
+                    >
+                      {fmt}
+                    </span>
+                  ))}
                 </div>
-              </div>
+              </>
+            )}
 
-              {/* Buy button - full width, below price and action buttons (only for non-admin) */}
-              {!adminActions && (
-                <Button
-                  size='sm'
-                  className='w-full bg-amber-500 hover:bg-amber-600 text-white rounded-full'
-                  onClick={() => setBuyOpen(true)}
-                >
-                  {buyLabel}
-                </Button>
-              )}
-            </CardContent>
+            <div className='flex items-center justify-between mt-auto pt-3 border-t border-border'>
+              <span className='text-lg font-bold'>{tab.price} ₽</span>
+              <div className='flex items-center gap-2'>
+                {tab.files.pdf && (
+                  <>
+                    <Button
+                      data-tooltip-id={`prev-${tp}${tab.id}`}
+                      data-tooltip-content={locale === 'en' ? 'Preview' : 'Превью'}
+                      size='sm'
+                      variant='outline'
+                      className={`rounded-full w-9 h-9 p-0 shrink-0 transition-colors bg-transparent hover:bg-transparent dark:bg-transparent dark:hover:bg-transparent ${isTouch ? 'border-border text-foreground' : 'hover:border-amber-500 hover:text-amber-500'}`}
+                      onClick={handlePreviewClick}
+                    >
+                      <Eye className='h-4 w-4' />
+                    </Button>
+                    <ReactTooltip
+                      id={`prev-${tp}${tab.id}`}
+                      place='top'
+                      hidden={isTouch}
+                      opacity={1}
+                      delayShow={350}
+                    />
+                  </>
+                )}
+                {tab.youtube_url && (
+                  <>
+                    <a
+                      data-tooltip-id={`yt-${tp}${tab.id}`}
+                      data-tooltip-content={locale === 'en' ? 'Watch arrangement video' : 'Смотреть видео аранжировки'}
+                      href={tab.youtube_url}
+                      target='_blank'
+                      rel='noopener noreferrer'
+                      className={`flex items-center justify-center w-9 h-9 rounded-full border transition-colors cursor-pointer ${isTouch ? 'border-red-500 text-red-500' : 'border-border text-muted-foreground dark:text-foreground hover:border-red-500 hover:text-red-500'}`}
+                      aria-label={locale === 'en' ? 'Watch on YouTube' : 'Смотреть на YouTube'}
+                    >
+                      <YouTubeIcon />
+                    </a>
+                    <ReactTooltip
+                      id={`yt-${tp}${tab.id}`}
+                      place='top'
+                      hidden={isTouch}
+                      opacity={1}
+                      delayShow={isTouch ? 0 : 350}
+                    />
+                  </>
+                )}
+                {!adminActions && (
+                  <>
+                    <Button
+                      data-tooltip-id={`cart-${tp}${tab.id}`}
+                      data-tooltip-content={
+                        inCart
+                          ? locale === 'en'
+                            ? 'Remove from cart'
+                            : 'Убрать из корзины'
+                          : locale === 'en'
+                            ? 'Add to cart'
+                            : 'В корзину'
+                      }
+                      size='sm'
+                      variant='outline'
+                      className={`rounded-full w-9 h-9 p-0 shrink-0 ${
+                        inCart
+                          ? cartHovered
+                            ? 'border-red-500 text-red-500'
+                            : 'border-amber-500 text-amber-500'
+                          : 'border-amber-500 text-amber-500 hover:border-amber-500 hover:text-amber-500'
+                      }`}
+                      onClick={() => {
+                        if (inCart) {
+                          removeItem(tab.id);
+                          toast(title, {
+                            description:
+                              locale === 'en' ? 'Removed from cart' : 'Убрано из корзины',
+                            icon: '🗑️',
+                          });
+                        } else {
+                          addItem(tab);
+                          toast(title, {
+                            description:
+                              locale === 'en' ? 'Added to cart' : 'Добавлено в корзину',
+                            icon: '🛒',
+                          });
+                        }
+                      }}
+                      onMouseEnter={() => setCartHovered(true)}
+                      onMouseLeave={() => setCartHovered(false)}
+                    >
+                      {inCart ? (
+                        cartHovered ? (
+                          <Trash2 className='h-4 w-4' />
+                        ) : (
+                          <Check className='h-4 w-4' />
+                        )
+                      ) : (
+                        <ShoppingCart className='h-4 w-4' />
+                      )}
+                    </Button>
+                    <ReactTooltip
+                      id={`cart-${tp}${tab.id}`}
+                      place='top'
+                      hidden={isTouch}
+                      opacity={1}
+                      delayShow={isTouch ? 0 : 350}
+                    />
+                  </>
+                )}
+                {tab.files.mp3 && (
+                  <>
+                    <Button
+                      data-tooltip-id={`audio-${tp}${tab.id}`}
+                      data-tooltip-content={locale === 'en' ? 'Listen to audio' : 'Слушать аудио'}
+                      size='sm'
+                      variant='outline'
+                      className={`rounded-full w-9 h-9 p-0 shrink-0 transition-colors bg-transparent hover:bg-transparent dark:bg-transparent dark:hover:bg-transparent ${isTouch ? 'border-border text-foreground' : 'hover:border-amber-500 hover:text-amber-500'}`}
+                      onClick={() => setAudioOpen(true)}
+                    >
+                      <Headphones className='h-4 w-4' />
+                    </Button>
+                    <ReactTooltip
+                      id={`audio-${tp}${tab.id}`}
+                      place='top'
+                      hidden={isTouch}
+                      opacity={1}
+                      delayShow={350}
+                    />
+                  </>
+                )}
+                {adminActions && (
+                  <div className='flex gap-2'>
+                    {adminActions}
+                  </div>
+                )}
+              </div>
             </div>
-          </Card>
-          </motion.div>
-        </motion.div>
+
+            {/* Buy button - full width, below price and action buttons (only for non-admin) */}
+            {!adminActions && (
+              <Button
+                size='sm'
+                className='w-full bg-amber-500 hover:bg-amber-600 text-white rounded-full'
+                onClick={() => setBuyOpen(true)}
+              >
+                {buyLabel}
+              </Button>
+            )}
+          </CardContent>
+        </Card>
       </div>
       <BuyDialog tab={tab} locale={locale} open={buyOpen} onOpenChange={setBuyOpen} />
       <TabPreviewDialog
         tab={tab}
         locale={locale}
         open={previewOpen}
-        onOpenChange={(open) => {
-          if (!open) handlePreviewClose();
-          else setPreviewOpen(open);
-        }}
+        onOpenChange={setPreviewOpen}
         onBuy={() => setBuyOpen(true)}
       />
       <AudioPlayerDialog

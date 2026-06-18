@@ -1,26 +1,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { useTranslations, useLocale } from 'next-intl';
-import { useIsTouch } from '@/hooks/useIsTouch';
 import { TrendingUp } from 'lucide-react';
 import { TabCard } from '@/components/shared/TabCard';
 import { TabCardSkeleton } from '@/components/shared/TabCard/TabCardSkeleton';
 import { supabase } from '@/lib/supabase';
-import { usePreviewBlock } from '@/context/PreviewBlockContext';
 import { TABLE_TABS } from '@/lib/constants';
 import type { Tab } from '@/types';
 
 export function BestsellerSection() {
   const t = useTranslations('bestseller');
   const locale = useLocale();
-  const isTouch = useIsTouch();
-  const duration = isTouch ? 0.5 / 1.5 : 0.5;
-  const cardDuration = isTouch ? 0.7 / 1.5 : 0.7;
   const [topTabs, setTopTabs] = useState<Tab[]>([]);
   const [loading, setLoading] = useState(true);
-  const { flippingTabId } = usePreviewBlock();
 
   useEffect(() => {
     supabase
@@ -43,13 +36,7 @@ export function BestsellerSection() {
   return (
     <section className='py-12 sm:py-24' style={{ backgroundColor: 'var(--bestseller-bg)' }}>
       <div className='max-w-6xl mx-auto px-4 sm:px-6 lg:px-8'>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration }}
-          className='text-center mb-12'
-        >
+        <div className='text-center mb-12'>
           <div className='flex items-center justify-center gap-2 mb-2'>
             <TrendingUp className='h-4 w-4 text-amber-500' />
             <span className='text-amber-500 text-sm font-medium tracking-widest uppercase'>
@@ -57,7 +44,7 @@ export function BestsellerSection() {
             </span>
           </div>
           <h2 className='text-3xl sm:text-4xl font-bold'>{t('title')}</h2>
-        </motion.div>
+        </div>
 
         {loading ? (
           <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
@@ -69,33 +56,16 @@ export function BestsellerSection() {
           <p className='text-center text-muted-foreground py-12'>{t('empty')}</p>
         ) : (
           <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
-            {topTabs.map((tab, i) => (
-              <motion.div
+            {topTabs.map((tab) => (
+              <TabCard
                 key={tab.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{
-                  duration: cardDuration,
-                  delay: i * 0.1,
-                }}
-                style={{
-                  zIndex: flippingTabId === `bestseller-${tab.id}` ? 100 : 0,
-                }}
-              >
-                <TabCard
-                  tab={tab}
-                  index={i}
-                  locale={locale}
-                  buyLabel={t('buy')}
-                  showRank={i === 0}
-                  purchasesLabel={t('purchases', { count: tab.purchase_count })}
-                  showDetails={false}
-                  tooltipPrefix='bestseller'
-                  sectionPrefix='bestseller'
-                  disableAnimations={isTouch}
-                />
-              </motion.div>
+                tab={tab}
+                locale={locale}
+                buyLabel={t('buy')}
+                showRank={false}
+                showDetails={false}
+                tooltipPrefix='bestseller'
+              />
             ))}
           </div>
         )}

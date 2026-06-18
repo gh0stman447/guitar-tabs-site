@@ -1,14 +1,11 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslations, useLocale } from 'next-intl';
-import { useIsTouch } from '@/hooks/useIsTouch';
-import { Search, ChevronUp, ChevronDown, X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import type { Tab } from '@/types';
 import { TabCard, TabCardSkeleton } from '@/components/shared/TabCard';
 import { supabase } from '@/lib/supabase';
-import { usePreviewBlock } from '@/context/PreviewBlockContext';
 import {
   TABLE_TABS,
   DISCOUNT_TIER_1_MIN,
@@ -22,15 +19,11 @@ type SortKey = 'title' | 'difficulty' | 'price' | 'popular';
 export function TabsSection() {
   const t = useTranslations('tabs');
   const locale = useLocale();
-  const isTouch = useIsTouch();
-  const headerDuration = isTouch ? 0.5 / 1.5 : 0.5;
-  const cardDuration = 0.2;
   const [tabs, setTabs] = useState<Tab[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortKey>('popular');
   const [asc, setAsc] = useState(false);
-  const { flippingTabId } = usePreviewBlock();
 
   useEffect(() => {
     supabase
@@ -90,28 +83,16 @@ export function TabsSection() {
   return (
     <section id='tabs' className='py-12 sm:py-24'>
       <div className='max-w-6xl mx-auto px-4 sm:px-6 lg:px-8'>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: headerDuration }}
-          className='text-center mb-12'
-        >
+        <div className='text-center mb-12'>
           <span className='text-amber-500 text-sm font-medium tracking-widest uppercase'>
             {t('badge')}
           </span>
           <h2 className='text-3xl sm:text-4xl font-bold mt-2'>{t('title')}</h2>
           <p className='text-muted-foreground mt-3 max-w-xl mx-auto'>{t('description')}</p>
-        </motion.div>
+        </div>
 
         {/* Search + Sort */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: headerDuration * 0.8, delay: 0.15 }}
-          className='flex flex-col gap-3 mb-8'
-        >
+        <div className='flex flex-col gap-3 mb-8'>
           <div className='relative'>
             <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
             <input
@@ -137,29 +118,22 @@ export function TabsSection() {
                   }`}
                 >
                   {opt.label}
-                  {active &&
-                    (asc ? <ChevronUp className='h-3 w-3' /> : <ChevronDown className='h-3 w-3' />)}
+                  {active && (asc ? ' ↑' : ' ↓')}
                 </button>
               );
             })}
 
-            <AnimatePresence>
-              {isDirty && (
-                <motion.button
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  transition={{ duration: 0.15 }}
-                  onClick={reset}
-                  className='flex items-center gap-1 h-8 px-3 rounded-full text-xs font-medium border border-border text-muted-foreground hover:border-red-400 hover:text-red-500 bg-background transition-colors cursor-pointer'
-                >
-                  <X className='h-3 w-3' />
-                  {t('reset')}
-                </motion.button>
-              )}
-            </AnimatePresence>
+            {isDirty && (
+              <button
+                onClick={reset}
+                className='flex items-center gap-1 h-8 px-3 rounded-full text-xs font-medium border border-border text-muted-foreground hover:border-red-400 hover:text-red-500 bg-background transition-colors cursor-pointer'
+              >
+                <X className='h-3 w-3' />
+                {t('reset')}
+              </button>
+            )}
           </div>
-        </motion.div>
+        </div>
 
         {/* Discount promo */}
         {!loading && tabs.length >= DISCOUNT_TIER_2_MIN && (
@@ -192,56 +166,19 @@ export function TabsSection() {
           </div>
         ) : filtered.length === 0 && !search ? (
           <p className='text-center text-muted-foreground py-12'>{t('empty')}</p>
-        ) : isTouch ? (
+        ) : (
           <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
             {filtered.map((tab) => (
-              <div
+              <TabCard
                 key={tab.id}
-                style={{
-                  zIndex: flippingTabId === `catalog-${tab.id}` ? 100 : 0,
-                }}
-              >
-                <TabCard
-                  tab={tab}
-                  locale={locale}
-                  buyLabel={t('buy')}
-                  showDetails
-                  index={filtered.indexOf(tab)}
-                  tooltipPrefix='catalog'
-                  sectionPrefix='catalog'
-                  disableAnimations={isTouch}
-                />
-              </div>
+                tab={tab}
+                locale={locale}
+                buyLabel={t('buy')}
+                showDetails
+                tooltipPrefix='catalog'
+              />
             ))}
           </div>
-        ) : (
-          <motion.div layout className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
-            <AnimatePresence>
-              {filtered.map((tab) => (
-                <motion.div
-                  key={tab.id}
-                  layout
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: cardDuration }}
-                  style={{
-                    zIndex: flippingTabId === `catalog-${tab.id}` ? 100 : 0,
-                  }}
-                >
-                  <TabCard
-                    tab={tab}
-                    locale={locale}
-                    buyLabel={t('buy')}
-                    showDetails
-                    index={filtered.indexOf(tab)}
-                    tooltipPrefix='catalog'
-                    sectionPrefix='catalog'
-                  />
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </motion.div>
         )}
       </div>
     </section>

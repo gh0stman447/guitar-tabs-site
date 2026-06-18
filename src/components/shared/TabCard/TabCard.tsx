@@ -38,6 +38,7 @@ interface TabCardProps {
   showDetails?: boolean;
   adminActions?: React.ReactNode;
   tooltipPrefix?: string;
+  disableAnimations?: boolean;
 }
 
 export function TabCard({
@@ -70,9 +71,7 @@ export function TabCard({
   return (
     <>
       <div ref={cardRef}>
-        <Card
-          className={`overflow-hidden h-full flex flex-col relative border-border`}
-        >
+        <Card className={`overflow-hidden h-full flex flex-col relative border-border`}>
           {showRank && (
             <div className='absolute top-3 left-3 z-10 bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded-full'>
               #1
@@ -168,7 +167,9 @@ export function TabCard({
                   <>
                     <a
                       data-tooltip-id={`yt-${tp}${tab.id}`}
-                      data-tooltip-content={locale === 'en' ? 'Watch arrangement video' : 'Смотреть видео аранжировки'}
+                      data-tooltip-content={
+                        locale === 'en' ? 'Watch arrangement video' : 'Смотреть видео аранжировки'
+                      }
                       href={tab.youtube_url}
                       target='_blank'
                       rel='noopener noreferrer'
@@ -219,8 +220,7 @@ export function TabCard({
                         } else {
                           addItem(tab);
                           toast(title, {
-                            description:
-                              locale === 'en' ? 'Added to cart' : 'Добавлено в корзину',
+                            description: locale === 'en' ? 'Added to cart' : 'Добавлено в корзину',
                             icon: '🛒',
                           });
                         }
@@ -268,11 +268,7 @@ export function TabCard({
                     />
                   </>
                 )}
-                {adminActions && (
-                  <div className='flex gap-2'>
-                    {adminActions}
-                  </div>
-                )}
+                {adminActions && <div className='flex gap-2'>{adminActions}</div>}
               </div>
             </div>
 
@@ -297,12 +293,7 @@ export function TabCard({
         onOpenChange={setPreviewOpen}
         onBuy={() => setBuyOpen(true)}
       />
-      <AudioPlayerDialog
-        tab={tab}
-        locale={locale}
-        open={audioOpen}
-        onOpenChange={setAudioOpen}
-      />
+      <AudioPlayerDialog tab={tab} locale={locale} open={audioOpen} onOpenChange={setAudioOpen} />
     </>
   );
 }

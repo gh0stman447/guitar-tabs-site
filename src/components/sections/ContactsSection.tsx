@@ -31,9 +31,9 @@ const contacts = [
     label: 'Email',
     value: 'o_malygin@bk.ru',
     href: 'mailto:o_malygin@bk.ru',
-    color: 'text-amber-500',
-    border: 'border-amber-500/30',
-    shadow: 'shadow-amber-500/20',
+    color: 'text-primary',
+    border: 'border-primary/30',
+    shadow: 'shadow-primary/20',
   },
 ];
 
@@ -104,7 +104,7 @@ export function ContactsSection() {
           transition={{ duration }}
           className='text-center mb-12'
         >
-          <span className='text-amber-500 text-sm font-medium tracking-widest uppercase'>
+          <span className='text-primary text-sm font-medium tracking-widest uppercase'>
             {t('badge')}
           </span>
           <h2 className='text-3xl sm:text-4xl font-bold mt-2'>{t('title')}</h2>

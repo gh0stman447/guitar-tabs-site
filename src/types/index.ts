@@ -16,6 +16,7 @@ export interface TabFiles {
 
 export interface Tab {
   id: string;
+  created_at?: string;
   title_ru: string;
   title_en: string;
   difficulty: string;
@@ -25,6 +26,7 @@ export interface Tab {
   photo_url: string;
   files: TabFiles;
   purchase_count: number;
+  download_count?: number;
   youtube_url?: string;
 }
 

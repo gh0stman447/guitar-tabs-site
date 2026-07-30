@@ -18,8 +18,7 @@ export function AboutSection() {
   return (
     <section
       id='about'
-      className='py-12 sm:py-24 overflow-hidden'
-      style={{ backgroundColor: 'var(--bestseller-bg)' }}
+      className='section-soft py-12 sm:py-24 overflow-hidden'
     >
       <div className='max-w-6xl mx-auto px-4 sm:px-6 lg:px-8'>
         <div className='grid md:grid-cols-2 gap-12 items-center'>
@@ -30,7 +29,7 @@ export function AboutSection() {
             transition={{ duration }}
             className='relative'
           >
-            <div className='aspect-square max-w-sm mx-auto rounded-2xl overflow-hidden border border-amber-200 dark:border-amber-800/30 relative'>
+            <div className='aspect-square max-w-sm mx-auto rounded-2xl overflow-hidden border border-primary/25 relative'>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src='/me.jpg'
@@ -39,7 +38,7 @@ export function AboutSection() {
                 draggable={false}
               />
             </div>
-            <div className='absolute -bottom-4 -right-4 w-32 h-32 bg-amber-400/10 rounded-2xl -z-10' />
+            <div className='absolute -bottom-4 -right-4 w-32 h-32 bg-primary/10 rounded-2xl -z-10' />
           </motion.div>
 
           <motion.div
@@ -48,7 +47,7 @@ export function AboutSection() {
             viewport={{ once: true }}
             transition={{ duration, delay: 0.1 }}
           >
-            <span className='text-amber-500 text-sm font-medium tracking-widest uppercase'>
+            <span className='text-primary text-sm font-medium tracking-widest uppercase'>
               {t('badge')}
             </span>
             <h2 className='text-3xl sm:text-4xl font-bold mt-2 mb-6'>{t('title')}</h2>
@@ -69,8 +68,7 @@ export function AboutSection() {
                     x: 0,
                     transition: { duration: 0.2 },
                   }}
-                  className='flex items-center gap-4 p-4 rounded-xl border border-border cursor-pointer transition-shadow hover:shadow-lg'
-                  style={{ backgroundColor: 'hsl(var(--background))' }}
+                  className='flex items-center gap-4 p-4 rounded-xl border border-border bg-card cursor-pointer transition-shadow hover:shadow-lg'
                 >
                   <motion.div
                     className='shrink-0 w-9 h-9 rounded-lg flex items-center justify-center'
@@ -80,7 +78,7 @@ export function AboutSection() {
                       transition: { duration: 0.3 },
                     }}
                   >
-                    <Icon className='h-5 w-5 text-amber-500' />
+                    <Icon className='h-5 w-5 text-primary' />
                   </motion.div>
                   <div className='min-w-0'>
                     <div className='font-medium text-sm'>{label}</div>

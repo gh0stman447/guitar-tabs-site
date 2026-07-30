@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Loader2, Music } from 'lucide-react';
-import { Header } from '@/components/shared/Header';
+import { ArrowLeft, Loader2, Music } from 'lucide-react';
 import Link from 'next/link';
 import { Field, inputCls, DropZone, FORMAT_ACCEPT } from '@/components/admin/AdminFormFields';
 import { FORMATS } from '@/types';
@@ -23,6 +22,7 @@ export default function CreateTabPage() {
   const [descRu, setDescRu] = useState('');
   const [descEn, setDescEn] = useState('');
   const [difficulty, setDifficulty] = useState('5/10');
+  const [isPaid, setIsPaid] = useState(true);
   const [price, setPrice] = useState('');
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [photo, setPhoto] = useState<File | null>(null);
@@ -33,7 +33,7 @@ export default function CreateTabPage() {
 
   // Проверка обязательных полей
   const hasTitles = titleRu.trim() && titleEn.trim();
-  const hasPrice = price.trim();
+  const hasPrice = !isPaid || (price.trim() !== '' && Number(price) > 0);
   const hasDifficulty = difficulty.trim();
   const hasAtLeastOneFile = Object.keys(files).length > 0;
   const allRequiredFilled = hasTitles && hasPrice && hasDifficulty && hasAtLeastOneFile;
@@ -43,7 +43,7 @@ export default function CreateTabPage() {
   const missingFields: string[] = [];
   if (!titleRu.trim()) missingFields.push('Название (рус)');
   if (!titleEn.trim()) missingFields.push('Название (eng)');
-  if (!price.trim()) missingFields.push('Цена');
+  if (isPaid && !hasPrice) missingFields.push('Цена больше 0');
   if (!difficulty.trim()) missingFields.push('Сложность');
   if (!hasAtLeastOneFile) missingFields.push('Файл таба (PDF/GP5/GPX/MP3)');
 
@@ -73,7 +73,8 @@ export default function CreateTabPage() {
     formData.append('description_ru', descRu);
     formData.append('description_en', descEn);
     formData.append('difficulty', difficulty);
-    formData.append('price', price);
+    formData.append('is_free', String(!isPaid));
+    formData.append('price', isPaid ? price : '0');
     formData.append('youtube_url', youtubeUrl);
     if (photo) formData.append('photo', photo);
     for (const [fmt, file] of Object.entries(files)) {
@@ -89,6 +90,7 @@ export default function CreateTabPage() {
         setTitleEn('');
         setDescRu('');
         setDescEn('');
+        setIsPaid(true);
         setPrice('');
         setYoutubeUrl('');
         setPhoto(null);
@@ -105,10 +107,17 @@ export default function CreateTabPage() {
 
   return (
     <div className='min-h-screen bg-secondary/20'>
-      <Header />
       <div className='min-h-[calc(100vh-4rem)] flex items-center justify-center py-10 px-4 pt-24'>
         <div className='w-full max-w-2xl'>
           <div className='flex items-center gap-3 mb-8'>
+            <Link
+              href={`/${locale}`}
+              aria-label='Вернуться на главную'
+              title='Вернуться на главную'
+              className='flex items-center justify-center w-9 h-9 rounded-full border border-border hover:border-primary text-muted-foreground hover:text-foreground transition-colors'
+            >
+              <ArrowLeft className='h-4 w-4' />
+            </Link>
             <div className='w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center'>
               <Music className='h-5 w-5 text-amber-500' />
             </div>
@@ -164,17 +173,56 @@ export default function CreateTabPage() {
               </Field>
             </div>
 
-            <div className='grid grid-cols-2 gap-4'>
-              <Field label='Цена (₽)'>
-                <input
-                  required
-                  type='number'
-                  placeholder='499'
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  className={inputCls}
-                />
-              </Field>
+            <Field label='Тип таба'>
+              <div className='grid grid-cols-2 gap-2 rounded-xl bg-muted/60 p-1'>
+                <button
+                  type='button'
+                  aria-pressed={isPaid}
+                  onClick={() => setIsPaid(true)}
+                  className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                    isPaid
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Платный
+                </button>
+                <button
+                  type='button'
+                  aria-pressed={!isPaid}
+                  onClick={() => {
+                    setIsPaid(false);
+                    setFiles((current) =>
+                      Object.fromEntries(
+                        Object.entries(current).filter(([format]) => format !== 'mp3'),
+                      ),
+                    );
+                  }}
+                  className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                    !isPaid
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Бесплатный
+                </button>
+              </div>
+            </Field>
+
+            <div className={`grid gap-4 ${isPaid ? 'grid-cols-2' : 'grid-cols-1'}`}>
+              {isPaid && (
+                <Field label='Цена (₽)'>
+                  <input
+                    required
+                    min='1'
+                    type='number'
+                    placeholder='499'
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    className={inputCls}
+                  />
+                </Field>
+              )}
               <Field label='Сложность'>
                 <select
                   required
@@ -215,7 +263,7 @@ export default function CreateTabPage() {
                 <span className='text-muted-foreground font-normal'>(хотя бы один)</span>
               </p>
               <div className='grid grid-cols-2 gap-3'>
-                {FORMATS.map((fmt) => (
+                {FORMATS.filter((fmt) => isPaid || fmt !== 'mp3').map((fmt) => (
                   <div key={fmt} className='flex flex-col gap-1'>
                     <span className='text-xs font-mono font-bold text-amber-600 uppercase'>
                       {fmt}
@@ -258,7 +306,7 @@ export default function CreateTabPage() {
               data-tooltip-content={allRequiredFilled ? undefined : `Заполните все обязательные поля: ${missingFields.join(', ')}`}
               type='submit'
               disabled={isSubmitDisabled}
-              className={`w-full bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white rounded-full py-2.5 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${isSubmitDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+              className={`w-full bg-primary hover:bg-primary/90 disabled:opacity-60 text-primary-foreground rounded-full py-2.5 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${isSubmitDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
             >
               {loading ? (
                 <>

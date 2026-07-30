@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Loader2, Lock } from 'lucide-react';
-import { Header } from '@/components/shared/Header';
 import { inputCls } from '@/components/admin/AdminFormFields';
 import { useAdmin } from '@/context/AdminContext';
 
@@ -39,7 +38,6 @@ export default function AdminLoginPage() {
 
   return (
     <div className='min-h-screen bg-secondary/20'>
-      <Header />
       <div className='min-h-[calc(100vh-4rem)] flex items-center justify-center py-10 px-4 pt-24'>
         <div className='w-full max-w-sm bg-background rounded-2xl border border-border shadow-lg p-8 flex flex-col gap-6'>
           <div className='flex flex-col items-center gap-2'>
@@ -65,7 +63,7 @@ export default function AdminLoginPage() {
             <button
               onClick={tryAuth}
               disabled={loginBlocked || loading}
-              className='w-full bg-amber-500 hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-full py-2 text-sm font-medium transition-colors flex items-center justify-center gap-2'
+              className='w-full bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-primary-foreground rounded-full py-2 text-sm font-medium transition-colors flex items-center justify-center gap-2'
             >
               {loading ? (
                 <>

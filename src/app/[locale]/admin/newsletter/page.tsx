@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Loader2, Mail, Send } from 'lucide-react';
-import { Header } from '@/components/shared/Header';
 import Link from 'next/link';
 import { SITE_URL } from '@/lib/constants';
 import { Field, inputCls } from '@/components/admin/AdminFormFields';
@@ -87,7 +86,6 @@ export default function NewsletterPage() {
 
   return (
     <div className='min-h-screen bg-secondary/20'>
-      <Header />
       <div className='min-h-[calc(100vh-4rem)] flex items-center justify-center py-10 px-4 pt-24'>
         <div className='w-full max-w-2xl'>
           <div className='flex items-center gap-3 mb-8'>
@@ -171,7 +169,7 @@ export default function NewsletterPage() {
               }
               type='submit'
               disabled={isSubmitDisabled}
-              className={`w-full bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white rounded-full py-2.5 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${isSubmitDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+              className={`w-full bg-primary hover:bg-primary/90 disabled:opacity-60 text-primary-foreground rounded-full py-2.5 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${isSubmitDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
             >
               {loading ? (
                 <>

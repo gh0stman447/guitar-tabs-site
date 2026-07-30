@@ -142,10 +142,10 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
       {/* Header - одинаковый для всех */}
       <div className='flex items-center justify-between px-6 py-4 border-b border-border shrink-0'>
         <div className='flex items-center gap-2'>
-          <ShoppingCart className='h-5 w-5 text-amber-500' />
+          <ShoppingCart className='h-5 w-5 text-primary' />
           <span className='font-semibold text-base'>{ru ? 'Корзина' : 'Cart'}</span>
           {items.length > 0 && (
-            <span className='text-xs bg-amber-500 text-white rounded-full px-2 py-0.5 font-medium'>
+            <span className='text-xs bg-white text-primary rounded-full px-2 py-0.5 font-semibold shadow-sm'>
               {items.length}
             </span>
           )}
@@ -234,7 +234,7 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: isTouch ? 1 : 0.8 }}
                       transition={{ duration: isTouch ? 0 : 0.25 }}
-                      className='mx-6 my-2 rounded-lg bg-amber-500/10 border border-amber-500/20 px-4 py-2.5 text-sm text-amber-600 dark:text-amber-400'
+                      className='mx-6 my-2 rounded-lg bg-primary/10 border border-primary/20 px-4 py-2.5 text-sm text-primary'
                     >
                       {ru
                         ? `Добавь ещё 1 таб и получи скидку ${DISCOUNT_TIER_1_RATE * 100}% 🎸`
@@ -249,7 +249,7 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: isTouch ? 1 : 0.8 }}
                       transition={{ duration: isTouch ? 0 : 0.25 }}
-                      className='mx-6 my-2 rounded-lg bg-amber-500/10 border border-amber-500/20 px-4 py-2.5 text-sm text-amber-600 dark:text-amber-400'
+                      className='mx-6 my-2 rounded-lg bg-primary/10 border border-primary/20 px-4 py-2.5 text-sm text-primary'
                     >
                       {ru
                         ? `Добавь ещё 1 таб, и скидка вырастет до ${DISCOUNT_TIER_2_RATE * 100}% 🎸`
@@ -385,7 +385,7 @@ function CartItem({
         </div>
         <div className='flex-1 min-w-0'>
           <p className='text-sm font-medium truncate'>{title}</p>
-          <p className='text-sm text-amber-500 font-semibold'>{tab.price} ₽</p>
+          <p className='text-sm text-primary dark:text-white font-semibold'>{tab.price} ₽</p>
         </div>
         {!isTouch && (
           <>

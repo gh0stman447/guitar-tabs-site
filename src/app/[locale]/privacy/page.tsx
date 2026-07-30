@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { Header } from '@/components/shared/Header';
 import { Footer } from '@/components/shared/Footer';
 import { ScrollToTop } from '@/components/shared/ScrollToTop';
 import { ShieldCheck } from 'lucide-react';
@@ -11,7 +10,6 @@ export async function generateMetadata() {
 export default async function PrivacyPage() {
   return (
     <>
-      <Header />
       <main className='min-h-screen bg-background'>
         <div className='border-b border-border bg-muted/30 pt-16'>
           <div className='max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12'>

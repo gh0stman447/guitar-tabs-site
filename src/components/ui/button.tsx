@@ -13,7 +13,7 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40",
         outline:
-          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-white/30 dark:bg-white/[0.03]",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost:
@@ -47,15 +47,25 @@ function Button({
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean
-  }) {
+}) {
   const Comp = asChild ? Slot.Root : "button"
+  const normalizedHover =
+    variant === "outline"
+      ? "hover:border-primary/45 hover:bg-primary/10 hover:text-primary dark:hover:border-primary/80 dark:hover:bg-primary/25 dark:hover:text-white"
+      : variant === "default"
+        ? "hover:bg-primary/85 hover:text-primary-foreground"
+        : ""
 
   return (
     <Comp
       data-slot="button"
       data-variant={variant}
       data-size={size}
-      className={cn(buttonVariants({ variant, size, className }))}
+      className={cn(
+        buttonVariants({ variant, size, className }),
+        "rounded-md",
+        normalizedHover
+      )}
       {...props}
     />
   )

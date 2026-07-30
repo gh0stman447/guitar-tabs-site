@@ -17,16 +17,29 @@ export async function GET(req: NextRequest) {
     const dir = searchParams.get('dir') === 'asc' ? 'ASC' : 'DESC';
     const limit = searchParams.get('limit');
 
-    let sql = `SELECT * FROM ${TABLE_TABS_QUOTED}`;
+    const conditions: string[] = [];
     if (onlyPublished) {
-      sql += ' WHERE is_published = true';
+      conditions.push('tabs.is_published = true');
     }
+    const whereClause = conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
 
     if (countOnly) {
-      const countSql = sql.replace('SELECT *', 'SELECT COUNT(*)');
+      const countSql = `SELECT COUNT(*) FROM ${TABLE_TABS_QUOTED} AS tabs${whereClause}`;
       const result = await dbQuery(countSql);
       return NextResponse.json({ count: parseInt(result.rows[0].count, 10) });
     }
+
+    let sql = `
+      SELECT
+        tabs.*,
+        (
+          SELECT COUNT(*)::int
+          FROM tab_downloads AS downloads
+          WHERE downloads.tab_id = tabs.id
+        ) AS download_count
+      FROM ${TABLE_TABS_QUOTED} AS tabs
+      ${whereClause}
+    `;
 
     sql += ` ORDER BY ${order} ${dir}`;
     if (limit) {
@@ -40,7 +53,7 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.json(result.rows);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to fetch tabs' }, { status: 500 });
   }
 }

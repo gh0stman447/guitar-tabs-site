@@ -304,7 +304,13 @@ export function TabPreviewDialog({
                 )}
               </div>
               {tooltipsReady && !downloading && (
-                <ReactTooltip id='preview-download' place='bottom' opacity={1} delayShow={350} />
+                <ReactTooltip
+                  id='preview-download'
+                  place='bottom'
+                  opacity={1}
+                  delayShow={350}
+                  style={{ fontSize: 13 }}
+                />
               )}
               <button
                 data-tooltip-id='preview-close'
@@ -314,7 +320,13 @@ export function TabPreviewDialog({
               >
                 <X className='h-4 w-4' />
               </button>
-              <ReactTooltip id='preview-close' place='bottom' opacity={1} delayShow={350} />
+              <ReactTooltip
+                id='preview-close'
+                place='bottom'
+                opacity={1}
+                delayShow={350}
+                style={{ fontSize: 13 }}
+              />
             </div>
           ) : (
             <div className='flex items-center gap-1'>

@@ -18,31 +18,39 @@ export async function GET(req: NextRequest) {
     const order = searchParams.get('order') || 'created_at';
     const dir = searchParams.get('dir') === 'asc' ? 'ASC' : 'DESC';
 
-    let sql = `SELECT * FROM ${TABLE_TABS_QUOTED}`;
     const conditions: string[] = [];
     const values: unknown[] = [];
     let paramIndex = 1;
 
     if (id) {
-      conditions.push(`id = $${paramIndex++}`);
+      conditions.push(`tabs.id = $${paramIndex++}`);
       values.push(id);
     }
     if (published) {
-      conditions.push('is_published = true');
+      conditions.push('tabs.is_published = true');
     } else if (drafts) {
-      conditions.push('is_published = false');
+      conditions.push('tabs.is_published = false');
     }
 
-    if (conditions.length > 0) {
-      sql += ' WHERE ' + conditions.join(' AND ');
-    }
+    const whereClause = conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
 
     if (countOnly) {
-      // Return just count
-      const countSql = sql.replace('SELECT *', 'SELECT COUNT(*)');
+      const countSql = `SELECT COUNT(*) FROM ${TABLE_TABS_QUOTED} AS tabs${whereClause}`;
       const result = await dbQuery(countSql, values);
       return NextResponse.json({ count: parseInt(result.rows[0].count, 10) });
     }
+
+    let sql = `
+      SELECT
+        tabs.*,
+        (
+          SELECT COUNT(*)::int
+          FROM tab_downloads AS downloads
+          WHERE downloads.tab_id = tabs.id
+        ) AS download_count
+      FROM ${TABLE_TABS_QUOTED} AS tabs
+      ${whereClause}
+    `;
 
     sql += ` ORDER BY ${order} ${dir}`;
 
@@ -53,7 +61,7 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.json(result.rows);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to fetch tabs' }, { status: 500 });
   }
 }

@@ -90,8 +90,8 @@ export function FloatingCart() {
           onClick={() => setOpen(true)}
           className={cn(
             'group relative flex items-center gap-3 rounded-2xl px-4 py-3',
-            'bg-amber-500 text-white shadow-lg shadow-amber-500/30',
-            'hover:bg-amber-600 hover:shadow-amber-500/50 hover:shadow-xl',
+            'bg-primary text-primary-foreground shadow-lg shadow-primary/30',
+            'hover:bg-primary/90 hover:shadow-primary/40 hover:shadow-xl',
             'active:scale-95 transition-all duration-200 cursor-pointer',
           )}
           initial={{ scale: 1 }}
@@ -99,7 +99,7 @@ export function FloatingCart() {
         >
           {/* Glow ring */}
           <motion.span
-            className='absolute inset-0 rounded-2xl ring-2 ring-amber-400/40 pointer-events-none'
+            className='absolute inset-0 rounded-2xl ring-2 ring-primary-foreground/25 pointer-events-none'
             animate={count > 0 ? { opacity: [0.4, 1, 0.4] } : { opacity: 0.4 }}
             transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
           />
@@ -112,7 +112,7 @@ export function FloatingCart() {
             transition={{ duration: 0.4 }}
           >
             <ShoppingCart className='h-5 w-5' />
-            <span className='absolute -top-2 -right-2 flex items-center justify-center w-4 h-4 rounded-full bg-white text-amber-500 text-[10px] font-bold leading-none'>
+            <span className='absolute -top-2 -right-2 flex items-center justify-center w-4 h-4 rounded-full bg-white text-primary text-[10px] font-bold leading-none shadow-sm'>
               {count}
             </span>
           </motion.div>

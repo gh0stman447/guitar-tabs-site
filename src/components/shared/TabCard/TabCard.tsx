@@ -1,56 +1,40 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { Tooltip as ReactTooltip } from 'react-tooltip';
-import { useIsTouch } from '@/hooks/useIsTouch';
-import { useTheme } from 'next-themes';
+import { useRef, useState } from 'react';
 import Image from 'next/image';
-import { motion, useMotionValue, useSpring, useTransform, useAnimation } from 'framer-motion';
+import Link from 'next/link';
+import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { Tooltip as ReactTooltip } from 'react-tooltip';
+import { Check, Download, Music, ShoppingBag, ShoppingCart, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Music, ShoppingCart, Check, Trash2, Eye, Headphones } from 'lucide-react';
 import { MarqueeText } from '@/components/shared/MarqueeText';
 import { BuyDialog } from '@/components/shared/BuyDialog';
-import { TabPreviewDialog } from '@/components/shared/TabPreviewDialog';
-import { AudioPlayerDialog } from '@/components/shared/AudioPlayerDialog';
+import { FreeDownloadMenu } from '@/components/shared/FreeDownloadMenu';
 import { useCart } from '@/context/CartContext';
 import { useCartAnimation } from '@/context/CartAnimationContext';
-import { usePreviewBlock } from '@/context/PreviewBlockContext';
-import { toast } from 'sonner';
+import { useIsTouch } from '@/hooks/useIsTouch';
 import type { Tab } from '@/types';
 
 function getDifficultyColor(difficulty: string) {
   const num = parseInt(difficulty);
-  if (num <= 3) return 'border border-green-500 text-green-600 dark:text-green-400 bg-green-500/10';
-  if (num <= 6) return 'border border-amber-500 text-amber-600 dark:text-amber-400 bg-amber-500/10';
-  return 'border border-red-500 text-red-600 dark:text-red-400 bg-red-500/10';
+  if (num <= 3) return 'border-green-500 text-green-700 dark:text-green-300 bg-green-100/90 dark:bg-green-950/80';
+  if (num <= 6) return 'border-amber-500 text-amber-700 dark:text-amber-300 bg-amber-100/90 dark:bg-amber-950/80';
+  return 'border-red-500 text-red-700 dark:text-red-300 bg-red-100/90 dark:bg-red-950/80';
 }
-
-const YouTubeIcon = () => (
-  <svg className='h-4 w-4' viewBox='0 0 24 24' fill='currentColor'>
-    <path d='M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z' />
-  </svg>
-);
 
 interface TabCardProps {
   tab: Tab;
   locale: string;
   buyLabel: string;
-  /** Анимация: задержка по индексу (для бестселлера) или layout (для каталога) */
   index?: number;
-  /** Показать бейдж #1 */
   showRank?: boolean;
-  /** Текст покупок под заголовком (для бестселлера) */
   purchasesLabel?: string;
-  /** Показать форматы файлов и описание (для каталога) */
   showDetails?: boolean;
-  /** Кнопки админа вместо кнопки "Купить" */
   adminActions?: React.ReactNode;
-  /** Префикс для уникальности id тултипов (если компонент используется в нескольких секциях) */
   tooltipPrefix?: string;
-  /** Префикс секции для уникальности flippingTabId (catalog, bestseller) */
   sectionPrefix?: string;
-  /** Отключить все анимации (tilt, flip, fly-to-cart, justAdded glow) */
   disableAnimations?: boolean;
 }
 
@@ -63,44 +47,52 @@ export function TabCard({
   purchasesLabel,
   showDetails = true,
   tooltipPrefix = '',
-  sectionPrefix = '',
   disableAnimations = false,
 }: TabCardProps) {
   const [buyOpen, setBuyOpen] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [audioOpen, setAudioOpen] = useState(false);
-  const isTouch = useIsTouch();
-  const tp = tooltipPrefix ? `${tooltipPrefix}-` : '';
-  const cardRef = useRef<HTMLDivElement>(null);
-  const { addItem, removeItem, hasItem } = useCart();
-  const { flyToCart, flyFromCart } = useCartAnimation();
-  const { theme } = useTheme();
-  const inCart = hasItem(tab.id);
   const [cartHovered, setCartHovered] = useState(false);
   const [justAdded, setJustAdded] = useState(false);
-  const isDark = theme === 'dark';
-  const justAddedClass = disableAnimations ? '' : justAdded;
-  const inCartClass = disableAnimations ? '' : inCart;
+  const cardRef = useRef<HTMLDivElement>(null);
+  const isTouch = useIsTouch();
+  const { addItem, removeItem, hasItem } = useCart();
+  const { flyToCart, flyFromCart } = useCartAnimation();
+  const inCart = hasItem(tab.id);
+  const tp = tooltipPrefix ? `${tooltipPrefix}-` : '';
+  const title = locale === 'en' ? tab.title_en : tab.title_ru;
+  const description = locale === 'en' ? tab.description_en : tab.description_ru;
+  const formats = (Object.entries(tab.files) as Array<[keyof typeof tab.files, boolean | undefined]>)
+    .filter(([, available]) => available)
+    .map(([format]) => format.toUpperCase());
+  const isFree = tab.price <= 0;
+  const showDownloadCount = isFree && typeof tab.download_count === 'number';
+  const activityLabel = isFree
+    ? showDownloadCount
+      ? locale === 'en'
+        ? `Downloads: ${tab.download_count}`
+        : `Скачиваний: ${tab.download_count}`
+      : null
+    : purchasesLabel ??
+      (locale === 'en'
+        ? `Purchases: ${tab.purchase_count ?? 0}`
+        : `Покупок: ${tab.purchase_count ?? 0}`);
 
-  const flipControls = useAnimation();
-  const { isPreviewBlocking, startPreviewBlock, endPreviewBlock } = usePreviewBlock();
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
-  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [6, -6]), {
+  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [5, -5]), {
     stiffness: 300,
     damping: 30,
   });
-  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-6, 6]), {
+  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-5, 5]), {
     stiffness: 300,
     damping: 30,
   });
 
-  function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
+  function handleMouseMove(event: React.MouseEvent<HTMLDivElement>) {
     if (disableAnimations) return;
     const rect = cardRef.current?.getBoundingClientRect();
     if (!rect) return;
-    mouseX.set((e.clientX - rect.left) / rect.width - 0.5);
-    mouseY.set((e.clientY - rect.top) / rect.height - 0.5);
+    mouseX.set((event.clientX - rect.left) / rect.width - 0.5);
+    mouseY.set((event.clientY - rect.top) / rect.height - 0.5);
   }
 
   function handleMouseLeave() {
@@ -109,154 +101,56 @@ export function TabCard({
     mouseY.set(0);
   }
 
-  function handlePreviewClick() {
-    if (isPreviewBlocking || previewOpen) return;
-    // Skip flip animation when disabled (admin pages)
-    if (disableAnimations) {
-      setPreviewOpen(true);
+  function handleCartClick() {
+    const element = cardRef.current;
+
+    if (inCart) {
+      removeItem(tab.id);
+      toast(title, {
+        description: locale === 'en' ? 'Removed from cart' : 'Убрано из корзины',
+        icon: '🗑️',
+      });
+      if (!disableAnimations && element) {
+        flyFromCart(element.getBoundingClientRect(), element);
+      }
       return;
     }
-    // Use section prefix to create unique flippingTabId
-    const uniqueTabId = sectionPrefix ? `${sectionPrefix}-${tab.id}` : tab.id;
-    startPreviewBlock(uniqueTabId);
-    // Disable tilt during flip
-    mouseX.set(0);
-    mouseY.set(0);
 
-    // Get card position and calculate center offset
-    const rect = cardRef.current?.getBoundingClientRect();
-    if (rect) {
-      const centerX = window.innerWidth / 2 - rect.left - rect.width / 2;
-      const centerY = window.innerHeight / 2 - rect.top - rect.height / 2;
-
-      // Fly to center of screen with flip
-      flipControls.start({
-        x: centerX,
-        y: centerY,
-        rotateY: 180,
-        scale: 2.5,
-        z: 500,
-        opacity: [1, 1, 0],
-        transition: { duration: 0.6, ease: 'easeInOut' },
-      }).then(() => {
-        setPreviewOpen(true);
-        // Keep card in "flown" state until preview closes
-        flipControls.set({
-          x: centerX,
-          y: centerY,
-          rotateY: 180,
-          scale: 2.5,
-          z: 500,
-          opacity: 0,
-        });
-      });
+    addItem(tab);
+    toast(title, {
+      description: locale === 'en' ? 'Added to cart' : 'Добавлено в корзину',
+      icon: '🛒',
+    });
+    if (!disableAnimations && element) {
+      setJustAdded(true);
+      window.setTimeout(() => setJustAdded(false), 650);
+      flyToCart(element.getBoundingClientRect(), element);
     }
   }
-
-  function handlePreviewClose() {
-    setPreviewOpen(false);
-    // Animate back to original position
-    flipControls.start({
-      x: 0,
-      y: 0,
-      rotateY: 0,
-      scale: 1,
-      z: 0,
-      opacity: 1,
-      transition: { duration: 0.6, ease: 'easeInOut' },
-    }).then(() => {
-      // End preview block after animation completes
-      endPreviewBlock();
-    });
-  }
-  const title = locale === 'en' ? tab.title_en : tab.title_ru;
-  const description = locale === 'en' ? tab.description_en : tab.description_ru;
 
   return (
     <>
-      <div style={{ perspective: 1000 }}>
+      <div className='w-full max-w-[22rem] mx-auto sm:max-w-none' style={{ perspective: 1000 }}>
         <motion.div
           ref={cardRef}
-          initial={{ opacity: 1, y: 0 }}
-          animate={{ opacity: 1, y: 0 }}
           style={disableAnimations ? {} : { rotateX, rotateY }}
           whileHover={disableAnimations ? {} : { y: -4 }}
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
         >
-          <motion.div
-            animate={flipControls}
-            style={{
-              transformStyle: 'preserve-3d',
-              transformOrigin: 'center center',
-              zIndex: 99999,
-            }}
-          >
           <Card
-            style={{
-              transformStyle: 'preserve-3d',
-              backfaceVisibility: 'hidden',
-              WebkitBackfaceVisibility: 'hidden',
-              ...(disableAnimations
-                ? {}
-                : justAddedClass
-                  ? {
-                      boxShadow: isDark
-                        ? '0 0 15px 3px rgba(245,158,11,0.5)'
-                        : '0 0 12px 3px rgba(245,158,11,0.5), 0 0 20px 6px rgba(0,0,0,0.15)',
-                    }
-                  : inCartClass
-                    ? {
-                        boxShadow: isDark
-                          ? '0 0 15px 2px rgba(245,158,11,0.2)'
-                          : '0 0 10px 2px rgba(245,158,11,0.35), 0 0 16px 4px rgba(0,0,0,0.12)',
-                      }
-                    : {}),
-            }}
-            className={`overflow-hidden h-full flex flex-col relative transition-all duration-500 ${
-              disableAnimations
-                ? 'border-border'
-                : justAddedClass
-                  ? isDark
-                    ? 'border-amber-500/50'
-                    : 'border-amber-500/60'
-                  : inCartClass
-                    ? isDark
-                      ? 'border-amber-500/30'
-                      : 'border-amber-500/40'
-                    : 'border-border hover:border-amber-300 dark:hover:border-amber-700'
+            className={`overflow-hidden h-full flex flex-col gap-0 py-0 relative transition-[border-color,box-shadow] duration-500 ${
+              justAdded && !adminActions
+                ? 'border-amber-500/70 shadow-[0_0_18px_4px_rgba(245,158,11,0.48)]'
+                : inCart && !adminActions
+                  ? 'border-amber-500/45 shadow-[0_0_14px_2px_rgba(245,158,11,0.24)]'
+                  : 'border-border hover:border-primary/45'
             }`}
           >
-            {/* Card back / Рубашка - visible when flipped */}
             <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                backgroundColor: 'rgba(245, 158, 11, 0.15)',
-                border: '2px solid rgba(245, 158, 11, 0.3)',
-                borderRadius: '12px',
-                backgroundImage: `repeating-linear-gradient(45deg, rgba(245, 158, 11, 0.05) 0px, rgba(245, 158, 11, 0.05) 2px, transparent 2px, transparent 4px)`,
-                transform: 'rotateY(180deg)',
-                backfaceVisibility: 'hidden',
-                WebkitBackfaceVisibility: 'hidden',
-                zIndex: 50,
-              }}
-            />
-
-            {/* Wrapper for front content with backface hidden */}
-            <div
-              style={{
-                backfaceVisibility: 'hidden',
-                WebkitBackfaceVisibility: 'hidden',
-              }}
+              className='protected-image aspect-video relative bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/30 dark:to-zinc-900'
+              onContextMenu={(event) => event.preventDefault()}
             >
-            {showRank && (
-              <div className='absolute top-3 left-3 z-10 bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded-full'>
-                #1
-              </div>
-            )}
-
-            <div className='aspect-video relative bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/30 dark:to-zinc-900'>
               {tab.photo_url ? (
                 <Image
                   key={tab.id}
@@ -272,18 +166,73 @@ export function TabCard({
                   <Music className='h-12 w-12 text-amber-400' strokeWidth={1} />
                 </div>
               )}
+              <div
+                aria-hidden
+                className='absolute inset-0 z-[5]'
+                onContextMenu={(event) => event.preventDefault()}
+              />
+
+              {showRank && (
+                <div className='absolute top-3 left-3 z-10 rounded-full bg-primary px-2 py-1 text-xs font-bold text-primary-foreground shadow-sm'>
+                  #1
+                </div>
+              )}
+
+              {!adminActions && (
+                <div className='absolute right-4 top-4 z-10 isolate rotate-[-2deg]'>
+                  <svg
+                    aria-hidden='true'
+                    viewBox='0 0 120 44'
+                    preserveAspectRatio='none'
+                    className='pointer-events-none absolute -inset-x-5 -inset-y-3 -z-10 h-[calc(100%+1.5rem)] w-[calc(100%+2.5rem)] overflow-visible text-amber-500'
+                  >
+                    <path
+                      d='M8 12 C30 11 52 7 83 8'
+                      fill='none'
+                      stroke='currentColor'
+                      strokeWidth='9'
+                      strokeLinecap='round'
+                    />
+                    <path
+                      d='M18 21 C42 14 72 11 108 13'
+                      fill='none'
+                      stroke='currentColor'
+                      strokeWidth='10'
+                      strokeLinecap='round'
+                    />
+                    <path
+                      d='M11 31 C39 24 69 19 101 22'
+                      fill='none'
+                      stroke='currentColor'
+                      strokeWidth='10'
+                      strokeLinecap='round'
+                    />
+                    <path
+                      d='M28 38 C52 31 76 28 111 29'
+                      fill='none'
+                      stroke='currentColor'
+                      strokeWidth='8'
+                      strokeLinecap='round'
+                    />
+                  </svg>
+                  <span className='relative inline-block -translate-y-1 whitespace-nowrap text-base font-black tracking-tight text-white drop-shadow-sm'>
+                    {isFree ? (locale === 'en' ? 'Free' : 'Бесплатно') : `${tab.price} ₽`}
+                  </span>
+                </div>
+              )}
+
             </div>
 
-            <CardContent className='p-5 flex flex-col flex-1 gap-3'>
+            <CardContent className='p-4 sm:p-5 flex flex-col flex-1 gap-2.5 sm:gap-3'>
               <div className='flex items-start justify-between gap-2'>
                 <MarqueeText
                   text={title}
-                  className='font-semibold text-base leading-tight flex-1 min-w-0'
+                  className='font-semibold text-sm sm:text-base leading-tight flex-1 min-w-0'
                 />
                 <span
                   data-tooltip-id={`diff-${tp}${tab.id}`}
-                  data-tooltip-content='Уровень сложности'
-                  className={`shrink-0 text-xs font-medium px-2 py-1 rounded-full cursor-default ${getDifficultyColor(tab.difficulty)}`}
+                  data-tooltip-content={locale === 'en' ? 'Difficulty level' : 'Уровень сложности'}
+                  className={`shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-semibold cursor-default ${getDifficultyColor(tab.difficulty)}`}
                 >
                   {tab.difficulty}
                 </span>
@@ -295,77 +244,72 @@ export function TabCard({
                   style={{ fontSize: 13 }}
                 />
               </div>
-
-              {purchasesLabel && <p className='text-xs text-muted-foreground'>{purchasesLabel}</p>}
-
-              {showDetails && (
+              {adminActions && showDetails ? (
                 <>
                   <MarqueeText
                     text={description}
-                    className='text-sm text-muted-foreground flex-1 leading-relaxed'
+                    className='text-[13px] sm:text-sm text-muted-foreground leading-snug sm:leading-relaxed'
                   />
-                  <div className='flex flex-wrap gap-1'>
-                    {(Object.keys(tab.files) as Array<keyof typeof tab.files>).map((fmt) => (
-                      <span
-                        key={fmt}
-                        className='text-xs px-2 py-0.5 rounded bg-secondary text-muted-foreground font-mono uppercase'
-                      >
-                        {fmt}
-                      </span>
-                    ))}
+                  <div className='flex items-center justify-between gap-2'>
+                    <div className='flex flex-wrap gap-1.5'>
+                      {formats.map((format) => (
+                        <span
+                          key={format}
+                          className='rounded-md border border-border bg-card px-2 py-0.5 text-[10px] font-medium tracking-wide text-foreground/70'
+                        >
+                          {format}
+                        </span>
+                      ))}
+                    </div>
+                    {activityLabel && (
+                      <p className='flex shrink-0 items-center gap-1 text-[11px] text-muted-foreground'>
+                        {isFree ? (
+                          <Download className='h-3 w-3' />
+                        ) : (
+                          <ShoppingBag className='h-3 w-3' />
+                        )}
+                        {activityLabel}
+                      </p>
+                    )}
                   </div>
                 </>
+              ) : (
+                <div className='flex items-center justify-between gap-2'>
+                  <p className='min-w-0 text-[11px] font-medium tracking-[0.12em] text-muted-foreground'>
+                    {formats.join(' · ')}
+                  </p>
+                  {activityLabel && (
+                    <p className='flex shrink-0 items-center gap-1 text-[11px] text-muted-foreground'>
+                      {isFree ? (
+                        <Download className='h-3 w-3' />
+                      ) : (
+                        <ShoppingBag className='h-3 w-3' />
+                      )}
+                      {activityLabel}
+                    </p>
+                  )}
+                </div>
               )}
 
-              <div className='flex items-center justify-between mt-auto pt-3 border-t border-border'>
-                <span className='text-lg font-bold'>{tab.price} ₽</span>
-                <div className='flex items-center gap-2'>
-                  {tab.files.pdf && (
+              <div className='h-px bg-border mt-auto' />
+
+              {adminActions ? (
+                <div className='flex items-center justify-between gap-3'>
+                  <span className='text-base sm:text-lg font-bold'>
+                    {isFree ? (locale === 'en' ? 'Free' : 'Бесплатно') : `${tab.price} ₽`}
+                  </span>
+                  <div className='flex gap-2'>{adminActions}</div>
+                </div>
+              ) : (
+                <div
+                  className={`grid gap-2 ${
+                    isFree ? 'grid-cols-2' : 'grid-cols-[2rem_1fr_1fr]'
+                  }`}
+                >
+                  {!isFree && (
                     <>
-                      <Button
-                        data-tooltip-id={`prev-${tp}${tab.id}`}
-                        data-tooltip-content={locale === 'en' ? 'Preview' : 'Превью'}
-                        size='sm'
-                        variant='outline'
-                        className={`rounded-full w-9 h-9 p-0 shrink-0 transition-colors bg-transparent hover:bg-transparent dark:bg-transparent dark:hover:bg-transparent ${isTouch ? 'border-border text-foreground' : 'hover:border-amber-500 hover:text-amber-500'}`}
-                        onClick={handlePreviewClick}
-                      >
-                        <Eye className='h-4 w-4' />
-                      </Button>
-                      <ReactTooltip
-                        id={`prev-${tp}${tab.id}`}
-                        place='top'
-                        hidden={isTouch}
-                        opacity={1}
-                        delayShow={350}
-                      />
-                    </>
-                  )}
-                  {tab.youtube_url && (
-                    <>
-                      <a
-                        data-tooltip-id={`yt-${tp}${tab.id}`}
-                        data-tooltip-content={locale === 'en' ? 'Watch arrangement video' : 'Смотреть видео аранжировки'}
-                        href={tab.youtube_url}
-                        target='_blank'
-                        rel='noopener noreferrer'
-                        className={`flex items-center justify-center w-9 h-9 rounded-full border transition-colors cursor-pointer ${isTouch ? 'border-red-500 text-red-500' : 'border-border text-muted-foreground dark:text-foreground hover:border-red-500 hover:text-red-500'}`}
-                        aria-label={locale === 'en' ? 'Watch on YouTube' : 'Смотреть на YouTube'}
-                      >
-                        <YouTubeIcon />
-                      </a>
-                      <ReactTooltip
-                        id={`yt-${tp}${tab.id}`}
-                        place='top'
-                        hidden={isTouch}
-                        opacity={1}
-                        delayShow={isTouch ? 0 : 350}
-                      />
-                    </>
-                  )}
-                  {!adminActions && (
-                    <>
-                      <Button
+                      <button
+                        type='button'
                         data-tooltip-id={`cart-${tp}${tab.id}`}
                         data-tooltip-content={
                           inCart
@@ -376,52 +320,23 @@ export function TabCard({
                               ? 'Add to cart'
                               : 'В корзину'
                         }
-                        size='sm'
-                        variant='outline'
-                        className={`rounded-full w-9 h-9 p-0 shrink-0 ${
-                          disableAnimations
-                            ? inCart
-                              ? cartHovered
-                                ? 'border-red-500 text-red-500'
-                                : 'border-amber-500 text-amber-500'
-                              : 'border-amber-500 text-amber-500'
-                            : 'transition-all duration-300 bg-transparent hover:bg-transparent dark:bg-transparent dark:hover:bg-transparent ' +
-                              (inCartClass
-                                ? cartHovered
-                                  ? 'border-red-500 text-red-500'
-                                  : 'border-amber-500 text-amber-500'
-                                : 'hover:border-amber-500 hover:text-amber-500') +
-                              (justAddedClass ? ' shadow-[0_0_10px_1px_rgba(245,158,11,0.6)]' : '')
-                        }`}
-                        onClick={() => {
-                          if (inCart) {
-                            removeItem(tab.id);
-                            toast(title, {
-                              description:
-                                locale === 'en' ? 'Removed from cart' : 'Убрано из корзины',
-                              icon: '🗑️',
-                            });
-                            if (!disableAnimations) {
-                              const el = cardRef.current;
-                              if (el) flyFromCart(el.getBoundingClientRect(), el);
-                            }
-                          } else {
-                            addItem(tab);
-                            if (!disableAnimations) {
-                              setJustAdded(true);
-                              setTimeout(() => setJustAdded(false), 650);
-                            }
-                            toast(title, {
-                              description:
-                                locale === 'en' ? 'Added to cart' : 'Добавлено в корзину',
-                              icon: '🛒',
-                            });
-                            if (!disableAnimations) {
-                              const el = cardRef.current;
-                              if (el) flyToCart(el.getBoundingClientRect(), el);
-                            }
-                          }
-                        }}
+                        aria-label={
+                          inCart
+                            ? locale === 'en'
+                              ? 'Remove from cart'
+                              : 'Убрать из корзины'
+                            : locale === 'en'
+                              ? 'Add to cart'
+                              : 'Добавить в корзину'
+                        }
+                        className={`relative flex h-8 w-8 items-center justify-center rounded-full border transition-all cursor-pointer ${
+                          inCart
+                            ? cartHovered
+                              ? 'border-red-500 bg-red-500/10 text-red-500'
+                              : 'border-primary bg-primary/10 text-primary'
+                            : 'border-border text-muted-foreground hover:border-primary hover:text-primary'
+                        } ${justAdded ? 'ring-2 ring-primary/30' : ''}`}
+                        onClick={handleCartClick}
                         onMouseEnter={() => setCartHovered(true)}
                         onMouseLeave={() => setCartHovered(false)}
                       >
@@ -434,30 +349,9 @@ export function TabCard({
                         ) : (
                           <ShoppingCart className='h-4 w-4' />
                         )}
-                      </Button>
+                      </button>
                       <ReactTooltip
                         id={`cart-${tp}${tab.id}`}
-                        place='top'
-                        hidden={isTouch}
-                        opacity={1}
-                        delayShow={isTouch ? 0 : 350}
-                      />
-                    </>
-                  )}
-                  {tab.files.mp3 && (
-                    <>
-                      <Button
-                        data-tooltip-id={`audio-${tp}${tab.id}`}
-                        data-tooltip-content={locale === 'en' ? 'Listen to audio' : 'Слушать аудио'}
-                        size='sm'
-                        variant='outline'
-                        className={`rounded-full w-9 h-9 p-0 shrink-0 transition-colors bg-transparent hover:bg-transparent dark:bg-transparent dark:hover:bg-transparent ${isTouch ? 'border-border text-foreground' : 'hover:border-amber-500 hover:text-amber-500'}`}
-                        onClick={() => setAudioOpen(true)}
-                      >
-                        <Headphones className='h-4 w-4' />
-                      </Button>
-                      <ReactTooltip
-                        id={`audio-${tp}${tab.id}`}
                         place='top'
                         hidden={isTouch}
                         opacity={1}
@@ -465,47 +359,37 @@ export function TabCard({
                       />
                     </>
                   )}
-                  {adminActions && (
-                    <div className='flex gap-2'>
-                      {adminActions}
-                    </div>
+                  <Button
+                    asChild
+                    size='sm'
+                    variant='outline'
+                    className='w-full rounded-full bg-transparent hover:bg-muted/70'
+                  >
+                    <Link href={`/${locale}/tabs/${tab.id}`}>
+                      {locale === 'en' ? 'Details' : 'Подробнее'}
+                    </Link>
+                  </Button>
+                  {isFree ? (
+                    <FreeDownloadMenu tab={tab} locale={locale} compact />
+                  ) : (
+                    <Button
+                      size='sm'
+                      className='w-full rounded-full bg-primary text-primary-foreground hover:bg-primary/90'
+                      onClick={() => setBuyOpen(true)}
+                    >
+                      {buyLabel}
+                    </Button>
                   )}
                 </div>
-              </div>
-
-              {/* Buy button - full width, below price and action buttons (only for non-admin) */}
-              {!adminActions && (
-                <Button
-                  size='sm'
-                  className='w-full bg-amber-500 hover:bg-amber-600 text-white rounded-full'
-                  onClick={() => setBuyOpen(true)}
-                >
-                  {buyLabel}
-                </Button>
               )}
             </CardContent>
-            </div>
           </Card>
-          </motion.div>
         </motion.div>
       </div>
-      <BuyDialog tab={tab} locale={locale} open={buyOpen} onOpenChange={setBuyOpen} />
-      <TabPreviewDialog
-        tab={tab}
-        locale={locale}
-        open={previewOpen}
-        onOpenChange={(open) => {
-          if (!open) handlePreviewClose();
-          else setPreviewOpen(open);
-        }}
-        onBuy={() => setBuyOpen(true)}
-      />
-      <AudioPlayerDialog
-        tab={tab}
-        locale={locale}
-        open={audioOpen}
-        onOpenChange={setAudioOpen}
-      />
+
+      {!adminActions && !isFree && (
+        <BuyDialog tab={tab} locale={locale} open={buyOpen} onOpenChange={setBuyOpen} />
+      )}
     </>
   );
 }

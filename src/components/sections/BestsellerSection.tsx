@@ -41,7 +41,7 @@ export function BestsellerSection() {
   if (!loading && topTabs.length === 0) return null;
 
   return (
-    <section className='py-12 sm:py-24' style={{ backgroundColor: 'var(--bestseller-bg)' }}>
+    <section className='section-warm py-12 sm:py-24'>
       <div className='max-w-6xl mx-auto px-4 sm:px-6 lg:px-8'>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -51,8 +51,8 @@ export function BestsellerSection() {
           className='text-center mb-12'
         >
           <div className='flex items-center justify-center gap-2 mb-2'>
-            <TrendingUp className='h-4 w-4 text-amber-500' />
-            <span className='text-amber-500 text-sm font-medium tracking-widest uppercase'>
+            <TrendingUp className='h-4 w-4 text-primary' />
+            <span className='text-primary text-sm font-medium tracking-widest uppercase'>
               {t('badge')}
             </span>
           </div>

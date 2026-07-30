@@ -2,7 +2,7 @@
 
 ## Описание проекта
 
-Интернет-магазин цифровок (табов) для гитары. Пользователи могут приобрести табы в форматах PDF, GP5, GPX с сопроводительными аудиофайлами.
+Каталог авторских гитарных табов. Платные табы приобретаются через корзину и приходят по email, бесплатные можно сразу скачать в форматах PDF, GP5/GPX или единым ZIP-архивом.
 
 **Ссылка на проект:** `/Users/olegmalygin/Documents/Proga/myProjects/guitar-tabs-site`
 
@@ -38,12 +38,14 @@ src/
 │   │   ├── page.tsx              # Главная страница
 │   │   ├── layout.tsx            # Layout с локалью
 │   │   ├── admin/                # Админ-панель
-│   │   │   ├── page.tsx          # Создание таба
+│   │   │   ├── page.tsx          # Главная админ-панели
+│   │   │   ├── create-tab/page.tsx
 │   │   │   ├── published/page.tsx
 │   │   │   ├── drafts/page.tsx
 │   │   │   ├── newsletter/page.tsx
 │   │   │   └── edit/[id]/page.tsx
 │   │   ├── payment/
+│   │   ├── tabs/[id]/page.tsx    # Детальная страница таба
 │   │   ├── payment/success/page.tsx
 │   │   ├── payment/canceled/page.tsx
 │   │   ├── unsubscribe/page.tsx
@@ -57,6 +59,7 @@ src/
 │   │   ├── email/webhook/route.ts
 │   │   ├── tabs/[id]/preview/route.ts
 │   │   ├── tabs/[id]/audio/route.ts
+│   │   ├── tabs/[id]/download/route.ts
 │   │   ├── files/[tabId]/[format]/route.ts
 │   │   └── purchases/[id]/route.ts
 │   ├── globals.css
@@ -76,11 +79,14 @@ src/
 │   │   ├── Header.tsx
 │   │   ├── Footer.tsx
 │   │   ├── TabCard/
+│   │   ├── TabDetails.tsx
+│   │   ├── FreeDownloadMenu.tsx
 │   │   ├── BuyDialog.tsx
 │   │   ├── CheckoutForm.tsx
 │   │   ├── CartDrawer.tsx
 │   │   ├── FloatingCart.tsx
-│   │   └── TabPreviewDialog.tsx
+│   │   ├── TabPreviewDialog.tsx
+│   │   └── ThemeTransition.tsx
 │   └── ui/                       # shadcn/ui components
 ├── context/
 │   ├── CartContext.tsx
@@ -124,6 +130,11 @@ messages/                         # i18n translations
 | `customers` | Данные клиентов |
 | `purchases` | История покупок |
 | `tab_files` | Файлы табов (bytea хранение) |
+| `tab_downloads` | События скачивания бесплатных табов |
+
+Рабочие базы имеют одинаковую схему:
+- `guitar_tabs_dev` — разработка;
+- `guitar_tabs` — production.
 
 ### Схема `purchases`
 
@@ -159,6 +170,8 @@ youtube_url     text
 is_published    boolean NOT NULL DEFAULT false
 ```
 
+`price = 0` означает бесплатный таб. Отдельной колонки `is_free` в БД нет.
+
 ### Схема `customers`
 
 ```sql
@@ -181,6 +194,16 @@ data          bytea NOT NULL         -- бинарные данные файла
 created_at    timestamp DEFAULT CURRENT_TIMESTAMP
 ```
 
+### Схема `tab_downloads`
+
+```sql
+id              bigserial PRIMARY KEY
+tab_id          uuid NOT NULL FK → guitar-tabs(id) ON DELETE CASCADE
+downloaded_at   timestamptz NOT NULL DEFAULT now()
+```
+
+Одна строка соответствует одному успешному запросу скачивания. Формат отдельно не хранится.
+
 ### Константы (`src/lib/constants.ts`)
 
 ```typescript
@@ -201,6 +224,7 @@ export const DISCOUNT_TIER_2_RATE = 0.15;
 ```typescript
 interface Tab {
   id: string
+  created_at?: string
   title_ru: string
   title_en: string
   difficulty: string
@@ -210,6 +234,7 @@ interface Tab {
   photo_url?: string
   files: TabFiles           // { pdf?, gp5?, gpx?, mp3? }
   purchase_count: number
+  download_count?: number   // вычисляется запросом COUNT(tab_downloads)
   youtube_url?: string
   is_published: boolean
 }
@@ -269,6 +294,7 @@ interface Purchase {
 |-------|--------|----------|
 | `/api/tabs/[id]/preview` | GET | PDF превью первой страницы |
 | `/api/tabs/[id]/audio` | GET | MP3 аудио из файловой системы |
+| `/api/tabs/[id]/download` | GET | ZIP бесплатного таба или отдельный файл через `?format=pdf|gp5|gpx` |
 | `/api/files/[tabId]/[format]` | GET | PDF/GP5/GPX из базы (bytea) с Range requests |
 | `/api/email/webhook` | POST | События Resend (delivered, opened) |
 | `/api/purchases/[id]` | GET | Получение информации о заказе |
@@ -282,11 +308,24 @@ interface Purchase {
 - 3D tilt эффект при ховере (Framer Motion)
 - Бейдж сложности с цветовой кодировкой
 - Бейджи форматов (PDF, GP5, GPX, MP3)
-- Добавление/удаление из корзины
-- Flip-анимация при превью (полёт в центр экрана с переворотом)
+- Для платных табов: добавление/удаление из корзины, кнопки «Подробнее» и «Купить»
+- Для бесплатных табов: кнопки «Подробнее» и выпадающее меню скачивания
+- Счётчик покупок для платных и скачиваний для бесплатных
+- Цена/метка «Бесплатно» на фоне из граффити-мазков
 - Отключение анимаций на touch-устройствах
-- Buy button во всю ширину под ценой и кнопками действий
-- Превью диалог
+
+### TabDetails (`src/components/shared/TabDetails.tsx`)
+- Детальная страница таба: название, описание, сложность, форматы и состав набора
+- Для платных: корзина, покупка и PDF-превью
+- Для бесплатных: прямое скачивание без превью
+- Счётчик покупок/скачиваний
+- Анимация открытия и обратного закрытия превью для платных табов
+
+### FreeDownloadMenu (`src/components/shared/FreeDownloadMenu.tsx`)
+- Показывает только доступные варианты
+- Guitar Pro скачивает GPX в приоритете, GP5 используется как fallback
+- PDF скачивается отдельно
+- ZIP содержит все доступные файлы
 
 ### AudioPlayerDialog (`src/components/shared/AudioPlayerDialog.tsx`)
 - Аудиоплеер с прогресс-баром и буферизацией
@@ -408,6 +447,12 @@ export const routing = defineRouting({
 4. **Редактирование** — обновление существующего таба, синхронизация файлов
 5. **Рассылка** — массовая email-рассылка подписчикам через Resend
 
+При создании/редактировании выбирается тип «Платный» или «Бесплатный»:
+- платный требует цену больше нуля;
+- бесплатный сохраняется с `price = 0`;
+- MP3 не предлагается при создании бесплатного таба;
+- хотя бы один файл таба обязателен.
+
 ---
 
 ## Email система
@@ -476,6 +521,7 @@ await query('UPDATE "guitar-tabs" SET "purchase_count" = "purchase_count" + 1 WH
 | `/api/tabs/[id]/audio` | GET MP3 из файловой системы |
 | `/api/files/[tabId]/[format]` | GET PDF/GP5/GPX из базы (bytea) |
 | `/api/tabs/[id]/preview` | GET первая страница PDF для превью |
+| `/api/tabs/[id]/download` | GET защищённая загрузка файлов опубликованного бесплатного таба |
 
 ---
 
@@ -501,6 +547,19 @@ await query('UPDATE "guitar-tabs" SET "purchase_count" = "purchase_count" + 1 WH
 - **Провайдер:** next-themes
 - **По умолчанию:** Dark mode
 - **Хранение:** localStorage
+- Смена темы выполняется через View Transition API с fallback
+- Иконки солнца/луны анимируются Framer Motion
+
+---
+
+## Каталог и сортировка
+
+- Поиск выполняется по русскому и английскому названию
+- Сортировки: популярность, дата добавления, название, сложность, цена
+- При фильтре «Бесплатные» сортировка по цене скрывается
+- Популярность платных определяется `purchase_count`
+- Популярность бесплатных определяется `download_count`
+- Скидочные пороги рассчитываются только по количеству платных табов
 
 ---
 
@@ -602,6 +661,10 @@ npm run lint
 | Cart animation context | `src/context/CartAnimationContext.tsx` |
 | Admin context | `src/context/AdminContext.tsx` |
 | PreviewBlock context | `src/context/PreviewBlockContext.tsx` |
+| Детальная страница | `src/app/[locale]/tabs/[id]/page.tsx` |
+| Компонент детализации | `src/components/shared/TabDetails.tsx` |
+| Меню бесплатной загрузки | `src/components/shared/FreeDownloadMenu.tsx` |
+| API бесплатной загрузки | `src/app/api/tabs/[id]/download/route.ts` |
 | Payment webhook | `src/app/api/payment/webhook/route.ts` |
 | Payment create | `src/app/api/payment/create/route.ts` |
 | Admin login | `src/app/api/admin/login/route.ts` |

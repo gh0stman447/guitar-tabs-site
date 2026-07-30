@@ -9,7 +9,7 @@ export function Footer() {
   const { locale } = useParams<{ locale: string }>();
 
   return (
-    <footer className='border-t border-border py-8 mt-16'>
+    <footer className='border-t border-border py-8'>
       <div className='max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground'>
         <div className='flex items-center gap-2'>
           <span>{t('name')}</span>

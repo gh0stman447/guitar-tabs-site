@@ -130,13 +130,17 @@ export function TabCard({
 
   return (
     <>
-      <div className='w-full max-w-[22rem] mx-auto sm:max-w-none' style={{ perspective: 1000 }}>
+      <div
+        className='w-full max-w-[22rem] mx-auto sm:max-w-none'
+        style={disableAnimations ? undefined : { perspective: 1000 }}
+      >
         <motion.div
           ref={cardRef}
-          style={disableAnimations ? {} : { rotateX, rotateY }}
-          whileHover={disableAnimations ? {} : { y: -4 }}
-          onMouseMove={handleMouseMove}
-          onMouseLeave={handleMouseLeave}
+          className={disableAnimations ? 'touch-pan-y' : undefined}
+          style={disableAnimations ? undefined : { rotateX, rotateY }}
+          whileHover={disableAnimations ? undefined : { y: -4 }}
+          onMouseMove={disableAnimations ? undefined : handleMouseMove}
+          onMouseLeave={disableAnimations ? undefined : handleMouseLeave}
         >
           <Card
             className={`overflow-hidden h-full flex flex-col gap-0 py-0 relative transition-[border-color,box-shadow] duration-500 ${

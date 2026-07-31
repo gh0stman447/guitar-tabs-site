@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { CheckoutForm } from '@/components/shared/CheckoutForm';
 import type { Tab } from '@/types';
+import { submitPaymentRedirect } from '@/lib/submit-payment';
 
 interface BuyDialogProps {
   tab: Tab;
@@ -33,7 +34,14 @@ export function BuyDialog({ tab, locale, open, onOpenChange, testMode }: BuyDial
     const res = await fetch('/api/payment/create', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tab_id: tab.id, firstname, email, newsletter, test: testMode ?? false }),
+      body: JSON.stringify({
+        tab_id: tab.id,
+        firstname,
+        email,
+        newsletter,
+        locale,
+        test: testMode ?? false,
+      }),
     });
 
     const data = await res.json();
@@ -42,7 +50,7 @@ export function BuyDialog({ tab, locale, open, onOpenChange, testMode }: BuyDial
       throw new Error(data.error ?? (locale === 'en' ? 'Something went wrong' : 'Что-то пошло не так'));
     }
 
-    window.location.href = data.confirmation_url;
+    submitPaymentRedirect(data);
   }
 
   return (

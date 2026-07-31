@@ -215,7 +215,7 @@ export function TabCard({
                       strokeLinecap='round'
                     />
                   </svg>
-                  <span className='relative inline-block -translate-y-1 whitespace-nowrap text-base font-black tracking-tight text-white drop-shadow-sm'>
+                  <span className='relative inline-block -translate-y-1 whitespace-nowrap text-base font-black tracking-tight text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.45),0_0_7px_rgba(255,255,255,0.38)]'>
                     {isFree ? (locale === 'en' ? 'Free' : 'Бесплатно') : `${tab.price} ₽`}
                   </span>
                 </div>
@@ -329,7 +329,7 @@ export function TabCard({
                               ? 'Add to cart'
                               : 'Добавить в корзину'
                         }
-                        className={`relative flex h-8 w-8 items-center justify-center rounded-full border transition-all cursor-pointer ${
+                        className={`relative flex h-8 w-8 items-center justify-center rounded-md border transition-all cursor-pointer ${
                           inCart
                             ? cartHovered
                               ? 'border-red-500 bg-red-500/10 text-red-500'

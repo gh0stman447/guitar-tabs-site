@@ -61,10 +61,14 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
   const ru = locale !== 'en';
   const isTouch = useIsTouch();
   const isLandscape = useOrientation();
-  const [publishedCount, setPublishedCount] = useState(0);
+  const [publishedPaidCount, setPublishedPaidCount] = useState(0);
   const tooltipsReady = useDelayedRender(0, open);
   const animatedTotal = useAnimatedNumber(total);
   const displayTotal = isTouch ? total : animatedTotal.get();
+  const hasMaximumAvailableDiscount =
+    discountRate > 0 &&
+    (discountRate >= DISCOUNT_TIER_2_RATE ||
+      (publishedPaidCount > 0 && items.length >= publishedPaidCount));
 
   const [viewportHeight, setViewportHeight] = useState(
     typeof window !== 'undefined' ? window.innerHeight : 768,
@@ -84,9 +88,12 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
   useEffect(() => {
     supabase
       .from(TABLE_TABS)
-      .select('id', { count: 'exact', head: true })
+      .select('price')
       .eq('is_published', true)
-      .then(({ count }) => setPublishedCount(count ?? 0));
+      .then(({ data }) => {
+        const publishedTabs = (data ?? []) as Array<{ price: number }>;
+        setPublishedPaidCount(publishedTabs.filter((tab) => tab.price > 0).length);
+      });
   }, []);
 
   useEffect(() => {
@@ -227,7 +234,7 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
               {/* Discount hints */}
               <AnimatePresence mode='wait'>
                 {items.length === DISCOUNT_TIER_1_MIN - 1 &&
-                  publishedCount >= DISCOUNT_TIER_1_MIN && (
+                  publishedPaidCount >= DISCOUNT_TIER_1_MIN && (
                     <motion.div
                       key={`tier1-${items.length}`}
                       initial={{ opacity: 0, scale: isTouch ? 1 : 0.8 }}
@@ -242,7 +249,7 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
                     </motion.div>
                   )}
                 {items.length === DISCOUNT_TIER_2_MIN - 1 &&
-                  publishedCount >= DISCOUNT_TIER_2_MIN && (
+                  publishedPaidCount >= DISCOUNT_TIER_2_MIN && (
                     <motion.div
                       key={`tier2-${items.length}`}
                       initial={{ opacity: 0, scale: isTouch ? 1 : 0.8 }}
@@ -256,6 +263,20 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
                         : `Add 1 more tab and discount grows to ${DISCOUNT_TIER_2_RATE * 100}% 🎸`}
                     </motion.div>
                   )}
+                {hasMaximumAvailableDiscount && (
+                  <motion.div
+                    key={`maximum-discount-${discountRate}`}
+                    initial={{ opacity: 0, scale: isTouch ? 1 : 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: isTouch ? 1 : 0.8 }}
+                    transition={{ duration: isTouch ? 0 : 0.25 }}
+                    className='mx-6 my-2 rounded-lg border border-green-500/20 bg-green-500/10 px-4 py-2.5 text-sm text-green-700 dark:text-green-400'
+                  >
+                    {ru
+                      ? `У вас максимальная скидка — ${discountRate * 100}% 🔥`
+                      : `Your maximum discount — ${discountRate * 100}% 🔥`}
+                  </motion.div>
+                )}
               </AnimatePresence>
             </>
           )}

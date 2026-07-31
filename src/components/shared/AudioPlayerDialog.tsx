@@ -303,12 +303,14 @@ export function AudioPlayerDialog({ tab, locale, open, onOpenChange }: AudioPlay
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <DialogHeader className='px-6 pt-4 pb-3 flex flex-row items-center justify-between shrink-0 gap-2 border-b border-border'>
-          <DialogTitle className='text-base font-semibold flex-1 truncate'>{title}</DialogTitle>
+          <DialogTitle className='min-w-0 flex-1 truncate text-sm font-medium sm:text-base sm:font-semibold'>
+            {title}
+          </DialogTitle>
           <button
             data-tooltip-id='audio-close'
             data-tooltip-content={locale === 'en' ? 'Close' : 'Закрыть'}
             onClick={() => onOpenChange(false)}
-            className='rounded-full w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer'
+            className='rounded-full w-7 h-7 flex items-center justify-center text-muted-foreground hover:bg-primary/10 hover:text-primary dark:hover:bg-white/10 dark:hover:text-white transition-colors cursor-pointer'
           >
             <X className='h-4 w-4' />
           </button>

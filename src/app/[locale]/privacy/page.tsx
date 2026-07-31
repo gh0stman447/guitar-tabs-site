@@ -560,7 +560,7 @@ export default async function PrivacyPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className='rounded-xl border border-border bg-card p-6 space-y-2 text-sm text-muted-foreground leading-relaxed'>
-      <h2 className='text-base font-semibold text-foreground mb-3'>{title}</h2>
+      <h2 className='mb-3 text-[15px] font-semibold text-foreground sm:text-base'>{title}</h2>
       {children}
     </div>
   );

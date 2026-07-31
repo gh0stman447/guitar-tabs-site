@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
 import { Menu, ShoppingCart, X, LogOut, Settings } from 'lucide-react';
 import { Tooltip as ReactTooltip } from 'react-tooltip';
 import {
@@ -21,6 +20,7 @@ import { useLayoutEffect, useState } from 'react';
 import { useAdmin } from '@/context/AdminContext';
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useIsTouch } from '@/hooks/useIsTouch';
+import { usePathname, useRouter } from '@/i18n/navigation';
 
 export function Header() {
   const t = useTranslations('nav');
@@ -37,7 +37,7 @@ export function Header() {
   function handleLogout() {
     fetch('/api/admin/logout', { method: 'POST' }).then(() => {
       setIsAdmin(false);
-      router.push(`/${locale}`);
+      router.push('/');
     });
   }
 
@@ -59,10 +59,9 @@ export function Header() {
 
   function switchLocale() {
     const next = locale === 'ru' ? 'en' : 'ru';
-    const segments = pathname.split('/');
-    segments[1] = next;
     const search = window.location.search;
-    router.push((segments.join('/') || '/') + search, { scroll: false });
+    const hash = window.location.hash;
+    router.replace(pathname + search + hash, { locale: next, scroll: false });
   }
 
   const isAdminRoute = pathname.includes('/admin');
@@ -73,7 +72,7 @@ export function Header() {
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
     } else {
-      router.push(`/${locale}#${id}`);
+      router.push(`/#${id}`);
     }
   }
 
@@ -83,7 +82,7 @@ export function Header() {
     { id: 'contacts', label: t('contacts') },
   ];
   const headerButtonClass =
-    'rounded-full bg-transparent text-muted-foreground shadow-none transition-all duration-200 hover:-translate-y-0.5 hover:bg-[hsl(var(--header-hover)/0.10)] hover:text-[hsl(var(--header-hover))] hover:ring-1 hover:ring-[hsl(var(--header-hover)/0.34)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50';
+    'rounded-md border-0 bg-transparent text-muted-foreground shadow-none ring-0 transition-all duration-200 hover:-translate-y-0.5 hover:bg-muted/45 hover:text-foreground hover:ring-1 hover:ring-border focus-visible:border-transparent focus-visible:outline-none focus-visible:ring-0';
 
   return (
     <>
@@ -104,7 +103,10 @@ export function Header() {
           )}
         >
           <div className='flex items-center justify-between h-16 lg:h-[4.5rem]'>
-            <Link href='/' className='flex items-center gap-1.5 select-none'>
+            <Link
+              href={locale === 'en' ? '/en' : '/'}
+              className='flex items-center gap-1.5 select-none'
+            >
               <div className='flex flex-col leading-none gap-0.5 relative'>
                 <div className='absolute inset-0 flex flex-col justify-around pointer-events-none'>
                   {[...Array(6)].map((_, i) => (
@@ -192,7 +194,7 @@ export function Header() {
                     'relative flex h-9 w-9 items-center justify-center',
                     count > 0
                       ? cn(headerButtonClass, 'cursor-pointer')
-                      : 'rounded-full text-muted-foreground/30 cursor-not-allowed',
+                      : 'rounded-md border-0 bg-transparent text-muted-foreground/30 ring-0 cursor-not-allowed',
                   )}
                 >
                   <ShoppingCart className='h-4 w-4' />

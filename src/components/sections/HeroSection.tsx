@@ -4,7 +4,7 @@ import { useRef, useState, useEffect } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
-import { ArrowDown } from 'lucide-react';
+import { ArrowDown, Music2 } from 'lucide-react';
 import { useIsTouch } from '@/hooks/useIsTouch';
 import { NOTES } from '@/lib/notes';
 import { cn } from '@/lib/utils';
@@ -98,11 +98,14 @@ export function HeroSection() {
         >
           <span
             className={cn(
-              'inline-block text-muted-foreground font-medium tracking-wide mb-4',
-              isCompact ? 'text-xs' : 'text-sm',
+              'mb-5 inline-flex -rotate-1 items-center gap-2 rounded-full border border-primary/25 bg-background/80 text-primary shadow-[0_8px_22px_hsl(var(--primary)/0.12)] backdrop-blur-md [font-family:var(--font-caveat)]',
+              isCompact
+                ? 'px-4 py-1.5 text-lg font-semibold'
+                : 'px-5 py-2 text-2xl font-bold sm:px-6 sm:py-2.5 sm:text-[1.7rem]',
             )}
           >
-            {t('badge')}
+            <Music2 className={cn('shrink-0', isCompact ? 'h-4 w-4' : 'h-5 w-5')} />
+            <span>{t('badge')}</span>
           </span>
           <h1
             className={cn(

@@ -9,15 +9,15 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        default: "bg-primary text-primary-foreground hover:bg-primary hover:brightness-110",
         destructive:
           "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40",
         outline:
-          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-white/30 dark:bg-white/[0.03]",
+          "border bg-background shadow-xs hover:border-primary/55 hover:bg-primary/10 hover:text-primary dark:border-white/30 dark:bg-white/[0.03] dark:hover:border-primary dark:hover:bg-primary dark:hover:text-primary-foreground",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+          "bg-secondary text-secondary-foreground hover:bg-secondary hover:brightness-105",
         ghost:
-          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
+          "hover:bg-primary/10 hover:text-primary dark:hover:bg-white/10 dark:hover:text-white",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
@@ -51,9 +51,9 @@ function Button({
   const Comp = asChild ? Slot.Root : "button"
   const normalizedHover =
     variant === "outline"
-      ? "hover:border-primary/45 hover:bg-primary/10 hover:text-primary dark:hover:border-primary/80 dark:hover:bg-primary/25 dark:hover:text-white"
+      ? "hover:border-primary/55 hover:bg-primary/10 hover:text-primary dark:hover:border-primary dark:hover:bg-primary dark:hover:text-primary-foreground"
       : variant === "default"
-        ? "hover:bg-primary/85 hover:text-primary-foreground"
+        ? "hover:bg-primary hover:text-primary-foreground hover:brightness-110"
         : ""
 
   return (

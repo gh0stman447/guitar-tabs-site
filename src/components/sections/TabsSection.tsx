@@ -4,11 +4,17 @@ import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslations, useLocale } from 'next-intl';
 import { useIsTouch } from '@/hooks/useIsTouch';
-import { Search, ChevronUp, ChevronDown, Gift, X } from 'lucide-react';
+import { Search, ChevronUp, ChevronDown, ArrowUpDown, Gift, X } from 'lucide-react';
 import type { Tab } from '@/types';
 import { TabCard, TabCardSkeleton } from '@/components/shared/TabCard';
 import { supabase } from '@/lib/supabase';
 import { usePreviewBlock } from '@/context/PreviewBlockContext';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   TABLE_TABS,
   DISCOUNT_TIER_1_MIN,
@@ -51,6 +57,7 @@ export function TabsSection() {
     { value: 'difficulty', label: t('sortDifficulty') },
     ...(!freeOnly ? [{ value: 'price' as const, label: t('sortPrice') }] : []),
   ];
+  const activeSortLabel = SORT_OPTIONS.find((option) => option.value === sort)?.label;
 
   const isDirty = search !== '' || sort !== 'popular' || asc || freeOnly;
 
@@ -150,30 +157,54 @@ export function TabsSection() {
           </div>
 
           <div className='flex flex-wrap gap-2'>
-            {SORT_OPTIONS.map((opt) => {
-              const active = sort === opt.value;
-              return (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
                 <button
-                  key={opt.value}
-                  onClick={() => handleSort(opt.value)}
-                  className={`flex items-center gap-1 h-8 px-3 rounded-full text-xs font-medium border transition-colors cursor-pointer ${
-                    active
-                      ? 'bg-primary border-primary text-primary-foreground'
-                      : 'border-border text-muted-foreground hover:border-primary hover:text-foreground bg-background'
-                  }`}
+                  type='button'
+                  className='flex h-8 items-center gap-1.5 rounded-md border border-border bg-background px-3 text-xs font-medium text-foreground transition-colors hover:bg-muted/70 cursor-pointer'
                 >
-                  {opt.label}
-                  {active &&
-                    (asc ? <ChevronUp className='h-3 w-3' /> : <ChevronDown className='h-3 w-3' />)}
+                  <ArrowUpDown className='h-3.5 w-3.5 text-muted-foreground' />
+                  <span>
+                    {t('sortLabel')}: {activeSortLabel}
+                  </span>
+                  {asc ? (
+                    <ChevronUp className='h-3 w-3 text-muted-foreground' />
+                  ) : (
+                    <ChevronDown className='h-3 w-3 text-muted-foreground' />
+                  )}
                 </button>
-              );
-            })}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align='start' className='min-w-52'>
+                {SORT_OPTIONS.map((option) => {
+                  const active = sort === option.value;
+                  return (
+                    <DropdownMenuItem
+                      key={option.value}
+                      onSelect={() => handleSort(option.value)}
+                      className={
+                        active
+                          ? 'bg-muted/70 font-medium hover:bg-muted focus:bg-muted focus:text-foreground'
+                          : 'hover:bg-muted/70 hover:text-foreground focus:bg-muted/70 focus:text-foreground'
+                      }
+                    >
+                      <span>{option.label}</span>
+                      {active &&
+                        (asc ? (
+                          <ChevronUp className='ml-auto h-3.5 w-3.5' />
+                        ) : (
+                          <ChevronDown className='ml-auto h-3.5 w-3.5' />
+                        ))}
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             <button
               type='button'
               aria-pressed={freeOnly}
               onClick={handleFreeOnlyChange}
-              className={`flex items-center gap-1 h-8 px-3 rounded-full text-xs font-medium border transition-colors cursor-pointer ${
+              className={`flex items-center gap-1 h-8 px-3 rounded-md text-xs font-medium border transition-colors cursor-pointer ${
                 freeOnly
                   ? 'bg-primary border-primary text-primary-foreground'
                   : 'border-border text-muted-foreground hover:border-primary hover:text-foreground bg-background'
@@ -191,7 +222,7 @@ export function TabsSection() {
                   exit={{ opacity: 0, scale: 0.8 }}
                   transition={{ duration: 0.15 }}
                   onClick={reset}
-                  className='flex items-center gap-1 h-8 px-3 rounded-full text-xs font-medium border border-border text-muted-foreground hover:border-red-400 hover:text-red-500 bg-background transition-colors cursor-pointer'
+                  className='flex items-center gap-1 h-8 px-3 rounded-md text-xs font-medium border border-border text-muted-foreground hover:border-red-400 hover:text-red-500 bg-background transition-colors cursor-pointer'
                 >
                   <X className='h-3 w-3' />
                   {t('reset')}

@@ -7,6 +7,7 @@ import { motion, useAnimation } from 'framer-motion';
 import {
   ArrowLeft,
   BadgeCheck,
+  CalendarDays,
   Check,
   Download,
   Eye,
@@ -15,8 +16,10 @@ import {
   Headphones,
   MonitorSmartphone,
   Music,
+  ShieldCheck,
   ShoppingBag,
   ShoppingCart,
+  Zap,
 } from 'lucide-react';
 import { FaYoutube } from 'react-icons/fa';
 import { toast } from 'sonner';
@@ -41,6 +44,7 @@ const COPY = {
   ru: {
     back: 'Назад к каталогу',
     arrangement: 'Авторская аранжировка',
+    created: 'Добавлено',
     difficulty: 'Сложность',
     formats: 'В наборе',
     free: 'Бесплатно',
@@ -59,6 +63,8 @@ const COPY = {
     filesTitle: 'Все материалы в одном наборе',
     filesText:
       'Получите файлы Guitar Pro для занятий и PDF-версию, которую удобно открыть или распечатать.',
+    filesTextWithAudio:
+      'Получите файлы Guitar Pro для занятий, PDF-версию для просмотра или печати и MP3-версию исполнения для прослушивания.',
     devicesTitle: 'Занимайтесь в удобном формате',
     devicesText:
       'Разбирайте аранжировку в Guitar Pro, следите за табулатурой на экране или играйте по распечатанным нотам.',
@@ -68,11 +74,14 @@ const COPY = {
     checkedTitle: 'Проверено на практике',
     checkedText:
       'Аранжировка написана вручную и проверена на гитаре, чтобы по ней было удобно заниматься.',
+    securePayment: 'Надёжная оплата',
+    fastDelivery: 'Быстрая доставка',
     note: 'Материалы предназначены для личного некоммерческого использования.',
   },
   en: {
     back: 'Back to catalog',
     arrangement: 'Original arrangement',
+    created: 'Added',
     difficulty: 'Difficulty',
     formats: 'Included',
     free: 'Free',
@@ -91,6 +100,8 @@ const COPY = {
     filesTitle: 'All materials in one set',
     filesText:
       'Get Guitar Pro files for practice and a PDF version that is easy to open or print.',
+    filesTextWithAudio:
+      'Get Guitar Pro files for practice, a PDF version to view or print, and an MP3 performance recording to listen to.',
     devicesTitle: 'Practice the way that suits you',
     devicesText:
       'Study the arrangement in Guitar Pro, follow the tab on screen, or play from printed sheets.',
@@ -100,6 +111,8 @@ const COPY = {
     checkedTitle: 'Tested in practice',
     checkedText:
       'The arrangement is written by hand and checked on guitar to make it comfortable to learn.',
+    securePayment: 'Secure payment',
+    fastDelivery: 'Fast delivery',
     note: 'The materials are intended for personal, non-commercial use.',
   },
 } as const;
@@ -124,6 +137,16 @@ export function TabDetails({ tab, locale }: { tab: Tab; locale: string }) {
   const formats = (Object.entries(tab.files) as Array<[TabFileFormat, boolean | undefined]>)
     .filter(([, available]) => available)
     .map(([format]) => FORMAT_LABELS[format]);
+  const createdAt = tab.created_at ? new Date(tab.created_at) : null;
+  const createdDate =
+    createdAt && !Number.isNaN(createdAt.getTime())
+      ? new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'ru-RU', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+          timeZone: 'Europe/Moscow',
+        }).format(createdAt)
+      : null;
 
   async function handlePreviewOpen() {
     const element = mediaCardRef.current;
@@ -295,7 +318,7 @@ export function TabDetails({ tab, locale }: { tab: Tab; locale: string }) {
               <p className='mt-4 text-muted-foreground leading-relaxed'>{description}</p>
 
               <div className='mt-6 flex flex-wrap gap-2'>
-                <span className='inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-sm'>
+                <span className='inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-sm'>
                   <Gauge className='h-4 w-4 text-primary' />
                   {copy.difficulty}: <b>{tab.difficulty}</b>
                 </span>
@@ -321,6 +344,12 @@ export function TabDetails({ tab, locale }: { tab: Tab; locale: string }) {
                     {language === 'en'
                       ? `Purchases: ${tab.purchase_count ?? 0}`
                       : `Покупок: ${tab.purchase_count ?? 0}`}
+                    </span>
+                )}
+                {createdDate && (
+                  <span className='inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-sm'>
+                    <CalendarDays className='h-4 w-4 text-primary' />
+                    {copy.created}: {createdDate}
                   </span>
                 )}
               </div>
@@ -375,6 +404,18 @@ export function TabDetails({ tab, locale }: { tab: Tab; locale: string }) {
                     </Button>
                   </div>
                 )}
+                {!isFree && (
+                  <div className='mt-4 grid grid-cols-2 gap-2 border-t border-border pt-4'>
+                    <div className='flex items-center justify-center gap-2 text-xs font-medium text-muted-foreground'>
+                      <ShieldCheck className='h-4 w-4 shrink-0 text-primary' />
+                      <span>{copy.securePayment}</span>
+                    </div>
+                    <div className='flex items-center justify-center gap-2 text-xs font-medium text-muted-foreground'>
+                      <Zap className='h-4 w-4 shrink-0 text-primary' />
+                      <span>{copy.fastDelivery}</span>
+                    </div>
+                  </div>
+                )}
                 <p className='mt-3 text-center text-xs text-muted-foreground'>{copy.note}</p>
               </div>
             </div>
@@ -391,7 +432,11 @@ export function TabDetails({ tab, locale }: { tab: Tab; locale: string }) {
 
             <div className='mt-8 grid sm:grid-cols-2 gap-4'>
               {[
-                { icon: FileText, title: copy.filesTitle, text: copy.filesText },
+                {
+                  icon: FileText,
+                  title: copy.filesTitle,
+                  text: tab.files.mp3 ? copy.filesTextWithAudio : copy.filesText,
+                },
                 { icon: MonitorSmartphone, title: copy.devicesTitle, text: copy.devicesText },
                 { icon: BadgeCheck, title: copy.foreverTitle, text: copy.foreverText },
                 { icon: Music, title: copy.checkedTitle, text: copy.checkedText },

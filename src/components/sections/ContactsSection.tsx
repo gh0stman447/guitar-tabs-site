@@ -81,8 +81,8 @@ function ContactCard({
           >
             <Icon />
           </motion.div>
-          <h3 className='mt-4 text-sm font-medium text-muted-foreground'>{label}</h3>
-          <p className='mt-1 text-sm font-semibold text-foreground'>{value}</p>
+          <h3 className='mt-4 text-[13px] font-medium text-muted-foreground'>{label}</h3>
+          <p className='mt-1 text-[13px] font-normal text-foreground/80'>{value}</p>
         </CardContent>
       </Card>
     </motion.div>

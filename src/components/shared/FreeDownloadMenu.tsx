@@ -40,7 +40,10 @@ export function FreeDownloadMenu({
         className='w-56 rounded-xl border-border bg-background p-1.5 shadow-xl'
       >
         {guitarProFormat && (
-          <DropdownMenuItem asChild className='rounded-lg px-3 py-2.5 text-sm cursor-pointer'>
+          <DropdownMenuItem
+            asChild
+            className='rounded-lg px-3 py-2.5 text-sm hover:bg-muted/70 hover:text-foreground focus:bg-muted/70 focus:text-foreground cursor-pointer'
+          >
             <a href={`/api/tabs/${tab.id}/download?format=${guitarProFormat}`} download>
               <Music2 className='h-5 w-5' />
               Guitar Pro (.{guitarProFormat})
@@ -48,14 +51,20 @@ export function FreeDownloadMenu({
           </DropdownMenuItem>
         )}
         {tab.files.pdf && (
-          <DropdownMenuItem asChild className='rounded-lg px-3 py-2.5 text-sm cursor-pointer'>
+          <DropdownMenuItem
+            asChild
+            className='rounded-lg px-3 py-2.5 text-sm hover:bg-muted/70 hover:text-foreground focus:bg-muted/70 focus:text-foreground cursor-pointer'
+          >
             <a href={`/api/tabs/${tab.id}/download?format=pdf`} download>
               <FileText className='h-5 w-5' />
               PDF
             </a>
           </DropdownMenuItem>
         )}
-        <DropdownMenuItem asChild className='rounded-lg px-3 py-2.5 text-sm cursor-pointer'>
+        <DropdownMenuItem
+          asChild
+          className='rounded-lg px-3 py-2.5 text-sm hover:bg-muted/70 hover:text-foreground focus:bg-muted/70 focus:text-foreground cursor-pointer'
+        >
           <a href={`/api/tabs/${tab.id}/download`} download>
             <Archive className='h-5 w-5' />
             {ru ? 'Архив (ZIP)' : 'Archive (ZIP)'}

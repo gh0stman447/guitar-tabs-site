@@ -29,6 +29,7 @@
     "description": "Download free tabs instantly or receive paid tabs by email after checkout",
     "buy": "Buy",
     "searchPlaceholder": "Search by title...",
+    "sortLabel": "Sort",
     "sortPopular": "Popularity",
     "sortDate": "Date added",
     "sortTitle": "Title",

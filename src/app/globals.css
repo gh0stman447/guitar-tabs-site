@@ -302,33 +302,35 @@ html[data-theme-transition='active'] *::after {
   }
 }
 
-/* Anthropic-style typography */
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
-  font-weight: 600;
-  line-height: 1.2;
-  letter-spacing: -0.022em;
-}
+@layer base {
+  /* Базовые размеры применяются только когда компонент не задаёт свой размер. */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.022em;
+  }
 
-/* Mobile: < 640px */
-h1 { font-size: 2.25rem; font-weight: 700; }
-h2 { font-size: 1.625rem; }
-h3 { font-size: 1.25rem; }
+  /* Mobile: < 640px */
+  h1 { font-size: 2.25rem; font-weight: 700; }
+  h2 { font-size: 1.625rem; }
+  h3 { font-size: 1.25rem; }
 
-/* Tablet: 640px - 1024px */
-@media (min-width: 640px) and (max-width: 1023px) {
-  body { font-size: 16px; line-height: 1.7; }
-  h1 { font-size: 2.75rem; }
-  h2 { font-size: 1.875rem; }
-  h3 { font-size: 1.375rem; }
-}
+  /* Tablet: 640px - 1024px */
+  @media (min-width: 640px) and (max-width: 1023px) {
+    body { font-size: 16px; line-height: 1.7; }
+    h1 { font-size: 2.75rem; }
+    h2 { font-size: 1.875rem; }
+    h3 { font-size: 1.375rem; }
+  }
 
-/* Desktop: >= 1024px */
-@media (min-width: 1024px) {
-  body { font-size: 17px; line-height: 1.7; }
-  h1 { font-size: 3.5rem; }
-  h2 { font-size: 2.25rem; }
-  h3 { font-size: 1.5rem; }
+  /* Desktop: >= 1024px */
+  @media (min-width: 1024px) {
+    body { font-size: 17px; line-height: 1.7; }
+    h1 { font-size: 3.5rem; }
+    h2 { font-size: 2.25rem; }
+    h3 { font-size: 1.5rem; }
+  }
 }
 
 /* Уменьшаем ширину контейнеров на экранах от 640px до 1024px */

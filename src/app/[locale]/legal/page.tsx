@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
-import { Header } from '@/components/shared/Header';
 import { Footer } from '@/components/shared/Footer';
 import { ScrollToTop } from '@/components/shared/ScrollToTop';
 import { FileText } from 'lucide-react';
@@ -14,7 +13,6 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function LegalPage() {
   return (
     <>
-      <Header />
       <main className='min-h-screen bg-background'>
         <div className='border-b border-border bg-muted/30 pt-16'>
           <div className='max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12'>
@@ -691,7 +689,7 @@ export default async function LegalPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className='rounded-xl border border-border bg-card p-6 space-y-2 text-sm text-muted-foreground leading-relaxed'>
-      <h2 className='text-base font-semibold text-foreground mb-3'>{title}</h2>
+      <h2 className='mb-3 text-[15px] font-semibold text-foreground sm:text-base'>{title}</h2>
       {children}
     </div>
   );

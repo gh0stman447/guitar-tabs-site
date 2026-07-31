@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useIsTouch } from '@/hooks/useIsTouch';
-import { Header } from '@/components/shared/Header';
 import { Loader2, EyeOff, Pencil } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
@@ -72,7 +71,6 @@ export default function PublishedPage() {
 
   return (
     <div className='min-h-screen bg-secondary/20'>
-      <Header />
       <div className='max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-12'>
         <div className='flex items-center justify-between mb-8'>
           <div>

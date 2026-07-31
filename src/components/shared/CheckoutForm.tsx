@@ -232,7 +232,7 @@ export function CheckoutForm({ locale, price, onSubmit }: CheckoutFormProps) {
       <Button
         type='submit'
         disabled={loading}
-        className='w-full bg-amber-500 hover:bg-amber-600 text-white rounded-full'
+        className='w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-full'
       >
         {loading ? (
           <>

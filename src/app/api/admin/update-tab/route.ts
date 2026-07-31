@@ -18,14 +18,22 @@ export async function POST(req: NextRequest) {
   const description_ru = (formData.get('description_ru') as string) ?? '';
   const description_en = (formData.get('description_en') as string) ?? '';
   const difficulty = formData.get('difficulty') as string;
-  const price = parseFloat(formData.get('price') as string);
+  const isFree = formData.get('is_free') === 'true';
+  const rawPrice = (formData.get('price') as string) ?? '';
+  const price = isFree ? 0 : Number(rawPrice);
   const youtube_url = (formData.get('youtube_url') as string) || null;
   const photo = formData.get('photo') as File | null;
   const existingFiles: Record<string, boolean> = JSON.parse((formData.get('existing_files') as string) ?? '{}');
   const formatsToDelete: string[] = JSON.parse((formData.get('formats_to_delete') as string) ?? '[]');
   const deletePhoto = formData.get('delete_photo') === 'true';
 
-  if (!id || !title_ru || !title_en || !difficulty || !price) {
+  if (
+    !id ||
+    !title_ru?.trim() ||
+    !title_en?.trim() ||
+    !difficulty?.trim() ||
+    (!isFree && (!Number.isFinite(price) || price <= 0))
+  ) {
     return NextResponse.json({ error: 'Заполните обязательные поля' }, { status: 400 });
   }
 

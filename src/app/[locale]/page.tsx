@@ -1,4 +1,3 @@
-import { Header } from '@/components/shared/Header';
 import { Footer } from '@/components/shared/Footer';
 import { HeroSection } from '@/components/sections/HeroSection';
 import { AboutSection } from '@/components/sections/AboutSection';
@@ -59,7 +58,6 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
           dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
         />
       )}
-      <Header />
       <main>
         <HeroSection />
         <BestsellerSection />

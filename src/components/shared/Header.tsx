@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
 import { Menu, ShoppingCart, X, LogOut, Settings } from 'lucide-react';
 import { Tooltip as ReactTooltip } from 'react-tooltip';
 import {
@@ -17,10 +16,11 @@ import { ThemeToggle } from './ThemeToggle';
 import { CartDrawer } from './CartDrawer';
 import { useCart } from '@/context/CartContext';
 import { cn } from '@/lib/utils';
-import { useEffect, useState } from 'react';
+import { useLayoutEffect, useState } from 'react';
 import { useAdmin } from '@/context/AdminContext';
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useIsTouch } from '@/hooks/useIsTouch';
+import { usePathname, useRouter } from '@/i18n/navigation';
 
 export function Header() {
   const t = useTranslations('nav');
@@ -37,14 +37,14 @@ export function Header() {
   function handleLogout() {
     fetch('/api/admin/logout', { method: 'POST' }).then(() => {
       setIsAdmin(false);
-      router.push(`/${locale}`);
+      router.push('/');
     });
   }
 
   const isTouch = useIsTouch();
   const { count } = useCart();
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     let lastY = window.scrollY;
     const onScroll = () => {
       const y = window.scrollY;
@@ -59,10 +59,9 @@ export function Header() {
 
   function switchLocale() {
     const next = locale === 'ru' ? 'en' : 'ru';
-    const segments = pathname.split('/');
-    segments[1] = next;
     const search = window.location.search;
-    router.push((segments.join('/') || '/') + search);
+    const hash = window.location.hash;
+    router.replace(pathname + search + hash, { locale: next, scroll: false });
   }
 
   const isAdminRoute = pathname.includes('/admin');
@@ -73,7 +72,7 @@ export function Header() {
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
     } else {
-      router.push(`/${locale}#${id}`);
+      router.push(`/#${id}`);
     }
   }
 
@@ -82,29 +81,38 @@ export function Header() {
     { id: 'about', label: t('about') },
     { id: 'contacts', label: t('contacts') },
   ];
+  const headerButtonClass =
+    'rounded-md border-0 bg-transparent text-muted-foreground shadow-none ring-0 transition-all duration-200 hover:-translate-y-0.5 hover:bg-muted/45 hover:text-foreground hover:ring-1 hover:ring-border focus-visible:border-transparent focus-visible:outline-none focus-visible:ring-0';
 
   return (
     <>
       <header
         data-no-particles
-        style={{ paddingTop: 'env(safe-area-inset-top)' }}
+        style={{ paddingTop: 'calc(env(safe-area-inset-top) + 0.75rem)' }}
         className={cn(
-          'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
-          scrolled
-            ? 'bg-background/80 backdrop-blur-md border-b border-border shadow-sm'
-            : 'bg-transparent',
+          'fixed top-0 left-0 right-0 z-50 px-3 sm:px-5 lg:px-6 transition-transform duration-300 ease-out',
           hidden ? '-translate-y-full' : 'translate-y-0',
         )}
       >
-        <div className='max-w-6xl mx-auto px-4 sm:px-6 lg:px-8'>
-          <div className='flex items-center justify-between h-16'>
-            <Link href='/' className='flex items-center gap-1.5 select-none'>
+        <div
+          className={cn(
+            'max-w-7xl mx-auto rounded-[1.75rem] border border-border/60 bg-background/65 px-4 sm:px-6 lg:px-8 backdrop-blur-2xl backdrop-saturate-150 transition-[background-color,box-shadow] duration-300',
+            scrolled &&
+              !hidden &&
+              'bg-background/72 shadow-[0_4px_14px_hsl(var(--foreground)/0.07)]',
+          )}
+        >
+          <div className='flex items-center justify-between h-16 lg:h-[4.5rem]'>
+            <Link
+              href={locale === 'en' ? '/en' : '/'}
+              className='flex items-center gap-1.5 select-none'
+            >
               <div className='flex flex-col leading-none gap-0.5 relative'>
                 <div className='absolute inset-0 flex flex-col justify-around pointer-events-none'>
                   {[...Array(6)].map((_, i) => (
                     <div
                       key={i}
-                      className='w-full bg-amber-500 dark:bg-amber-400'
+                      className='w-full bg-primary'
                       style={{ height: '1px', opacity: 0.75 - i * 0.08 }}
                     />
                   ))}
@@ -112,9 +120,9 @@ export function Header() {
                 <span className='text-[12px] md:text-[12px] italic font-black tracking-[0.2em] uppercase text-foreground relative z-10'>
                   Oleg
                 </span>
-                <span className='text-[23px] md:text-[28px] font-black tracking-tight bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500 bg-clip-text text-transparent relative z-10'>
+                <span className='text-[23px] md:text-[28px] font-black tracking-tight bg-gradient-to-r from-primary via-primary/85 to-primary bg-clip-text text-transparent relative z-10'>
                   Guitar
-                  <span className='absolute -bottom-[2px] left-0 right-0 h-[2px] bg-gradient-to-r from-amber-400/80 via-orange-400/60 to-transparent rounded-full' />
+                  <span className='absolute -bottom-[2px] left-0 right-0 h-[2px] bg-gradient-to-r from-primary/80 via-primary/60 to-transparent rounded-full' />
                 </span>
               </div>
             </Link>
@@ -124,7 +132,7 @@ export function Header() {
                 <button
                   key={link.id}
                   onClick={() => scrollToSection(link.id)}
-                  className='text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer'
+                  className={cn(headerButtonClass, 'px-4 py-1.5 text-sm font-medium cursor-pointer')}
                 >
                   {link.label}
                 </button>
@@ -136,7 +144,10 @@ export function Header() {
                 <DropdownMenu open={adminMenuOpen} onOpenChange={setAdminMenuOpen}>
                   <DropdownMenuTrigger asChild>
                     <div
-                      className='hidden md:flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-full border border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white transition-colors cursor-pointer'
+                      className={cn(
+                        headerButtonClass,
+                        'hidden md:flex items-center gap-1 px-3 py-1.5 text-xs font-medium cursor-pointer',
+                      )}
                       onPointerDown={(e) => e.preventDefault()}
                       onClick={() => setAdminMenuOpen(true)}
                     >
@@ -179,11 +190,16 @@ export function Header() {
               {isTouch && (
                 <button
                   onClick={() => count > 0 && setCartOpen(true)}
-                  className={`relative flex items-center justify-center w-9 h-9 rounded border transition-colors ${count > 0 ? 'border-border text-muted-foreground hover:text-foreground hover:border-amber-500 cursor-pointer' : 'border-border text-muted-foreground/30 cursor-not-allowed'}`}
+                  className={cn(
+                    'relative flex h-9 w-9 items-center justify-center',
+                    count > 0
+                      ? cn(headerButtonClass, 'cursor-pointer')
+                      : 'rounded-md border-0 bg-transparent text-muted-foreground/30 ring-0 cursor-not-allowed',
+                  )}
                 >
                   <ShoppingCart className='h-4 w-4' />
                   {count > 0 && (
-                    <span className='absolute -top-1.5 -right-1.5 flex items-center justify-center w-4 h-4 rounded-full bg-amber-500 text-white text-[10px] font-bold leading-none'>
+                    <span className='absolute -top-1.5 -right-1.5 flex items-center justify-center w-4 h-4 rounded-full bg-white text-primary text-[10px] font-bold leading-none shadow-sm'>
                       {count}
                     </span>
                   )}
@@ -198,11 +214,17 @@ export function Header() {
                     size='icon'
                     onClick={switchLocale}
                     aria-label='Переключить язык'
-                    className='text-xs font-semibold text-muted-foreground'
+                    className={cn(headerButtonClass, 'text-xs font-semibold')}
                   >
                     {locale === 'ru' ? 'EN' : 'RU'}
                   </Button>
-                  <ReactTooltip id='locale-toggle' place='bottom' opacity={1} delayShow={350} />
+                  <ReactTooltip
+                    id='locale-toggle'
+                    place='bottom'
+                    opacity={1}
+                    delayShow={350}
+                    style={{ fontSize: 13 }}
+                  />
                 </>
               )}
               {!isAdminRoute && isTouch && (
@@ -211,17 +233,20 @@ export function Header() {
                   size='icon'
                   onClick={switchLocale}
                   aria-label='Переключить язык'
-                  className='text-xs font-semibold text-muted-foreground'
+                  className={cn(headerButtonClass, 'text-xs font-semibold')}
                 >
                   {locale === 'ru' ? 'EN' : 'RU'}
                 </Button>
               )}
-              <ThemeToggle />
+              <ThemeToggle className={headerButtonClass} />
               <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
                 <SheetTrigger asChild>
                   <button
                     suppressHydrationWarning
-                    className='md:hidden flex items-center justify-center w-9 h-9 rounded border border-border text-muted-foreground hover:text-foreground hover:border-amber-500 transition-colors cursor-pointer'
+                    className={cn(
+                      headerButtonClass,
+                      'md:hidden flex items-center justify-center w-9 h-9 cursor-pointer',
+                    )}
                   >
                     <Menu className='h-4 w-4' />
                   </button>
@@ -235,7 +260,7 @@ export function Header() {
                   <SheetTitle className='sr-only'>Меню</SheetTitle>
                   <button
                     onClick={() => setSheetOpen(false)}
-                    className='absolute top-4 right-4 flex items-center justify-center w-9 h-9 rounded border border-border text-muted-foreground hover:text-foreground hover:border-amber-500 transition-colors cursor-pointer'
+                    className='absolute top-4 right-4 flex items-center justify-center w-9 h-9 rounded border border-border text-muted-foreground hover:text-foreground hover:border-primary transition-colors cursor-pointer'
                   >
                     <X className='h-4 w-4' />
                   </button>
@@ -265,28 +290,28 @@ export function Header() {
                           <Link
                             href={`/${locale}/admin/published`}
                             onClick={() => setSheetOpen(false)}
-                            className='text-base font-medium px-2 py-2.5 rounded-lg text-amber-500 hover:bg-amber-500/10 transition-colors'
+                            className='text-base font-medium px-2 py-2.5 rounded-lg text-primary hover:bg-primary/10 transition-colors'
                           >
                             Опубликованные
                           </Link>
                           <Link
                             href={`/${locale}/admin/drafts`}
                             onClick={() => setSheetOpen(false)}
-                            className='text-base font-medium px-2 py-2.5 rounded-lg text-amber-500 hover:bg-amber-500/10 transition-colors'
+                            className='text-base font-medium px-2 py-2.5 rounded-lg text-primary hover:bg-primary/10 transition-colors'
                           >
                             Черновики
                           </Link>
                           <Link
                             href={`/${locale}/admin/create-tab`}
                             onClick={() => setSheetOpen(false)}
-                            className='text-base font-medium px-2 py-2.5 rounded-lg text-amber-500 hover:bg-amber-500/10 transition-colors'
+                            className='text-base font-medium px-2 py-2.5 rounded-lg text-primary hover:bg-primary/10 transition-colors'
                           >
                             Добавить таб
                           </Link>
                           <Link
                             href={`/${locale}/admin/newsletter`}
                             onClick={() => setSheetOpen(false)}
-                            className='text-base font-medium px-2 py-2.5 rounded-lg text-amber-500 hover:bg-amber-500/10 transition-colors'
+                            className='text-base font-medium px-2 py-2.5 rounded-lg text-primary hover:bg-primary/10 transition-colors'
                           >
                             Рассылка
                           </Link>

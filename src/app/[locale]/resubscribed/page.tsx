@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { MailCheck } from 'lucide-react';
-import { Header } from '@/components/shared/Header';
 import { Footer } from '@/components/shared/Footer';
 import { Button } from '@/components/ui/button';
 
@@ -14,7 +13,6 @@ export default async function ResubscribedPage({
 
   return (
     <>
-      <Header />
       <main className='min-h-screen flex items-center justify-center px-4'>
         <div className='max-w-md w-full text-center space-y-6'>
           <div className='flex justify-center'>
@@ -34,7 +32,7 @@ export default async function ResubscribedPage({
             </p>
           </div>
 
-          <Button asChild className='bg-amber-500 hover:bg-amber-600 text-white rounded-full px-8'>
+          <Button asChild className='bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-8'>
             <Link href={`/${locale}`}>{isRu ? 'Вернуться на сайт' : 'Back to site'}</Link>
           </Button>
         </div>

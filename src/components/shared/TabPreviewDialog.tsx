@@ -252,7 +252,9 @@ export function TabPreviewDialog({
           style={{ backgroundColor: isDark ? undefined : 'rgba(68,77,86,0.1)' }}
           className='px-6 pt-4 pb-4 flex flex-row items-center justify-between shrink-0 gap-2'
         >
-          <DialogTitle className='text-base font-semibold flex-1'>{title}</DialogTitle>
+          <DialogTitle className='min-w-0 flex-1 truncate text-sm font-medium sm:text-base sm:font-semibold'>
+            {title}
+          </DialogTitle>
           {!isTouch ? (
             <div className='flex items-center gap-1'>
               <div className='relative'>
@@ -264,7 +266,7 @@ export function TabPreviewDialog({
                   className={`rounded-full w-7 h-7 flex items-center justify-center transition-colors ${
                     downloading
                       ? 'text-amber-500 cursor-not-allowed'
-                      : 'text-muted-foreground hover:text-amber-500 hover:bg-accent cursor-pointer'
+                      : 'text-muted-foreground hover:bg-primary/10 hover:text-primary dark:hover:bg-primary dark:hover:text-primary-foreground cursor-pointer'
                   }`}
                 >
                   <Download className={`h-4 w-4 ${downloading ? 'opacity-50' : ''}`} />
@@ -304,17 +306,29 @@ export function TabPreviewDialog({
                 )}
               </div>
               {tooltipsReady && !downloading && (
-                <ReactTooltip id='preview-download' place='bottom' opacity={1} delayShow={350} />
+                <ReactTooltip
+                  id='preview-download'
+                  place='bottom'
+                  opacity={1}
+                  delayShow={350}
+                  style={{ fontSize: 13 }}
+                />
               )}
               <button
                 data-tooltip-id='preview-close'
                 data-tooltip-content={locale === 'en' ? 'Close' : 'Закрыть'}
                 onClick={() => onOpenChange(false)}
-                className='rounded-full w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer'
+                className='rounded-full w-7 h-7 flex items-center justify-center text-muted-foreground hover:bg-primary/10 hover:text-primary dark:hover:bg-white/10 dark:hover:text-white transition-colors cursor-pointer'
               >
                 <X className='h-4 w-4' />
               </button>
-              <ReactTooltip id='preview-close' place='bottom' opacity={1} delayShow={350} />
+              <ReactTooltip
+                id='preview-close'
+                place='bottom'
+                opacity={1}
+                delayShow={350}
+                style={{ fontSize: 13 }}
+              />
             </div>
           ) : (
             <div className='flex items-center gap-1'>
@@ -325,7 +339,7 @@ export function TabPreviewDialog({
                   className={`rounded-full w-7 h-7 flex items-center justify-center transition-colors cursor-pointer ${
                     downloading
                       ? 'text-amber-500'
-                      : 'text-muted-foreground hover:text-amber-500 hover:bg-accent'
+                      : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
                   }`}
                 >
                   <Download className={`h-4 w-4 ${downloading ? 'opacity-50' : ''}`} />
@@ -366,7 +380,7 @@ export function TabPreviewDialog({
               </div>
               <button
                 onClick={() => onOpenChange(false)}
-                className='rounded-full w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer'
+                className='rounded-full w-7 h-7 flex items-center justify-center text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer'
               >
                 <X className='h-4 w-4' />
               </button>

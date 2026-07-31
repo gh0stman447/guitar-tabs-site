@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useIsTouch } from '@/hooks/useIsTouch';
-import { Header } from '@/components/shared/Header';
 import { Loader2, ShoppingCart, CheckCircle2, Trash2, Pencil } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
@@ -93,7 +92,6 @@ export default function DraftsPage() {
 
   return (
     <div className='min-h-screen bg-secondary/20'>
-      <Header />
       <div className='max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-12'>
         <div className='flex items-center justify-between mb-8'>
           <div>
@@ -194,7 +192,7 @@ export default function DraftsPage() {
                       data-tooltip-content={tab.files.pdf ? 'Опубликовать' : 'Нельзя опубликовать: нет PDF файла'}
                       onClick={() => setConfirmTab(tab)}
                       disabled={publishing === tab.id || !tab.files.pdf}
-                      className={`flex items-center justify-center w-8 h-8 rounded-full bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white transition-colors ${publishing === tab.id || !tab.files.pdf ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                      className={`flex items-center justify-center w-8 h-8 rounded-full bg-primary hover:bg-primary/90 disabled:opacity-60 text-primary-foreground transition-colors ${publishing === tab.id || !tab.files.pdf ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                     >
                       {publishing === tab.id ? (
                         <Loader2 className='h-3.5 w-3.5 animate-spin' />
@@ -271,7 +269,7 @@ export default function DraftsPage() {
               Отмена
             </Button>
             <Button
-              className='rounded-full bg-amber-500 hover:bg-amber-600 text-white'
+              className='rounded-full bg-primary hover:bg-primary/90 text-primary-foreground'
               onClick={() => {
                 if (confirmTab) publish(confirmTab.id);
                 setConfirmTab(null);

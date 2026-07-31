@@ -4,7 +4,7 @@ import { useRef, useState, useEffect } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
-import { ArrowDown } from 'lucide-react';
+import { ArrowDown, Music2 } from 'lucide-react';
 import { useIsTouch } from '@/hooks/useIsTouch';
 import { NOTES } from '@/lib/notes';
 import { cn } from '@/lib/utils';
@@ -52,14 +52,14 @@ export function HeroSection() {
       data-no-particles
       className='relative min-h-screen flex items-center justify-center overflow-hidden'
     >
-      <div className='absolute inset-0 bg-gradient-to-br from-amber-50/50 via-background to-background dark:from-amber-950/10 dark:via-background dark:to-background' />
+      <div className='absolute inset-0 bg-gradient-to-b from-background via-muted/20 to-background' />
       <motion.div
         style={{ y: blobY1 }}
-        className='absolute top-1/4 right-1/4 w-64 h-64 bg-amber-400/10 rounded-full blur-3xl'
+        className='absolute top-1/4 right-1/4 w-[32rem] h-[32rem] bg-primary/[0.03] dark:bg-primary/[0.05] rounded-full blur-3xl'
       />
       <motion.div
         style={{ y: blobY2 }}
-        className='absolute bottom-1/4 left-1/4 w-96 h-96 bg-amber-300/5 rounded-full blur-3xl'
+        className='absolute bottom-1/4 left-1/4 w-[40rem] h-[40rem] bg-primary/[0.02] dark:bg-primary/[0.04] rounded-full blur-3xl'
       />
 
       <div className='absolute inset-0 pointer-events-none'>
@@ -70,8 +70,8 @@ export function HeroSection() {
           {floatingNotes.map((note) => (
             <motion.span
               key={note.id}
-              className='absolute bottom-0 select-none text-amber-500'
-              style={{ left: note.left, fontSize: note.size, opacity: note.opacity }}
+              className='absolute bottom-0 select-none text-primary/20 dark:text-primary/30'
+              style={{ left: note.left, fontSize: note.size, opacity: note.opacity * 0.85 }}
               animate={{ y: '-110vh', rotate: [0, 15, -10, 5, 0] }}
               initial={{ y: '110vh' }}
               transition={{
@@ -98,21 +98,24 @@ export function HeroSection() {
         >
           <span
             className={cn(
-              'inline-block text-amber-500 font-medium tracking-widest uppercase mb-4',
-              isCompact ? 'text-xs' : 'text-sm',
+              'mb-5 inline-flex -rotate-1 items-center gap-2 rounded-full border border-primary/25 bg-background/80 text-primary shadow-[0_8px_22px_hsl(var(--primary)/0.12)] backdrop-blur-md [font-family:var(--font-caveat)]',
+              isCompact
+                ? 'px-4 py-1.5 text-lg font-semibold'
+                : 'px-5 py-2 text-2xl font-bold sm:px-6 sm:py-2.5 sm:text-[1.7rem]',
             )}
           >
-            {t('badge')}
+            <Music2 className={cn('shrink-0', isCompact ? 'h-4 w-4' : 'h-5 w-5')} />
+            <span>{t('badge')}</span>
           </span>
           <h1
             className={cn(
               'font-bold tracking-tight leading-tight mb-6',
-              isCompact ? 'text-4xl sm:text-5xl' : 'text-5xl sm:text-6xl lg:text-7xl',
+              isCompact ? 'text-4xl sm:text-5xl' : '',
             )}
           >
             {t('title')}
             <br />
-            <span className='text-amber-500'>{t('titleAccent')}</span>
+            <span className='text-primary'>{t('titleAccent')}</span>
           </h1>
           <p
             className={cn(
@@ -123,10 +126,10 @@ export function HeroSection() {
             {t('description')}
           </p>
           {!isCompact && (
-            <div className='flex flex-col sm:flex-row items-center justify-center gap-4'>
+            <div className='flex flex-col sm:flex-row items-center justify-center gap-3'>
               <Button
                 size='lg'
-                className='bg-amber-500 hover:bg-amber-600 text-white font-medium px-8 h-12 rounded-full'
+                className='bg-primary hover:bg-primary/90 text-primary-foreground font-medium px-7 h-11'
                 onClick={() =>
                   document.getElementById('tabs')?.scrollIntoView({ behavior: 'smooth' })
                 }
@@ -136,7 +139,7 @@ export function HeroSection() {
               <Button
                 variant='outline'
                 size='lg'
-                className='h-12 px-8 rounded-full'
+                className='h-11 px-7 border-border hover:bg-muted'
                 onClick={() =>
                   document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })
                 }

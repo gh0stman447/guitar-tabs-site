@@ -61,10 +61,14 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
   const ru = locale !== 'en';
   const isTouch = useIsTouch();
   const isLandscape = useOrientation();
-  const [publishedCount, setPublishedCount] = useState(0);
+  const [publishedPaidCount, setPublishedPaidCount] = useState(0);
   const tooltipsReady = useDelayedRender(0, open);
   const animatedTotal = useAnimatedNumber(total);
   const displayTotal = isTouch ? total : animatedTotal.get();
+  const hasMaximumAvailableDiscount =
+    discountRate > 0 &&
+    (discountRate >= DISCOUNT_TIER_2_RATE ||
+      (publishedPaidCount > 0 && items.length >= publishedPaidCount));
 
   const [viewportHeight, setViewportHeight] = useState(
     typeof window !== 'undefined' ? window.innerHeight : 768,
@@ -84,9 +88,12 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
   useEffect(() => {
     supabase
       .from(TABLE_TABS)
-      .select('id', { count: 'exact', head: true })
+      .select('price')
       .eq('is_published', true)
-      .then(({ count }) => setPublishedCount(count ?? 0));
+      .then(({ data }) => {
+        const publishedTabs = (data ?? []) as Array<{ price: number }>;
+        setPublishedPaidCount(publishedTabs.filter((tab) => tab.price > 0).length);
+      });
   }, []);
 
   useEffect(() => {
@@ -142,10 +149,10 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
       {/* Header - одинаковый для всех */}
       <div className='flex items-center justify-between px-6 py-4 border-b border-border shrink-0'>
         <div className='flex items-center gap-2'>
-          <ShoppingCart className='h-5 w-5 text-amber-500' />
+          <ShoppingCart className='h-5 w-5 text-primary' />
           <span className='font-semibold text-base'>{ru ? 'Корзина' : 'Cart'}</span>
           {items.length > 0 && (
-            <span className='text-xs bg-amber-500 text-white rounded-full px-2 py-0.5 font-medium'>
+            <span className='text-xs bg-white text-primary rounded-full px-2 py-0.5 font-semibold shadow-sm'>
               {items.length}
             </span>
           )}
@@ -227,14 +234,14 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
               {/* Discount hints */}
               <AnimatePresence mode='wait'>
                 {items.length === DISCOUNT_TIER_1_MIN - 1 &&
-                  publishedCount >= DISCOUNT_TIER_1_MIN && (
+                  publishedPaidCount >= DISCOUNT_TIER_1_MIN && (
                     <motion.div
                       key={`tier1-${items.length}`}
                       initial={{ opacity: 0, scale: isTouch ? 1 : 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: isTouch ? 1 : 0.8 }}
                       transition={{ duration: isTouch ? 0 : 0.25 }}
-                      className='mx-6 my-2 rounded-lg bg-amber-500/10 border border-amber-500/20 px-4 py-2.5 text-sm text-amber-600 dark:text-amber-400'
+                      className='mx-6 my-2 rounded-lg bg-primary/10 border border-primary/20 px-4 py-2.5 text-sm text-primary'
                     >
                       {ru
                         ? `Добавь ещё 1 таб и получи скидку ${DISCOUNT_TIER_1_RATE * 100}% 🎸`
@@ -242,20 +249,34 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
                     </motion.div>
                   )}
                 {items.length === DISCOUNT_TIER_2_MIN - 1 &&
-                  publishedCount >= DISCOUNT_TIER_2_MIN && (
+                  publishedPaidCount >= DISCOUNT_TIER_2_MIN && (
                     <motion.div
                       key={`tier2-${items.length}`}
                       initial={{ opacity: 0, scale: isTouch ? 1 : 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: isTouch ? 1 : 0.8 }}
                       transition={{ duration: isTouch ? 0 : 0.25 }}
-                      className='mx-6 my-2 rounded-lg bg-amber-500/10 border border-amber-500/20 px-4 py-2.5 text-sm text-amber-600 dark:text-amber-400'
+                      className='mx-6 my-2 rounded-lg bg-primary/10 border border-primary/20 px-4 py-2.5 text-sm text-primary'
                     >
                       {ru
                         ? `Добавь ещё 1 таб, и скидка вырастет до ${DISCOUNT_TIER_2_RATE * 100}% 🎸`
                         : `Add 1 more tab and discount grows to ${DISCOUNT_TIER_2_RATE * 100}% 🎸`}
                     </motion.div>
                   )}
+                {hasMaximumAvailableDiscount && (
+                  <motion.div
+                    key={`maximum-discount-${discountRate}`}
+                    initial={{ opacity: 0, scale: isTouch ? 1 : 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: isTouch ? 1 : 0.8 }}
+                    transition={{ duration: isTouch ? 0 : 0.25 }}
+                    className='mx-6 my-2 rounded-lg border border-green-500/20 bg-green-500/10 px-4 py-2.5 text-sm text-green-700 dark:text-green-400'
+                  >
+                    {ru
+                      ? `У вас максимальная скидка — ${discountRate * 100}% 🔥`
+                      : `Your maximum discount — ${discountRate * 100}% 🔥`}
+                  </motion.div>
+                )}
               </AnimatePresence>
             </>
           )}
@@ -385,7 +406,7 @@ function CartItem({
         </div>
         <div className='flex-1 min-w-0'>
           <p className='text-sm font-medium truncate'>{title}</p>
-          <p className='text-sm text-amber-500 font-semibold'>{tab.price} ₽</p>
+          <p className='text-sm text-primary dark:text-white font-semibold'>{tab.price} ₽</p>
         </div>
         {!isTouch && (
           <>

@@ -24,8 +24,8 @@
 | **i18n** | next-intl 4.8.3 |
 | **Theme** | next-themes |
 | **Email** | Resend |
-| **Payments** | YooKassa |
-| **Tax** | MyNalog proxy (157.22.204.114:5000) |
+| **Payments** | Robokassa |
+| **Tax** | Robokassa / Робочеки |
 
 ---
 
@@ -286,8 +286,8 @@ interface Purchase {
 
 | Route | Method | Описание |
 |-------|--------|----------|
-| `/api/payment/create` | POST | Создание платежа YooKassa |
-| `/api/payment/webhook` | POST | Обработка вебхуков YooKassa |
+| `/api/payment/create` | POST | Создание подписанной POST-формы Robokassa |
+| `/api/payment/webhook` | GET, POST | Проверка и обработка ResultURL Robokassa |
 
 ### Другие Routes
 
@@ -352,7 +352,7 @@ interface Purchase {
 - Валидация имени, email
 - Newsletter opt-in
 - Чекбокс соглашения
-- Редирект на YooKassa
+- Отправка POST-формы и переход на Robokassa
 
 ### CartDrawer (`src/components/shared/CartDrawer.tsx`)
 - Выезжающая панель с товарами
@@ -397,28 +397,55 @@ function signToken(data: { exp: number }): string {
 
 ## Платежная система
 
-**Провайдер:** YooKassa
+**Провайдер:** Robokassa
 
 ### Flow оплаты
 
 1. Пользователь заполняет форму → `/api/payment/create`
 2. Сервер создаёт pending purchase в БД
-3. Вызов API YooKassa → получение `confirmation_url`
-4. Редирект пользователя на YooKassa
-5. После оплаты → вебхук → `/api/payment/webhook`
+3. Сервер создаёт уникальный `InvId`, состав чека `Receipt` и `SignatureValue`
+4. Браузер отправляет подписанную POST-форму на платёжную страницу Robokassa
+5. После оплаты Robokassa вызывает ResultURL → `/api/payment/webhook`
 6. Сервер:
-   - Верифицирует платёж
+   - проверяет подпись Паролем №2, сумму, `InvId` и `Shp_purchase_id`;
    - Обновляет статус purchase на `succeeded`
    - Инкрементирует `purchase_count` таба (через прямой SQL)
-   - Создаёт чек через MyNalog proxy
    - Генерирует ZIP с файлами (JSZip)
    - Отправляет email через Resend
 
-### Тестовый режим (localhost)
+Повторные ResultURL идемпотентны: один заказ не увеличивает `purchase_count`
+повторно. `payment_id` в `purchases` хранит `InvId` Robokassa.
+`Receipt`, `SuccessUrl2` и `FailUrl2` включаются в подпись в URL-кодированном
+виде согласно требованиям платёжного интерфейса.
 
-- Страница `/payment-stub` с кнопкой "Подтвердить оплату"
-- Endpoint `/api/payment/simulate` симулирует успешную оплату
-- Обновляет статус, increment purchase_count, отправляет email
+### Переменные Robokassa
+
+```env
+ROBOKASSA_MERCHANT_LOGIN=идентификатор_магазина
+ROBOKASSA_PASSWORD_1=тестовый_пароль_1
+ROBOKASSA_PASSWORD_2=тестовый_пароль_2
+ROBOKASSA_TEST_MODE=true
+ROBOKASSA_HASH_ALGORITHM=md5
+ROBOKASSA_PAYMENT_OBJECT=service
+```
+
+Алгоритм должен совпадать с техническими настройками магазина. До активации
+используются тестовые пароли и `ROBOKASSA_TEST_MODE=true`. Для production нужно
+установить рабочие пароли и явно задать `ROBOKASSA_TEST_MODE=false`.
+
+В кабинете Robokassa ResultURL должен указывать на
+`https://<домен>/api/payment/webhook`; рекомендуемый метод — POST.
+
+### Тестовый режим
+
+- `IsTest=1` передаётся при `ROBOKASSA_TEST_MODE=true`.
+- Используются только тестовые Пароль №1 и Пароль №2 из технических настроек.
+- Для первичной проверки используется минимальная подпись
+  `MerchantLogin:OutSum:InvId:Пароль#1`; заказ в ResultURL определяется по
+  сохранённому `InvId`. Фискальный `Receipt` и динамические ReturnURL включаются
+  в боевом режиме.
+- ResultURL должен быть доступен Robokassa из интернета; для localhost нужен
+  HTTPS-туннель или тестирование на dev-стенде.
 
 ---
 
@@ -482,9 +509,12 @@ export const routing = defineRouting({
 
 ## Налоговый учёт (РФ)
 
-- **Proxy сервер:** `http://157.22.204.114:5000` (MyNalog)
-- **Генерация чеков:** автоматически после оплаты
-- **Тестовый режим:** настраивается через `NALOG_PROXY_TEST_MODE`
+- **Фискализация:** Robokassa / Робочеки для самозанятого.
+- В платёж передаётся `Receipt` с каждой позицией, скидкой и `tax: none`.
+- Отдельный вызов MyNalog после оплаты отключён, чтобы не формировать два чека.
+- `ROBOKASSA_PAYMENT_OBJECT` задаёт предмет расчёта и по умолчанию равен
+  `service`; значение необходимо сверить с настройками магазина и бухгалтерским
+  сценарием перед включением боевого режима.
 
 ---
 
@@ -682,8 +712,8 @@ npm run lint
 | Компонент детализации | `src/components/shared/TabDetails.tsx` |
 | Меню бесплатной загрузки | `src/components/shared/FreeDownloadMenu.tsx` |
 | API бесплатной загрузки | `src/app/api/tabs/[id]/download/route.ts` |
-| Payment webhook | `src/app/api/payment/webhook/route.ts` |
-| Payment create | `src/app/api/payment/create/route.ts` |
+| Payment webhook (Robokassa ResultURL) | `src/app/api/payment/webhook/route.ts` |
+| Payment create (Robokassa form) | `src/app/api/payment/create/route.ts` |
 | Admin login | `src/app/api/admin/login/route.ts` |
 | Tab upload | `src/app/api/admin/upload-tab/route.ts` |
 | Main page | `src/app/[locale]/page.tsx` |

@@ -3,146 +3,112 @@ import JSZip from 'jszip';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { TABLE_TABS, TABLE_PURCHASES, TABLE_TAB_FILES } from '@/lib/constants';
 import { query } from '@/lib/db';
+import { getRobokassaConfig, verifyRobokassaHash } from '@/lib/robokassa';
 
-interface YookassaPayment {
-  id?: string;
-  status?: string;
-  metadata?: {
-    purchase_id?: string;
-    customer_email?: string;
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
+interface RobokassaNotification {
+  outSum: string;
+  invId: string;
+  signature: string;
+  purchaseId?: string;
+}
+
+function getField(params: URLSearchParams, ...names: string[]) {
+  for (const name of names) {
+    const value = params.get(name);
+    if (value) return value;
+  }
+  return '';
+}
+
+function parseNotification(params: URLSearchParams): RobokassaNotification | null {
+  const notification = {
+    outSum: getField(params, 'OutSum', 'outSum'),
+    invId: getField(params, 'InvId', 'InvID', 'invId'),
+    signature: getField(params, 'SignatureValue', 'signatureValue'),
+    purchaseId: getField(params, 'Shp_purchase_id'),
   };
+
+  return notification.outSum && notification.invId && notification.signature ? notification : null;
 }
 
-/**
- * Запрос чека на российский сервер (Мой Налог)
- */
-async function createReceipt(amount: number, customerName: string, purchaseId: string): Promise<string | null> {
-  const proxyUrl = process.env.NALOG_PROXY_URL;
-  const proxyKey = process.env.NALOG_PROXY_KEY;
-
-  if (!proxyUrl || !proxyKey) {
-    console.warn('⚠️ NALOG_PROXY_URL or NALOG_PROXY_KEY not configured, skipping receipt');
-    return null;
-  }
-
+async function processNotification(req: NextRequest) {
+  let params: URLSearchParams;
   try {
-    const res = await fetch(`${proxyUrl}/create_receipt`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': proxyKey,
-      },
-      body: JSON.stringify({
-        amount: amount,
-        name: customerName || 'Покупатель',
-        purchase_id: purchaseId,  // Уникальный идентификатор для чека
-      }),
-    });
-
-    if (!res.ok) {
-      console.error(`❌ Receipt API error: ${res.status} ${res.statusText}`);
-      return null;
-    }
-
-    const data = await res.json();
-    if (data.status === 'success' && data.url) {
-      return data.url;
-    } else {
-      console.error('❌ Receipt error:', data.error);
-      return null;
-    }
+    params =
+      req.method === 'GET'
+        ? req.nextUrl.searchParams
+        : new URLSearchParams(await req.text());
   } catch (error) {
-    console.error('❌ Receipt request failed:', error);
-    return null;
-  }
-}
-
-async function verifyWithYookassa(paymentId: string): Promise<boolean> {
-  const shopId = process.env.YUKASSA_SHOP_ID;
-  const secretKey = process.env.YUKASSA_SECRET_KEY;
-
-  // Если ключи не настроены - пропускаем верификацию
-  if (!shopId || !secretKey) {
-    return true;
+    console.error('[payment/webhook] Failed to parse notification:', error);
+    return new NextResponse('bad request', { status: 400 });
   }
 
-  const res = await fetch(`https://api.yookassa.ru/v3/payments/${paymentId}`, {
-    headers: {
-      Authorization: `Basic ${Buffer.from(`${shopId}:${secretKey}`).toString('base64')}`,
-    },
+  const notification = parseNotification(params);
+  if (!notification) {
+    return new NextResponse('missing parameters', { status: 400 });
+  }
+
+  let password2: string;
+  try {
+    password2 = getRobokassaConfig().password2;
+  } catch (error) {
+    console.error('[payment/webhook]', error);
+    return new NextResponse('configuration error', { status: 500 });
+  }
+
+  const signatureSource = notification.purchaseId
+    ? `${notification.outSum}:${notification.invId}:${password2}:Shp_purchase_id=${notification.purchaseId}`
+    : `${notification.outSum}:${notification.invId}:${password2}`;
+  if (!verifyRobokassaHash(signatureSource, notification.signature)) {
+    console.error('[payment/webhook] Invalid Robokassa signature');
+    return new NextResponse('invalid signature', { status: 403 });
+  }
+
+  const purchaseResult = await query(
+    `SELECT p.id, p.amount, p.payment_id, c.email
+     FROM purchases p
+     JOIN customers c ON c.id = p.customer_id
+     WHERE p.payment_id = $1`,
+    [notification.invId],
+  );
+  const purchase = purchaseResult.rows[0] as
+    | { id: string; amount: number; payment_id: string | null; email: string }
+    | undefined;
+
+  if (
+    !purchase ||
+    (notification.purchaseId && purchase.id !== notification.purchaseId) ||
+    purchase.payment_id !== notification.invId ||
+    Number(notification.outSum) !== Number(purchase.amount)
+  ) {
+    console.error('[payment/webhook] Purchase data mismatch', {
+      purchaseId: notification.purchaseId ?? purchase?.id,
+      invId: notification.invId,
+    });
+    return new NextResponse('payment mismatch', { status: 400 });
+  }
+
+  const result = await handlePaymentSucceeded(purchase.id, purchase.email);
+  if (!result.ok) return result;
+
+  return new NextResponse(`OK${notification.invId}`, {
+    status: 200,
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
   });
-
-  if (!res.ok) {
-    console.error('❌ [webhook] YooKassa API error:', res.status, await res.text());
-    return false;
-  }
-  const data = await res.json();
-  return data.status === 'succeeded';
 }
 
 export async function POST(req: NextRequest) {
-  const rawBody = await req.text();
-
-  let body;
-  try {
-    body = JSON.parse(rawBody);
-  } catch (e) {
-    console.error('[webhook] Failed to parse body:', e);
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
-  }
-
-  const event = body.event as string;
-  const payment = body.object as YookassaPayment;
-
-  if (event === 'payment.succeeded') {
-    if (!payment?.id) {
-      console.error('[webhook] Missing payment id');
-      return NextResponse.json({ error: 'Missing payment id' }, { status: 400 });
-    }
-    const verified = await verifyWithYookassa(payment.id);
-    if (!verified) {
-      console.error('[webhook] Payment verification failed');
-      return NextResponse.json({ error: 'Payment verification failed' }, { status: 403 });
-    }
-  }
-
-  switch (event) {
-    case 'payment.succeeded':
-      return handlePaymentSucceeded(payment);
-    case 'payment.canceled':
-      return handlePaymentCanceled(payment);
-    default:
-      return NextResponse.json({ ok: true });
-  }
+  return processNotification(req);
 }
 
-async function handlePaymentCanceled(payment: YookassaPayment) {
-  const purchaseId = payment?.metadata?.purchase_id;
-  if (!purchaseId) return NextResponse.json({ ok: true });
-
-  const { error: updateError } = await supabaseAdmin
-    .from(TABLE_PURCHASES)
-    .update({ status: 'canceled' })
-    .eq('id', purchaseId);
-
-  if (updateError) {
-    console.error('[webhook] payment.canceled UPDATE ERROR:', updateError);
-    return NextResponse.json({ error: updateError.message }, { status: 500 });
-  }
-
-  return NextResponse.json({ ok: true });
+export async function GET(req: NextRequest) {
+  return processNotification(req);
 }
 
-async function handlePaymentSucceeded(payment: YookassaPayment) {
-  const purchaseId = payment?.metadata?.purchase_id;
-  const customerEmail = payment?.metadata?.customer_email;
-
-  if (!purchaseId || !customerEmail) {
-    console.error('[webhook] Missing metadata:', { purchaseId, customerEmail });
-    return NextResponse.json({ error: 'Missing metadata' }, { status: 400 });
-  }
-
-  // 0. Idempotency check - skip if already processed
+async function handlePaymentSucceeded(purchaseId: string, customerEmail: string) {
   const { data: existingPurchase } = await supabaseAdmin
     .from(TABLE_PURCHASES)
     .select('status, resend_email_id')
@@ -154,21 +120,20 @@ async function handlePaymentSucceeded(payment: YookassaPayment) {
     return NextResponse.json({ ok: true });
   }
 
-  // 1. Update purchase status
-  const { error: updateError } = await supabaseAdmin
-    .from(TABLE_PURCHASES)
-    .update({ status: 'succeeded' })
-    .eq('id', purchaseId);
-
-  if (updateError) {
-    console.error('[webhook] DB update error:', updateError);
-    return NextResponse.json({ error: 'DB update failed' }, { status: 500 });
-  }
+  // Change the status atomically so repeated Robokassa callbacks do not increment counters twice.
+  const statusResult = await query(
+    `UPDATE purchases
+     SET status = 'succeeded'
+     WHERE id = $1 AND status <> 'succeeded'
+     RETURNING id`,
+    [purchaseId],
+  );
+  const isFirstSuccessfulCallback = statusResult.rowCount === 1;
 
   // 2. Get purchase with tab_ids
   const { data: purchase, error: purchaseError } = await supabaseAdmin
     .from(TABLE_PURCHASES)
-    .select('tab_id, tab_ids, amount, customer_id')
+    .select('tab_id, tab_ids')
     .eq('id', purchaseId)
     .single();
 
@@ -188,28 +153,22 @@ async function handlePaymentSucceeded(payment: YookassaPayment) {
     return NextResponse.json({ error: 'Tabs not found' }, { status: 404 });
   }
 
-  // 3. Increment purchase_count using direct SQL
-  for (const tab of tabs) {
-    const tabId = (tab as { id: string }).id;
-    await query(
-      `UPDATE "${TABLE_TABS}" SET "purchase_count" = "purchase_count" + 1 WHERE "id" = $1`,
-      [tabId],
-    );
+  if (isFirstSuccessfulCallback) {
+    for (const tab of tabs) {
+      const tabId = (tab as { id: string }).id;
+      await query(
+        `UPDATE "${TABLE_TABS}" SET "purchase_count" = "purchase_count" + 1 WHERE "id" = $1`,
+        [tabId],
+      );
+    }
   }
 
-  // 4. Generate receipt via RU proxy
   const tabsWithTitles = tabs as Array<{
     id: string;
     title_ru: string;
     files: Record<string, string>;
   }>;
-  const serviceName =
-    tabsWithTitles.length === 1
-      ? tabsWithTitles[0].title_ru
-      : `Гитарные табы (${tabsWithTitles.length} шт.)`;
-  const receiptUrl = await createReceipt(purchase.amount, serviceName, purchaseId);
 
-  // 5. Build zip archive
   let attachments: { filename: string; content: string }[] = [];
   try {
     attachments = await buildZipAttachments(tabsWithTitles);
@@ -217,7 +176,6 @@ async function handlePaymentSucceeded(payment: YookassaPayment) {
     console.error('[webhook] ZIP build error:', zipError);
   }
 
-  // 6. Idempotency check (race condition protection)
   const { data: latestPurchase } = await supabaseAdmin
     .from(TABLE_PURCHASES)
     .select('resend_email_id')
@@ -229,18 +187,13 @@ async function handlePaymentSucceeded(payment: YookassaPayment) {
     return NextResponse.json({ ok: true });
   }
 
-  // 7. Send email
   const tabTitles = tabsWithTitles.map((t) => t.title_ru).join(', ');
-  const emailId = await sendEmail({ to: customerEmail, tabTitles, attachments, receiptUrl });
+  const emailId = await sendEmail({ to: customerEmail, tabTitles, attachments });
 
-  // 7. Save email tracking and receipt URL
-  const updateData: { resend_email_id?: string; email_status?: string; receipt_url?: string } = {};
+  const updateData: { resend_email_id?: string; email_status?: string } = {};
   if (emailId) {
     updateData.resend_email_id = emailId;
     updateData.email_status = 'sent';
-  }
-  if (receiptUrl) {
-    updateData.receipt_url = receiptUrl;
   }
 
   if (Object.keys(updateData).length > 0) {

@@ -22,6 +22,7 @@ import {
 } from '@/lib/constants';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
+import { submitPaymentRedirect } from '@/lib/submit-payment';
 
 interface CartDrawerProps {
   open: boolean;
@@ -130,6 +131,7 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
         firstname,
         email,
         newsletter,
+        locale,
         test: testMode ?? false,
       }),
     });
@@ -141,7 +143,7 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
     }
 
     clearCart();
-    window.location.href = data.confirmation_url;
+    submitPaymentRedirect(data);
   }
 
   const renderContent = () => (

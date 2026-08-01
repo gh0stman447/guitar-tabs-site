@@ -21,6 +21,7 @@ import { useAdmin } from '@/context/AdminContext';
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useIsTouch } from '@/hooks/useIsTouch';
 import { usePathname, useRouter } from '@/i18n/navigation';
+import { BrandLogo } from '@/components/shared/BrandLogo';
 
 export function Header() {
   const t = useTranslations('nav');
@@ -82,7 +83,7 @@ export function Header() {
     { id: 'contacts', label: t('contacts') },
   ];
   const headerButtonClass =
-    'rounded-md border-0 bg-transparent text-muted-foreground shadow-none ring-0 transition-all duration-200 hover:-translate-y-0.5 hover:bg-muted/45 hover:text-foreground hover:ring-1 hover:ring-border focus-visible:border-transparent focus-visible:outline-none focus-visible:ring-0';
+    'rounded-md border-0 bg-transparent text-foreground/70! shadow-none ring-0 transition-colors duration-200 hover:bg-muted/90! hover:text-foreground! dark:text-muted-foreground! dark:hover:bg-muted/80! dark:hover:text-foreground! focus-visible:border-transparent focus-visible:outline-none focus-visible:ring-0';
 
   return (
     <>
@@ -103,36 +104,17 @@ export function Header() {
           )}
         >
           <div className='flex items-center justify-between h-16 lg:h-[4.5rem]'>
-            <Link
-              href={locale === 'en' ? '/en' : '/'}
-              className='flex items-center gap-1.5 select-none'
-            >
-              <div className='flex flex-col leading-none gap-0.5 relative'>
-                <div className='absolute inset-0 flex flex-col justify-around pointer-events-none'>
-                  {[...Array(6)].map((_, i) => (
-                    <div
-                      key={i}
-                      className='w-full bg-primary'
-                      style={{ height: '1px', opacity: 0.75 - i * 0.08 }}
-                    />
-                  ))}
-                </div>
-                <span className='text-[12px] md:text-[12px] italic font-black tracking-[0.2em] uppercase text-foreground relative z-10'>
-                  Oleg
-                </span>
-                <span className='text-[23px] md:text-[28px] font-black tracking-tight bg-gradient-to-r from-primary via-primary/85 to-primary bg-clip-text text-transparent relative z-10'>
-                  Guitar
-                  <span className='absolute -bottom-[2px] left-0 right-0 h-[2px] bg-gradient-to-r from-primary/80 via-primary/60 to-transparent rounded-full' />
-                </span>
-              </div>
-            </Link>
+            <BrandLogo locale={locale} priority />
 
             <nav className='hidden md:flex items-center gap-6'>
               {navLinks.map((link) => (
                 <button
                   key={link.id}
                   onClick={() => scrollToSection(link.id)}
-                  className={cn(headerButtonClass, 'px-4 py-1.5 text-sm font-medium cursor-pointer')}
+                  className={cn(
+                    headerButtonClass,
+                    'px-4 py-1.5 text-sm font-medium cursor-pointer',
+                  )}
                 >
                   {link.label}
                 </button>

@@ -13,6 +13,12 @@ import { LoadingPage } from '@/components/shared/LoadingPage';
 import type { Tab } from '@/types';
 import { FORMATS } from '@/types';
 import { Tooltip as ReactTooltip } from 'react-tooltip';
+import { TabCharacteristicsFields } from '@/components/admin/TabCharacteristicsFields';
+import {
+  DEFAULT_TAB_CHARACTERISTICS,
+  normalizeTabCharacteristics,
+} from '@/lib/tab-characteristics';
+import type { TabCharacteristics } from '@/types';
 
 export default function EditTabPage() {
   const params = useParams();
@@ -37,6 +43,10 @@ export default function EditTabPage() {
   const [files, setFiles] = useState<Partial<Record<(typeof FORMATS)[number], File>>>({});
   const [deletedFormats, setDeletedFormats] = useState<string[]>([]);
   const [fileNames, setFileNames] = useState<Record<string, string>>({}); // fmt -> filename
+  const [characteristics, setCharacteristics] = useState<TabCharacteristics>({
+    ...DEFAULT_TAB_CHARACTERISTICS,
+    techniques: [],
+  });
 
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
@@ -53,7 +63,10 @@ export default function EditTabPage() {
     : 0;
   const newFilesCount = Object.keys(files).length;
   const hasAtLeastOneFile = existingFilesCount > 0 || newFilesCount > 0;
-  const allRequiredFilled = hasTitles && hasPrice && hasDifficulty && hasAtLeastOneFile;
+  const hasCustomTuning =
+    characteristics.tuning !== 'custom' || Boolean(characteristics.customTuning?.trim());
+  const allRequiredFilled =
+    hasTitles && hasPrice && hasDifficulty && hasAtLeastOneFile && hasCustomTuning;
   const isSubmitDisabled = loading || loadingTab || !allRequiredFilled;
 
   // Формируем сообщение о незаполненных обязательных полях
@@ -63,6 +76,7 @@ export default function EditTabPage() {
   if (isPaid && !hasPrice) missingFields.push('Цена больше 0');
   if (!difficulty.trim()) missingFields.push('Сложность');
   if (!hasAtLeastOneFile) missingFields.push('Файл таба (PDF/GP5/GPX/MP3)');
+  if (!hasCustomTuning) missingFields.push('Свой вариант строя');
 
   useEffect(() => {
     if (isLoading) return;
@@ -88,6 +102,7 @@ export default function EditTabPage() {
         setIsPaid(t.price > 0);
         setPrice(String(t.price));
         setYoutubeUrl(t.youtube_url ?? '');
+        setCharacteristics(normalizeTabCharacteristics(t.characteristics));
         // Build fileNames map from tab.files (which formats exist)
         const names: Record<string, string> = {};
         for (const [fmt, exists] of Object.entries(t.files || {})) {
@@ -126,6 +141,7 @@ export default function EditTabPage() {
     formData.append('is_free', String(!isPaid));
     formData.append('price', isPaid ? price : '0');
     formData.append('youtube_url', youtubeUrl);
+    formData.append('characteristics', JSON.stringify(characteristics));
     formData.append('existing_files', JSON.stringify(tab?.files ?? {}));
     formData.append('formats_to_delete', JSON.stringify(deletedFormats));
     formData.append('delete_photo', String(deletePhoto));
@@ -317,6 +333,11 @@ export default function EditTabPage() {
                   </select>
                 </Field>
               </div>
+
+              <TabCharacteristicsFields
+                value={characteristics}
+                onChange={setCharacteristics}
+              />
 
               <Field label='YouTube URL (необязательно)'>
                 <input

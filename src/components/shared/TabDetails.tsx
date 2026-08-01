@@ -31,14 +31,8 @@ import { AudioPlayerDialog } from '@/components/shared/AudioPlayerDialog';
 import { useCart } from '@/context/CartContext';
 import { useCartAnimation } from '@/context/CartAnimationContext';
 import { usePreviewBlock } from '@/context/PreviewBlockContext';
-import type { Tab, TabFileFormat } from '@/types';
-
-const FORMAT_LABELS: Record<TabFileFormat, string> = {
-  pdf: 'PDF',
-  gp5: 'GP5',
-  gpx: 'GPX',
-  mp3: 'MP3',
-};
+import type { Tab } from '@/types';
+import { TabCharacteristics } from '@/components/shared/TabCharacteristics';
 
 const COPY = {
   ru: {
@@ -134,9 +128,15 @@ export function TabDetails({ tab, locale }: { tab: Tab; locale: string }) {
   const description = language === 'en' ? tab.description_en : tab.description_ru;
   const isFree = tab.price <= 0;
   const inCart = hasItem(tab.id);
-  const formats = (Object.entries(tab.files) as Array<[TabFileFormat, boolean | undefined]>)
-    .filter(([, available]) => available)
-    .map(([format]) => FORMAT_LABELS[format]);
+  const mediaFormats = [
+    (tab.files.gp5 || tab.files.gpx) && {
+      key: 'guitar-pro',
+      mark: 'GP',
+      label: 'Guitar Pro',
+    },
+    tab.files.pdf && { key: 'pdf', mark: 'PDF', label: 'PDF' },
+    tab.files.mp3 && { key: 'mp3', mark: 'MP3', label: 'MP3' },
+  ].filter((format): format is { key: string; mark: string; label: string } => Boolean(format));
   const createdAt = tab.created_at ? new Date(tab.created_at) : null;
   const createdDate =
     createdAt && !Number.isNaN(createdAt.getTime())
@@ -274,10 +274,36 @@ export function TabDetails({ tab, locale }: { tab: Tab; locale: string }) {
                   className='absolute inset-0 z-[1]'
                   onContextMenu={(event) => event.preventDefault()}
                 />
+                {mediaFormats.length > 0 && (
+                  <div className='pointer-events-none absolute inset-x-0 bottom-0 z-[2]'>
+                    <div className='absolute inset-x-0 bottom-0 h-28 bg-zinc-950/65 backdrop-blur-[3px] [mask-image:linear-gradient(to_top,black_60%,transparent)] sm:h-32' />
+                    <div className='relative flex items-start justify-center gap-5 px-4 pb-3 pt-8 sm:gap-7 sm:pb-4 sm:pt-10'>
+                      {mediaFormats.map((format) => (
+                        <div
+                          key={format.key}
+                          className='flex min-w-14 flex-col items-center gap-1.5 text-center'
+                        >
+                          <div className='media-format-circle flex h-11 w-11 items-center justify-center rounded-full bg-zinc-900/65 text-xs font-bold tracking-wide text-primary backdrop-blur-md sm:h-12 sm:w-12'>
+                            {format.key === 'pdf' ? (
+                              <FileText className='h-4 w-4' />
+                            ) : format.key === 'mp3' ? (
+                              <Headphones className='h-4 w-4' />
+                            ) : (
+                              format.mark
+                            )}
+                          </div>
+                          <span className='text-[11px] font-semibold text-white/75 drop-shadow-sm sm:text-xs'>
+                            {format.label}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {((!isFree && tab.files.pdf) || tab.files.mp3 || tab.youtube_url) && (
-                <div className='flex flex-wrap gap-2 p-4 sm:p-5'>
+                <div className='flex flex-wrap gap-2 border-t border-border/60 p-4 sm:p-5'>
                   {!isFree && tab.files.pdf && (
                     <Button
                       variant='outline'
@@ -322,14 +348,6 @@ export function TabDetails({ tab, locale }: { tab: Tab; locale: string }) {
                   <Gauge className='h-4 w-4 text-primary' />
                   {copy.difficulty}: <b>{tab.difficulty}</b>
                 </span>
-                {formats.map((format) => (
-                  <span
-                    key={format}
-                    className='rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold tracking-wide'
-                  >
-                    {format}
-                  </span>
-                ))}
                 {isFree && typeof tab.download_count === 'number' && (
                   <span className='inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-sm'>
                     <Download className='h-4 w-4 text-primary' />
@@ -354,6 +372,12 @@ export function TabDetails({ tab, locale }: { tab: Tab; locale: string }) {
                 )}
               </div>
 
+              {tab.characteristics && (
+                <div className='mt-4'>
+                  <TabCharacteristics value={tab.characteristics} locale={locale} />
+                </div>
+              )}
+
               <div className='mt-7 rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-sm'>
                 <p className='text-xs font-medium uppercase tracking-widest text-muted-foreground'>
                   {copy.formats}
@@ -362,11 +386,6 @@ export function TabDetails({ tab, locale }: { tab: Tab; locale: string }) {
                   <span className='text-3xl font-bold text-foreground'>
                     {isFree ? copy.free : `${tab.price} ₽`}
                   </span>
-                  {!isFree && (
-                    <span className='text-xs text-muted-foreground'>
-                      {formats.join(' · ')}
-                    </span>
-                  )}
                 </div>
                 {isFree ? (
                   <div className='mt-5'>

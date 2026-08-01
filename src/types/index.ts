@@ -14,6 +14,19 @@ export interface TabFiles {
   mp3?: boolean;
 }
 
+export const TAB_TECHNIQUES = ['barre', 'percussion', 'harmonics', 'tapping'] as const;
+export type TabTechnique = (typeof TAB_TECHNIQUES)[number];
+
+export const TAB_TUNINGS = ['standard', 'drop_d', 'nonstandard', 'custom'] as const;
+export type TabTuning = (typeof TAB_TUNINGS)[number];
+
+export interface TabCharacteristics {
+  techniques: TabTechnique[];
+  tuning: TabTuning;
+  customTuning?: string;
+  capo: number;
+}
+
 export interface Tab {
   id: string;
   created_at?: string;
@@ -28,6 +41,7 @@ export interface Tab {
   purchase_count: number;
   download_count?: number;
   youtube_url?: string;
+  characteristics?: TabCharacteristics;
 }
 
 export function getTabTitle(tab: Tab, locale: string): string {

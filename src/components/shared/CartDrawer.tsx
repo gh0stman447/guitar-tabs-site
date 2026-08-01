@@ -154,7 +154,7 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
           <ShoppingCart className='h-5 w-5 text-primary' />
           <span className='font-semibold text-base'>{ru ? 'Корзина' : 'Cart'}</span>
           {items.length > 0 && (
-            <span className='text-xs bg-white text-primary rounded-full px-2 py-0.5 font-semibold shadow-sm'>
+            <span className='rounded-full border border-black/10 bg-white px-2 py-0.5 text-xs font-semibold text-black shadow-sm'>
               {items.length}
             </span>
           )}
@@ -408,7 +408,7 @@ function CartItem({
         </div>
         <div className='flex-1 min-w-0'>
           <p className='text-sm font-medium truncate'>{title}</p>
-          <p className='text-sm text-primary dark:text-white font-semibold'>{tab.price} ₽</p>
+          <p className='text-sm font-semibold text-zinc-900 dark:text-white'>{tab.price} ₽</p>
         </div>
         {!isTouch && (
           <>

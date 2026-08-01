@@ -10,6 +10,9 @@ import { useAdmin } from '@/context/AdminContext';
 import { toast } from 'sonner';
 import { LoadingPage } from '@/components/shared/LoadingPage';
 import { Tooltip as ReactTooltip } from 'react-tooltip';
+import { TabCharacteristicsFields } from '@/components/admin/TabCharacteristicsFields';
+import { DEFAULT_TAB_CHARACTERISTICS } from '@/lib/tab-characteristics';
+import type { TabCharacteristics } from '@/types';
 
 export default function CreateTabPage() {
   const params = useParams();
@@ -27,6 +30,10 @@ export default function CreateTabPage() {
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [photo, setPhoto] = useState<File | null>(null);
   const [files, setFiles] = useState<Partial<Record<(typeof FORMATS)[number], File>>>({});
+  const [characteristics, setCharacteristics] = useState<TabCharacteristics>({
+    ...DEFAULT_TAB_CHARACTERISTICS,
+    techniques: [],
+  });
 
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
@@ -36,7 +43,10 @@ export default function CreateTabPage() {
   const hasPrice = !isPaid || (price.trim() !== '' && Number(price) > 0);
   const hasDifficulty = difficulty.trim();
   const hasAtLeastOneFile = Object.keys(files).length > 0;
-  const allRequiredFilled = hasTitles && hasPrice && hasDifficulty && hasAtLeastOneFile;
+  const hasCustomTuning =
+    characteristics.tuning !== 'custom' || Boolean(characteristics.customTuning?.trim());
+  const allRequiredFilled =
+    hasTitles && hasPrice && hasDifficulty && hasAtLeastOneFile && hasCustomTuning;
   const isSubmitDisabled = loading || !allRequiredFilled;
 
   // Формируем сообщение о незаполненных обязательных полях
@@ -46,6 +56,7 @@ export default function CreateTabPage() {
   if (isPaid && !hasPrice) missingFields.push('Цена больше 0');
   if (!difficulty.trim()) missingFields.push('Сложность');
   if (!hasAtLeastOneFile) missingFields.push('Файл таба (PDF/GP5/GPX/MP3)');
+  if (!hasCustomTuning) missingFields.push('Свой вариант строя');
 
   useEffect(() => {
     if (!isLoading && !authed) {
@@ -76,6 +87,7 @@ export default function CreateTabPage() {
     formData.append('is_free', String(!isPaid));
     formData.append('price', isPaid ? price : '0');
     formData.append('youtube_url', youtubeUrl);
+    formData.append('characteristics', JSON.stringify(characteristics));
     if (photo) formData.append('photo', photo);
     for (const [fmt, file] of Object.entries(files)) {
       if (file) formData.append(fmt, file);
@@ -95,6 +107,7 @@ export default function CreateTabPage() {
         setYoutubeUrl('');
         setPhoto(null);
         setFiles({});
+        setCharacteristics({ ...DEFAULT_TAB_CHARACTERISTICS, techniques: [] });
       } else {
         setResult({ ok: false, message: data.error });
       }
@@ -238,6 +251,11 @@ export default function CreateTabPage() {
                 </select>
               </Field>
             </div>
+
+            <TabCharacteristicsFields
+              value={characteristics}
+              onChange={setCharacteristics}
+            />
 
             <Field label='YouTube URL (необязательно)'>
               <input

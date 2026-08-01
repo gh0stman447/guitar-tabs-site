@@ -5,6 +5,7 @@ import { FORMATS } from '@/types';
 import { TABLE_TABS } from '@/lib/constants';
 import { deleteFile, uploadFile } from '@/lib/storage';
 import { query } from '@/lib/db';
+import { validateTabCharacteristics } from '@/lib/tab-characteristics';
 
 export async function POST(req: NextRequest) {
   const authError = requireAdminSession(req);
@@ -26,13 +27,21 @@ export async function POST(req: NextRequest) {
   const existingFiles: Record<string, boolean> = JSON.parse((formData.get('existing_files') as string) ?? '{}');
   const formatsToDelete: string[] = JSON.parse((formData.get('formats_to_delete') as string) ?? '[]');
   const deletePhoto = formData.get('delete_photo') === 'true';
+  let rawCharacteristics: unknown;
+  try {
+    rawCharacteristics = JSON.parse((formData.get('characteristics') as string) ?? '{}');
+  } catch {
+    return NextResponse.json({ error: 'Некорректные особенности таба' }, { status: 400 });
+  }
+  const characteristics = validateTabCharacteristics(rawCharacteristics);
 
   if (
     !id ||
     !title_ru?.trim() ||
     !title_en?.trim() ||
     !difficulty?.trim() ||
-    (!isFree && (!Number.isFinite(price) || price <= 0))
+    (!isFree && (!Number.isFinite(price) || price <= 0)) ||
+    !characteristics
   ) {
     return NextResponse.json({ error: 'Заполните обязательные поля' }, { status: 400 });
   }
@@ -100,6 +109,7 @@ export async function POST(req: NextRequest) {
     price,
     youtube_url,
     files,
+    characteristics,
   };
   if (photo_url !== undefined) updateData.photo_url = photo_url;
 

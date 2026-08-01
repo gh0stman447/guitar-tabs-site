@@ -5,6 +5,7 @@ import { requireAdminSession } from '@/lib/admin-auth';
 import { FORMATS } from '@/types';
 import { TABLE_TABS } from '@/lib/constants';
 import { uploadFile } from '@/lib/storage';
+import { validateTabCharacteristics } from '@/lib/tab-characteristics';
 
 export async function POST(req: NextRequest) {
   const authError = requireAdminSession(req);
@@ -22,6 +23,13 @@ export async function POST(req: NextRequest) {
   const price = isFree ? 0 : Number(rawPrice);
   const youtube_url = (formData.get('youtube_url') as string) ?? null;
   const photo = formData.get('photo') as File | null;
+  let rawCharacteristics: unknown;
+  try {
+    rawCharacteristics = JSON.parse((formData.get('characteristics') as string) ?? '{}');
+  } catch {
+    return NextResponse.json({ error: 'Некорректные особенности таба' }, { status: 400 });
+  }
+  const characteristics = validateTabCharacteristics(rawCharacteristics);
 
   // === STEP 1: Validate all input BEFORE any DB/FS operations ===
 
@@ -30,7 +38,8 @@ export async function POST(req: NextRequest) {
     !title_ru?.trim() ||
     !title_en?.trim() ||
     !difficulty?.trim() ||
-    (!isFree && (!Number.isFinite(price) || price <= 0))
+    (!isFree && (!Number.isFinite(price) || price <= 0)) ||
+    !characteristics
   ) {
     return NextResponse.json({ error: 'Заполните обязательные поля' }, { status: 400 });
   }
@@ -96,6 +105,7 @@ export async function POST(req: NextRequest) {
       files: {},
       purchase_count: 0,
       is_published: false,
+      characteristics,
     })
     .select('id')
     .single();

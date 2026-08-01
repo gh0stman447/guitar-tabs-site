@@ -1,4 +1,4 @@
-import { Pool, QueryResult } from 'pg';
+import { Pool, PoolClient, QueryResult } from 'pg';
 
 // PostgreSQL connection pool with increased timeouts for remote connections
 const pool = new Pool({
@@ -36,7 +36,7 @@ export async function query(sql: string, values?: unknown[], retryCount = 0): Pr
 }
 
 // Helper for transactions
-export async function transaction<T>(fn: (client: unknown) => Promise<T>): Promise<T> {
+export async function transaction<T>(fn: (client: PoolClient) => Promise<T>): Promise<T> {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');

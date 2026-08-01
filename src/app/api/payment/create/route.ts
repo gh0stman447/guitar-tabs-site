@@ -4,6 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 import { TABLE_TABS, TABLE_CUSTOMERS, TABLE_PURCHASES, LOCAL_DEV_URL } from '@/lib/constants';
 import { query } from '@/lib/db';
 import { createRobokassaHash, getRobokassaConfig } from '@/lib/robokassa';
+import { getUserFromRequest, normalizeEmail } from '@/lib/customer-auth';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -38,7 +39,7 @@ function encodeReceipt(value: unknown) {
 export async function POST(req: NextRequest) {
   const { tab_id, tab_ids, firstname, email: rawEmail, newsletter, locale: rawLocale } =
     await req.json();
-  const email = rawEmail?.trim().toLowerCase();
+  const email = normalizeEmail(String(rawEmail ?? ''));
   const locale = rawLocale === 'en' ? 'en' : 'ru';
   const ids = [...new Set<string>(tab_ids ?? (tab_id ? [tab_id] : []))];
 
@@ -91,6 +92,19 @@ export async function POST(req: NextRequest) {
   if (customerError || !customer) {
     console.error('[payment/create] Customer error:', customerError);
     return NextResponse.json({ error: 'Ошибка создания покупателя' }, { status: 500 });
+  }
+
+  const authenticatedUser = await getUserFromRequest(req);
+  if (
+    authenticatedUser?.email &&
+    authenticatedUser.emailVerified &&
+    normalizeEmail(authenticatedUser.email) === email
+  ) {
+    await query(
+      `UPDATE customers SET user_id = $1
+       WHERE id = $2 AND (user_id IS NULL OR user_id = $1)`,
+      [authenticatedUser.id, customer.id],
+    );
   }
 
   const { data: purchase, error: purchaseError } = await supabaseAdmin

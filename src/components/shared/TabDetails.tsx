@@ -32,6 +32,7 @@ import { useCart } from '@/context/CartContext';
 import { useCartAnimation } from '@/context/CartAnimationContext';
 import { usePreviewBlock } from '@/context/PreviewBlockContext';
 import type { Tab } from '@/types';
+import { TabCharacteristics } from '@/components/shared/TabCharacteristics';
 
 const COPY = {
   ru: {
@@ -370,6 +371,12 @@ export function TabDetails({ tab, locale }: { tab: Tab; locale: string }) {
                   </span>
                 )}
               </div>
+
+              {tab.characteristics && (
+                <div className='mt-4'>
+                  <TabCharacteristics value={tab.characteristics} locale={locale} />
+                </div>
+              )}
 
               <div className='mt-7 rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-sm'>
                 <p className='text-xs font-medium uppercase tracking-widest text-muted-foreground'>

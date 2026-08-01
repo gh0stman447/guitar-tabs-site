@@ -4,17 +4,26 @@ import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslations, useLocale } from 'next-intl';
 import { useIsTouch } from '@/hooks/useIsTouch';
-import { Search, ChevronUp, ChevronDown, ArrowUpDown, Gift, X } from 'lucide-react';
-import type { Tab } from '@/types';
+import { Search, ChevronUp, ChevronDown, ArrowUpDown, Gift, Guitar, X } from 'lucide-react';
+import { TAB_TECHNIQUES, TAB_TUNINGS, type Tab, type TabTechnique, type TabTuning } from '@/types';
 import { TabCard, TabCardSkeleton } from '@/components/shared/TabCard';
 import { supabase } from '@/lib/supabase';
 import { usePreviewBlock } from '@/context/PreviewBlockContext';
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { normalizeTabCharacteristics } from '@/lib/tab-characteristics';
 import {
   TABLE_TABS,
   DISCOUNT_TIER_1_MIN,
@@ -24,6 +33,8 @@ import {
 } from '@/lib/constants';
 
 type SortKey = 'title' | 'difficulty' | 'price' | 'popular' | 'date';
+type TuningFilter = 'all' | TabTuning;
+type CapoFilter = 'all' | 'without' | 'with';
 
 export function TabsSection() {
   const t = useTranslations('tabs');
@@ -37,6 +48,9 @@ export function TabsSection() {
   const [sort, setSort] = useState<SortKey>('popular');
   const [asc, setAsc] = useState(false);
   const [freeOnly, setFreeOnly] = useState(false);
+  const [techniques, setTechniques] = useState<TabTechnique[]>([]);
+  const [tuning, setTuning] = useState<TuningFilter>('all');
+  const [capo, setCapo] = useState<CapoFilter>('all');
   const { flippingTabId } = usePreviewBlock();
 
   useEffect(() => {
@@ -59,13 +73,22 @@ export function TabsSection() {
   ];
   const activeSortLabel = SORT_OPTIONS.find((option) => option.value === sort)?.label;
 
-  const isDirty = search !== '' || sort !== 'popular' || asc || freeOnly;
+  const characteristicsFilterCount = techniques.length + Number(tuning !== 'all') + Number(capo !== 'all');
+  const isDirty =
+    search !== '' ||
+    sort !== 'popular' ||
+    asc ||
+    freeOnly ||
+    characteristicsFilterCount > 0;
 
   function reset() {
     setSearch('');
     setSort('popular');
     setAsc(false);
     setFreeOnly(false);
+    setTechniques([]);
+    setTuning('all');
+    setCapo('all');
   }
 
   function handleSort(key: SortKey) {
@@ -95,7 +118,21 @@ export function TabsSection() {
           (tab) => tab.title_ru.toLowerCase().includes(q) || tab.title_en.toLowerCase().includes(q),
         )
       : [...tabs];
-    const result = freeOnly ? matchingSearch.filter((tab) => tab.price <= 0) : matchingSearch;
+    const matchingPrice = freeOnly
+      ? matchingSearch.filter((tab) => tab.price <= 0)
+      : matchingSearch;
+    const result = matchingPrice.filter((tab) => {
+      const characteristics = normalizeTabCharacteristics(tab.characteristics);
+      const matchesTechniques = techniques.every((technique) =>
+        characteristics.techniques.includes(technique),
+      );
+      const matchesTuning = tuning === 'all' || characteristics.tuning === tuning;
+      const matchesCapo =
+        capo === 'all' ||
+        (capo === 'without' && characteristics.capo === 0) ||
+        (capo === 'with' && characteristics.capo > 0);
+      return matchesTechniques && matchesTuning && matchesCapo;
+    });
     const dir = asc ? 1 : -1;
 
     result.sort((a, b) => {
@@ -116,7 +153,20 @@ export function TabsSection() {
     });
 
     return result;
-  }, [tabs, search, sort, asc, freeOnly]);
+  }, [tabs, search, sort, asc, freeOnly, techniques, tuning, capo]);
+
+  const techniqueLabels: Record<TabTechnique, string> = {
+    barre: t('techniqueBarre'),
+    percussion: t('techniquePercussion'),
+    harmonics: t('techniqueHarmonics'),
+    tapping: t('techniqueTapping'),
+  };
+  const tuningLabels: Record<TabTuning, string> = {
+    standard: t('tuningStandard'),
+    drop_d: 'Drop D',
+    nonstandard: t('tuningNonstandard'),
+    custom: t('tuningCustom'),
+  };
 
   const paidTabsCount = tabs.filter((tab) => tab.price > 0).length;
 
@@ -167,6 +217,11 @@ export function TabsSection() {
                   <span>
                     {t('sortLabel')}: {activeSortLabel}
                   </span>
+                  {characteristicsFilterCount > 0 && (
+                    <span className='flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] text-primary-foreground'>
+                      {characteristicsFilterCount}
+                    </span>
+                  )}
                   {asc ? (
                     <ChevronUp className='h-3 w-3 text-muted-foreground' />
                   ) : (
@@ -174,7 +229,10 @@ export function TabsSection() {
                   )}
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align='start' className='min-w-52'>
+              <DropdownMenuContent align='start' className='min-w-60'>
+                <DropdownMenuLabel className='text-xs text-muted-foreground'>
+                  {t('sortLabel')}
+                </DropdownMenuLabel>
                 {SORT_OPTIONS.map((option) => {
                   const active = sort === option.value;
                   return (
@@ -197,6 +255,94 @@ export function TabsSection() {
                     </DropdownMenuItem>
                   );
                 })}
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className='text-xs text-muted-foreground'>
+                  {t('characteristics')}
+                </DropdownMenuLabel>
+
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className='focus:bg-muted/70 data-[state=open]:bg-muted/70 data-[state=open]:text-foreground'>
+                    {t('techniques')}
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className='min-w-48 border-border bg-background text-foreground'>
+                    {TAB_TECHNIQUES.map((technique) => (
+                      <DropdownMenuCheckboxItem
+                        key={technique}
+                        checked={techniques.includes(technique)}
+                        className='focus:bg-muted/70 focus:text-foreground'
+                        onSelect={(event) => event.preventDefault()}
+                        onCheckedChange={(checked) =>
+                          setTechniques((current) =>
+                            checked
+                              ? [...current, technique]
+                              : current.filter((item) => item !== technique),
+                          )
+                        }
+                      >
+                        {techniqueLabels[technique]}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className='focus:bg-muted/70 data-[state=open]:bg-muted/70 data-[state=open]:text-foreground'>
+                    {t('tuning')}
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className='min-w-52 border-border bg-background text-foreground'>
+                    <DropdownMenuRadioGroup
+                      value={tuning}
+                      onValueChange={(value) => setTuning(value as TuningFilter)}
+                    >
+                      <DropdownMenuRadioItem
+                        value='all'
+                        className='focus:bg-muted/70 focus:text-foreground'
+                      >
+                        {t('all')}
+                      </DropdownMenuRadioItem>
+                      {TAB_TUNINGS.filter((value) => value !== 'custom').map((value) => (
+                        <DropdownMenuRadioItem
+                          key={value}
+                          value={value}
+                          className='focus:bg-muted/70 focus:text-foreground'
+                        >
+                          {tuningLabels[value]}
+                        </DropdownMenuRadioItem>
+                      ))}
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className='focus:bg-muted/70 data-[state=open]:bg-muted/70 data-[state=open]:text-foreground'>
+                    {t('capo')}
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className='max-h-72 min-w-48 overflow-y-auto border-border bg-background text-foreground'>
+                    <DropdownMenuRadioGroup
+                      value={capo}
+                      onValueChange={(value) => setCapo(value as CapoFilter)}
+                    >
+                      <DropdownMenuRadioItem
+                        value='all'
+                        className='focus:bg-muted/70 focus:text-foreground'
+                      >
+                        {t('all')}
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem
+                        value='without'
+                        className='focus:bg-muted/70 focus:text-foreground'
+                      >
+                        {t('withoutCapo')}
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem
+                        value='with'
+                        className='focus:bg-muted/70 focus:text-foreground'
+                      >
+                        {t('withCapo')}
+                      </DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
               </DropdownMenuContent>
             </DropdownMenu>
 
@@ -251,9 +397,9 @@ export function TabsSection() {
         )}
 
         {/* Results count */}
-        {(search || freeOnly) && (
+        {(search || freeOnly || characteristicsFilterCount > 0) && filtered.length > 0 && (
           <p className='text-sm text-muted-foreground mb-6'>
-            {filtered.length === 0 ? t('notFound') : t('found', { count: filtered.length })}
+            {t('found', { count: filtered.length })}
           </p>
         )}
 
@@ -264,9 +410,36 @@ export function TabsSection() {
             ))}
           </div>
         ) : tabs.length === 0 ? (
-          <p className='text-center text-muted-foreground py-12'>{t('empty')}</p>
+          <div className='flex flex-col items-center py-14 text-center sm:py-20'>
+            <div className='relative mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary'>
+              <span className='absolute -right-1 top-1 h-2 w-2 rounded-full bg-primary/35' />
+              <span className='absolute -right-3 top-5 h-1.5 w-1.5 rounded-full bg-primary/20' />
+              <Guitar className='h-7 w-7 -rotate-12' strokeWidth={1.7} />
+            </div>
+            <h3 className='text-xl font-semibold text-foreground'>{t('empty')}</h3>
+            <p className='mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground'>
+              {t('emptyHint')}
+            </p>
+          </div>
         ) : filtered.length === 0 ? (
-          <p className='text-center text-muted-foreground py-12'>{t('notFound')}</p>
+          <div className='flex flex-col items-center py-14 text-center sm:py-20'>
+            <div className='relative mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary'>
+              <span className='absolute -right-1 top-1 h-2 w-2 rounded-full bg-primary/35' />
+              <span className='absolute -right-3 top-5 h-1.5 w-1.5 rounded-full bg-primary/20' />
+              <Guitar className='h-7 w-7 -rotate-12' strokeWidth={1.7} />
+            </div>
+            <h3 className='text-xl font-semibold text-foreground'>{t('notFound')}</h3>
+            <p className='mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground'>
+              {t('notFoundHint')}
+            </p>
+            <button
+              type='button'
+              onClick={reset}
+              className='mt-5 rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted/70'
+            >
+              {t('resetSearch')}
+            </button>
+          </div>
         ) : isTouch ? (
           <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 xl:gap-6'>
             {filtered.map((tab) => (

@@ -42,11 +42,28 @@
     "sortTitle": "Title",
     "sortDifficulty": "Difficulty",
     "sortPrice": "Price",
+    "characteristics": "Features",
+    "techniques": "Techniques",
+    "techniqueBarre": "Barre",
+    "techniquePercussion": "Percussion",
+    "techniqueHarmonics": "Harmonics",
+    "techniqueTapping": "Tapping",
+    "tuning": "Tuning",
+    "tuningStandard": "Standard tuning",
+    "tuningNonstandard": "Alternate tuning",
+    "tuningCustom": "Custom tuning",
+    "capo": "Capo",
+    "withoutCapo": "No capo",
+    "withCapo": "With capo",
+    "all": "All options",
     "freeOnly": "Free",
     "reset": "Reset",
     "found": "Found: {count}",
-    "notFound": "Nothing found",
-    "empty": "No tabs yet"
+    "notFound": "This melody hasn't been found yet",
+    "notFoundHint": "Try changing your search or removing some filters — the right tab may be just a note away.",
+    "resetSearch": "Reset and try again",
+    "empty": "The first melodies are coming soon",
+    "emptyHint": "New original arrangements are already in the works and will appear here soon."
   },
   "bestseller": {
     "badge": "Popular",
@@ -61,7 +78,6 @@
     "description": "Have questions? Write — I'll reply quickly"
   },
   "footer": {
-    "subtitle": "Guitar tabs",
     "rights": "All rights reserved",
     "details": "Oleg Romanovich Malygin (self-employed) | TIN: 502007772518 | Moscow",
     "legal": "Terms & Requisites",

@@ -1,12 +1,15 @@
 @import 'tailwindcss';
 
+/* Keep Tailwind dark utilities in sync with next-themes instead of the OS theme. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 html {
   scroll-behavior: smooth;
 }
 
 :root {
   /* Anthropic-inspired warm neutrals - Light theme */
-  --background: 36 26% 96%;
+  --background: 42 32% 97%;
   --foreground: 24 10% 15%;
 
   /* Light cards sit clearly above the warm page canvas */
@@ -40,9 +43,9 @@ html {
   --ring: 15 62% 57%;
   --header-hover: 15 62% 52%;
 
-  /* Alternating section surfaces */
-  --section-soft: 34 25% 92%;
-  --section-warm: 23 35% 93%;
+  /* Light ivory section surfaces without a gray or pink cast */
+  --section-soft: 38 30% 95%;
+  --section-warm: 30 38% 95%;
 
   --radius: 0.75rem;
 
@@ -221,7 +224,11 @@ html {
 body {
   background: hsl(var(--background));
   color: hsl(var(--foreground));
-  font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
+  font-family:
+    var(--font-inter),
+    system-ui,
+    -apple-system,
+    sans-serif;
   overflow-x: hidden;
   font-size: 16px;
   line-height: 1.65;
@@ -242,7 +249,7 @@ body {
 
 .section-soft,
 .section-warm {
-  border-block: 1px solid hsl(var(--border) / 0.72);
+  border-block: 1px solid hsl(var(--border) / 0.45);
 }
 
 .section-soft {
@@ -251,13 +258,17 @@ body {
 
 .section-warm {
   background:
-    radial-gradient(circle at 15% 0%, hsl(var(--primary) / 0.07), transparent 32rem),
+    radial-gradient(circle at 15% 0%, hsl(var(--accent) / 0.08), transparent 32rem),
     hsl(var(--section-warm));
 }
 
 .dark .section-soft,
 .dark .section-warm {
   border-color: hsl(var(--border) / 0.8);
+}
+
+.dark .media-format-circle {
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.15);
 }
 
 /*
@@ -304,32 +315,66 @@ html[data-theme-transition='active'] *::after {
 
 @layer base {
   /* Базовые размеры применяются только когда компонент не задаёт свой размер. */
-  h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family:
+      var(--font-inter),
+      system-ui,
+      -apple-system,
+      sans-serif;
     font-weight: 600;
     line-height: 1.2;
     letter-spacing: -0.022em;
   }
 
   /* Mobile: < 640px */
-  h1 { font-size: 2.25rem; font-weight: 700; }
-  h2 { font-size: 1.625rem; }
-  h3 { font-size: 1.25rem; }
+  h1 {
+    font-size: 2.25rem;
+    font-weight: 700;
+  }
+  h2 {
+    font-size: 1.625rem;
+  }
+  h3 {
+    font-size: 1.25rem;
+  }
 
   /* Tablet: 640px - 1024px */
   @media (min-width: 640px) and (max-width: 1023px) {
-    body { font-size: 16px; line-height: 1.7; }
-    h1 { font-size: 2.75rem; }
-    h2 { font-size: 1.875rem; }
-    h3 { font-size: 1.375rem; }
+    body {
+      font-size: 16px;
+      line-height: 1.7;
+    }
+    h1 {
+      font-size: 2.75rem;
+    }
+    h2 {
+      font-size: 1.875rem;
+    }
+    h3 {
+      font-size: 1.375rem;
+    }
   }
 
   /* Desktop: >= 1024px */
   @media (min-width: 1024px) {
-    body { font-size: 17px; line-height: 1.7; }
-    h1 { font-size: 3.5rem; }
-    h2 { font-size: 2.25rem; }
-    h3 { font-size: 1.5rem; }
+    body {
+      font-size: 17px;
+      line-height: 1.7;
+    }
+    h1 {
+      font-size: 3.5rem;
+    }
+    h2 {
+      font-size: 2.25rem;
+    }
+    h3 {
+      font-size: 1.5rem;
+    }
   }
 }
 

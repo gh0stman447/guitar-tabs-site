@@ -20,6 +20,9 @@
 # production
 /build
 
+# uploaded audio files
+/public/audio/
+
 # misc
 .DS_Store
 *.pem

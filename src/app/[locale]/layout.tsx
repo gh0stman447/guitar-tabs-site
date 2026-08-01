@@ -14,7 +14,7 @@ import { FloatingCart } from '@/components/shared/FloatingCart';
 import { NoteParticles } from '@/components/shared/NoteParticles';
 import { ThemeTransition } from '@/components/shared/ThemeTransition';
 import { Header } from '@/components/shared/Header';
-import { Caveat, Inter } from 'next/font/google';
+import { Caveat, Inter, Kaushan_Script } from 'next/font/google';
 import '../globals.css';
 
 const inter = Inter({
@@ -28,6 +28,13 @@ const caveat = Caveat({
   subsets: ['latin', 'cyrillic'],
   weight: ['600', '700'],
   variable: '--font-caveat',
+  display: 'swap',
+});
+
+const brandFont = Kaushan_Script({
+  subsets: ['latin'],
+  weight: '400',
+  variable: '--font-brand',
   display: 'swap',
 });
 
@@ -160,7 +167,7 @@ export default async function LocaleLayout({
         )}
         {/* /Yandex Metrika counter */}
       </head>
-      <body className={`antialiased ${inter.variable} ${caveat.variable}`}>
+      <body className={`antialiased ${inter.variable} ${caveat.variable} ${brandFont.variable}`}>
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider attribute='class' defaultTheme='dark'>
             <AdminProvider>

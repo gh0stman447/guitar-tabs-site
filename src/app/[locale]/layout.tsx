@@ -9,6 +9,7 @@ import { CartProvider } from '@/context/CartContext';
 import { CartAnimationProvider } from '@/context/CartAnimationContext';
 import { PreviewBlockProvider } from '@/context/PreviewBlockContext';
 import { AdminProvider } from '@/context/AdminContext';
+import { UserAuthProvider } from '@/context/UserAuthContext';
 import { ThemedToaster } from '@/components/shared/ThemedToaster';
 import { FloatingCart } from '@/components/shared/FloatingCart';
 import { NoteParticles } from '@/components/shared/NoteParticles';
@@ -170,21 +171,23 @@ export default async function LocaleLayout({
       <body className={`antialiased ${inter.variable} ${caveat.variable} ${brandFont.variable}`}>
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider attribute='class' defaultTheme='dark'>
-            <AdminProvider>
-              <CartProvider>
-                <CartAnimationProvider>
-                  <PreviewBlockProvider>
-                    <ThemeTransition />
-                    <ScrollProgress />
-                    <Header />
-                    {children}
-                    <FloatingCart />
-                    <NoteParticles />
-                    <ThemedToaster />
-                  </PreviewBlockProvider>
-                </CartAnimationProvider>
-              </CartProvider>
-            </AdminProvider>
+            <UserAuthProvider>
+              <AdminProvider>
+                <CartProvider>
+                  <CartAnimationProvider>
+                    <PreviewBlockProvider>
+                      <ThemeTransition />
+                      <ScrollProgress />
+                      <Header />
+                      {children}
+                      <FloatingCart />
+                      <NoteParticles />
+                      <ThemedToaster />
+                    </PreviewBlockProvider>
+                  </CartAnimationProvider>
+                </CartProvider>
+              </AdminProvider>
+            </UserAuthProvider>
           </ThemeProvider>
         </NextIntlClientProvider>
       </body>

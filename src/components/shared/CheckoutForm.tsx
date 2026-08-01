@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { reachGoal } from '@/lib/yandex-metrika';
+import { useUserAuth } from '@/context/UserAuthContext';
 
 const EMAIL_RE = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
 
@@ -31,9 +32,10 @@ interface CheckoutFormProps {
 
 export function CheckoutForm({ locale, price, onSubmit }: CheckoutFormProps) {
   const ru = locale !== 'en';
+  const { user } = useUserAuth();
 
-  const [firstname, setFirstname] = useState('');
-  const [email, setEmail] = useState('');
+  const [firstname, setFirstname] = useState(() => user?.name ?? '');
+  const [email, setEmail] = useState(() => user?.email ?? '');
   const [agreed, setAgreed] = useState(false);
   const [newsletter, setNewsletter] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -75,7 +77,7 @@ export function CheckoutForm({ locale, price, onSubmit }: CheckoutFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className='flex flex-col gap-4'>
+    <form onSubmit={handleSubmit} noValidate className='flex flex-col gap-4'>
       <div className='flex flex-col gap-1.5'>
         <label htmlFor='checkout-firstname' className='text-sm font-medium'>
           {ru ? 'Имя' : 'First name'}
@@ -142,7 +144,7 @@ export function CheckoutForm({ locale, price, onSubmit }: CheckoutFormProps) {
                 >
                   публичной оферты
                 </Link>{' '}
-                и{' '}
+                и подтверждаю, что ознакомился с{' '}
                 <Link
                   href={`/${locale}/privacy`}
                   target='_blank'
@@ -161,7 +163,7 @@ export function CheckoutForm({ locale, price, onSubmit }: CheckoutFormProps) {
                 >
                   terms of the public offer
                 </Link>{' '}
-                and{' '}
+                and confirm that I have read the{' '}
                 <Link
                   href={`/${locale}/privacy`}
                   target='_blank'

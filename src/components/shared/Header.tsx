@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Menu, ShoppingCart, X, LogOut, Settings } from 'lucide-react';
+import { CircleUserRound, Menu, ShoppingCart, X, LogOut, Settings, UserRound } from 'lucide-react';
 import { Tooltip as ReactTooltip } from 'react-tooltip';
 import {
   DropdownMenu,
@@ -22,6 +22,7 @@ import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/s
 import { useIsTouch } from '@/hooks/useIsTouch';
 import { usePathname, useRouter } from '@/i18n/navigation';
 import { BrandLogo } from '@/components/shared/BrandLogo';
+import { useUserAuth } from '@/context/UserAuthContext';
 
 export function Header() {
   const t = useTranslations('nav');
@@ -34,6 +35,7 @@ export function Header() {
   const [cartOpen, setCartOpen] = useState(false);
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
   const { isAdmin, setIsAdmin } = useAdmin();
+  const { user, isLoading: isUserLoading, logout: logoutUser } = useUserAuth();
 
   function handleLogout() {
     fetch('/api/admin/logout', { method: 'POST' }).then(() => {
@@ -122,6 +124,58 @@ export function Header() {
             </nav>
 
             <div className='flex items-center gap-2'>
+              {!isUserLoading && !isTouch && (
+                user ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant='ghost'
+                        size='icon'
+                        aria-label={t('account')}
+                        data-tooltip-id='account-menu'
+                        data-tooltip-content={t('account')}
+                        className={headerButtonClass}
+                      >
+                        <CircleUserRound className='h-[1.125rem] w-[1.125rem]' />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align='end' className='w-52'>
+                      <DropdownMenuItem asChild>
+                        <Link href={`/${locale}/account`} className='cursor-pointer'>
+                          <CircleUserRound className='mr-2 h-4 w-4' />
+                          {t('account')}
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href={`/${locale}/account/settings`} className='cursor-pointer'>
+                          <Settings className='mr-2 h-4 w-4' />{t('settings')}
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className='cursor-pointer text-red-500'
+                        onClick={() => void logoutUser()}
+                      >
+                        <LogOut className='mr-2 h-4 w-4' />
+                        {t('logout')}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <Button asChild variant='ghost' className={cn(headerButtonClass, 'gap-2 px-3')}>
+                    <Link href={`/${locale}/auth`}><UserRound className='h-4 w-4' /><span className='hidden lg:inline'>{t('login')}</span></Link>
+                  </Button>
+                )
+              )}
+              {user && !isUserLoading && !isTouch && (
+                <ReactTooltip
+                  id='account-menu'
+                  place='bottom'
+                  opacity={1}
+                  delayShow={350}
+                  style={{ fontSize: 13 }}
+                />
+              )}
               {isAdmin && (
                 <DropdownMenu open={adminMenuOpen} onOpenChange={setAdminMenuOpen}>
                   <DropdownMenuTrigger asChild>
@@ -260,6 +314,33 @@ export function Header() {
                           {link.label}
                         </button>
                       ))}
+                      {!isUserLoading && (
+                        <Link
+                          href={user ? `/${locale}/account` : `/${locale}/auth`}
+                          onClick={() => setSheetOpen(false)}
+                          className='flex items-center gap-2 px-2 py-2.5 text-base font-medium text-foreground/80 transition-colors hover:text-foreground'
+                        >
+                          <UserRound className='h-4 w-4' />
+                          {user ? t('account') : t('login')}
+                        </Link>
+                      )}
+                      {user && (
+                        <Link
+                          href={`/${locale}/account/settings`}
+                          onClick={() => setSheetOpen(false)}
+                          className='flex items-center gap-2 px-2 py-2.5 text-base font-medium text-foreground/80 transition-colors hover:text-foreground'
+                        >
+                          <Settings className='h-4 w-4' /> {t('settings')}
+                        </Link>
+                      )}
+                      {user && (
+                        <button
+                          onClick={() => { void logoutUser(); setSheetOpen(false); }}
+                          className='flex items-center gap-2 px-2 py-2.5 text-left text-base font-medium text-red-500'
+                        >
+                          <LogOut className='h-4 w-4' /> {t('logout')}
+                        </button>
+                      )}
                     </nav>
 
                     {isAdmin && (

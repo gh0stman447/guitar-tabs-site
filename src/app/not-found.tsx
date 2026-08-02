@@ -1,125 +1,22 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function NotFound() {
   return (
     <html lang='ru'>
-      <body
-        style={{
-          margin: 0,
-          backgroundColor: 'var(--background, #09090b)',
-          fontFamily: 'sans-serif',
-        }}
-      >
-        <main
-          style={{
-            minHeight: '100vh',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '1rem',
-            position: 'relative',
-            overflow: 'hidden',
-          }}
-        >
-          {/* Background glow */}
-          <div
-            style={{
-              position: 'absolute',
-              top: '30%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: '600px',
-              height: '600px',
-              background: 'radial-gradient(circle, rgba(245,158,11,0.08) 0%, transparent 70%)',
-              pointerEvents: 'none',
-            }}
-          />
-
-          <div
-            style={{
-              maxWidth: '480px',
-              width: '100%',
-              textAlign: 'center',
-              position: 'relative',
-              zIndex: 1,
-            }}
-          >
-            {/* Big 404 */}
-            <div style={{ position: 'relative', marginBottom: '2rem' }}>
-              <p
-                style={{
-                  fontSize: 'clamp(120px, 25vw, 200px)',
-                  fontWeight: 900,
-                  lineHeight: 1,
-                  margin: 0,
-                  background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #92400e 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                  letterSpacing: '-0.05em',
-                  userSelect: 'none',
-                }}
-              >
-                404
-              </p>
-              {/* Guitar strings decoration */}
-              <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.15 }}>
-                {[12, 26, 40, 54, 68, 82].map((top) => (
-                  <div
-                    key={top}
-                    style={{
-                      position: 'absolute',
-                      top: `${top}%`,
-                      left: 0,
-                      right: 0,
-                      height: '1px',
-                      background: 'linear-gradient(90deg, transparent, #f59e0b, transparent)',
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <h1
-              style={{
-                fontSize: '1.5rem',
-                fontWeight: 700,
-                color: '#fafafa',
-                margin: '0 0 0.75rem',
-              }}
-            >
-              Страница не найдена
-            </h1>
-
-            <p
-              style={{
-                color: '#71717a',
-                fontSize: '0.95rem',
-                lineHeight: 1.6,
-                margin: '0 0 2rem',
-              }}
-            >
-              Такой страницы не существует — возможно, ссылка устарела или была удалена.
-            </p>
-
-            <Link href='/ru' className='not-found-btn'>
+      <body style={{ margin: 0, background: '#171513', color: '#f5f1ed', fontFamily: 'Inter, system-ui, sans-serif' }}>
+        <main style={{ position: 'relative', display: 'grid', minHeight: '100svh', placeItems: 'center', overflow: 'hidden', padding: '24px' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 28%, rgba(224, 112, 73, .16), transparent 34rem)' }} />
+          <section style={{ position: 'relative', width: 'min(100%, 560px)', overflow: 'hidden', border: '1px solid rgba(255,255,255,.1)', borderRadius: '32px', background: 'rgba(29,27,25,.86)', padding: 'clamp(28px, 6vw, 52px)', textAlign: 'center', boxShadow: '0 28px 90px rgba(0,0,0,.28)', backdropFilter: 'blur(18px)' }}>
+            <Image src='/generated/logo_.png' width={76} height={76} alt='OlegGuitar' style={{ width: 76, height: 76, objectFit: 'contain' }} />
+            <p style={{ margin: '14px 0 0', color: '#df7954', fontSize: 12, fontWeight: 700, letterSpacing: '.22em', textTransform: 'uppercase' }}>Струна потерялась</p>
+            <p style={{ margin: '4px 0 0', background: 'linear-gradient(135deg, #f0ae70, #dc704b)', backgroundClip: 'text', color: 'transparent', fontSize: 'clamp(82px, 24vw, 150px)', fontWeight: 800, letterSpacing: '-.08em', lineHeight: .95 }}>404</p>
+            <h1 style={{ margin: '14px 0 0', fontSize: 'clamp(26px, 6vw, 36px)', lineHeight: 1.15 }}>Такой страницы нет</h1>
+            <p style={{ margin: '14px auto 0', maxWidth: 420, color: '#aaa39d', fontSize: 15, lineHeight: 1.65 }}>Возможно, ссылка устарела. Вернитесь на главную — там музыка продолжается.</p>
+            <Link href='/ru' style={{ display: 'inline-flex', marginTop: 28, borderRadius: 8, background: '#dd704c', padding: '12px 24px', color: '#fff', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
               Вернуться на главную
             </Link>
-            <style>{`
-              .not-found-btn {
-                display: inline-block;
-                background-color: #f59e0b;
-                color: #fff;
-                padding: 0.625rem 2rem;
-                border-radius: 9999px;
-                font-weight: 600;
-                font-size: 0.9rem;
-                text-decoration: none;
-                transition: background-color 0.2s;
-              }
-              .not-found-btn:hover { background-color: #d97706; }
-            `}</style>
-          </div>
+          </section>
         </main>
       </body>
     </html>

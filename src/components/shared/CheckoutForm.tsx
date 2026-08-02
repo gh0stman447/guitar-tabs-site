@@ -133,7 +133,7 @@ export function CheckoutForm({ locale, price, onSubmit }: CheckoutFormProps) {
             onChange={(e) => setAgreed(e.target.checked)}
             className='mt-0.5 h-4 w-4 shrink-0 accent-amber-500 min-w-5'
           />
-          <span className='text-sm text-muted-foreground leading-relaxed'>
+          <span className='text-[10px] leading-relaxed text-muted-foreground'>
             {ru ? (
               <>
                 Я принимаю условия{' '}
@@ -175,7 +175,7 @@ export function CheckoutForm({ locale, price, onSubmit }: CheckoutFormProps) {
             )}
           </span>
         </label>
-        {errors.agreed && submitted && <p className='text-xs text-red-500'>{errors.agreed}</p>}
+        {errors.agreed && submitted && <p className='text-[10px] text-red-500'>{errors.agreed}</p>}
       </div>
 
       <div className='flex flex-col gap-1.5'>
@@ -191,7 +191,7 @@ export function CheckoutForm({ locale, price, onSubmit }: CheckoutFormProps) {
             onChange={(e) => setNewsletter(e.target.checked)}
             className='mt-0.5 h-4 w-4 shrink-0 accent-amber-500 min-w-5'
           />
-          <span className='text-sm text-muted-foreground leading-relaxed'>
+          <span className='text-[10px] leading-relaxed text-muted-foreground'>
             {ru
               ? 'Хочу получать новости о новых табах и скидках (необязательно)'
               : 'I want to receive news about new tabs and discounts (optional)'}

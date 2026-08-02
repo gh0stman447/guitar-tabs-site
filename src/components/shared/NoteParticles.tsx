@@ -71,10 +71,8 @@ export function NoteParticles() {
         p.el.style.opacity = String(p.opacity);
         return true;
       });
-      rafRef.current = requestAnimationFrame(animate);
+      rafRef.current = particles.current.length > 0 ? requestAnimationFrame(animate) : 0;
     };
-
-    rafRef.current = requestAnimationFrame(animate);
 
     let lastSpawn = 0;
     const onMouseMove = (e: MouseEvent) => {
@@ -95,6 +93,7 @@ export function NoteParticles() {
       lastPos.current = { x: e.clientX, y: e.clientY };
       lastSpawn = now;
       spawnParticle(e.clientX, e.clientY);
+      if (!rafRef.current) rafRef.current = requestAnimationFrame(animate);
     };
 
     window.addEventListener('mousemove', onMouseMove);

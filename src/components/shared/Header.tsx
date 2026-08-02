@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { CircleUserRound, Menu, ShoppingCart, X, LogOut, Settings, UserRound } from 'lucide-react';
 import { Tooltip as ReactTooltip } from 'react-tooltip';
 import {
@@ -13,16 +14,25 @@ import {
 import { Button } from '@/components/ui/button';
 import { useTranslations, useLocale } from 'next-intl';
 import { ThemeToggle } from './ThemeToggle';
-import { CartDrawer } from './CartDrawer';
 import { useCart } from '@/context/CartContext';
 import { cn } from '@/lib/utils';
-import { useLayoutEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { useAdmin } from '@/context/AdminContext';
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useIsTouch } from '@/hooks/useIsTouch';
 import { usePathname, useRouter } from '@/i18n/navigation';
 import { BrandLogo } from '@/components/shared/BrandLogo';
 import { useUserAuth } from '@/context/UserAuthContext';
+
+const CartDrawer = dynamic(
+  () => import('./CartDrawer').then((module) => module.CartDrawer),
+  { ssr: false },
+);
+
+const AuthDialog = dynamic(
+  () => import('@/components/auth/AuthDialog').then((module) => module.AuthDialog),
+  { ssr: false },
+);
 
 export function Header() {
   const t = useTranslations('nav');
@@ -33,6 +43,7 @@ export function Header() {
   const [hidden, setHidden] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
   const { isAdmin, setIsAdmin } = useAdmin();
   const { user, isLoading: isUserLoading, logout: logoutUser } = useUserAuth();
@@ -47,17 +58,51 @@ export function Header() {
   const isTouch = useIsTouch();
   const { count } = useCart();
 
+  useEffect(() => {
+    const query = new URLSearchParams(window.location.search);
+    if (query.get('auth') !== '1') return;
+    const frame = window.requestAnimationFrame(() => setAuthOpen(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+
+  function handleAuthOpenChange(open: boolean) {
+    setAuthOpen(open);
+    if (!open) {
+      const url = new URL(window.location.href);
+      if (url.searchParams.has('auth')) {
+        url.searchParams.delete('auth');
+        url.searchParams.delete('telegram');
+        window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+      }
+    }
+  }
+
+  function openAuth() {
+    setSheetOpen(false);
+    setAuthOpen(true);
+  }
+
   useLayoutEffect(() => {
     let lastY = window.scrollY;
+    let frame = 0;
     const onScroll = () => {
-      const y = window.scrollY;
-      setScrolled(y > 10);
-      setHidden(y > lastY && y > 80);
-      lastY = y;
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        const y = Math.max(window.scrollY, 0);
+        const delta = y - lastY;
+        setScrolled(y > 10);
+        if (y <= 40) setHidden(false);
+        else if (Math.abs(delta) >= 4) setHidden(delta > 0 && y > 80);
+        lastY = y;
+        frame = 0;
+      });
     };
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
   }, []);
 
   function switchLocale() {
@@ -93,7 +138,7 @@ export function Header() {
         data-no-particles
         style={{ paddingTop: 'calc(env(safe-area-inset-top) + 0.75rem)' }}
         className={cn(
-          'fixed top-0 left-0 right-0 z-50 px-3 sm:px-5 lg:px-6 transition-transform duration-300 ease-out',
+          'fixed top-0 left-0 right-0 z-50 transform-gpu will-change-transform px-3 sm:px-5 lg:px-6 transition-transform duration-200 ease-out sm:duration-300',
           hidden ? '-translate-y-full' : 'translate-y-0',
         )}
       >
@@ -124,9 +169,12 @@ export function Header() {
             </nav>
 
             <div className='flex items-center gap-2'>
-              {!isUserLoading && !isTouch && (
-                user ? (
-                  <DropdownMenu>
+              {isUserLoading ? (
+                <span className='hidden h-9 w-9 items-center justify-center text-muted-foreground/45 md:flex' aria-hidden='true'>
+                  <CircleUserRound className='h-[1.125rem] w-[1.125rem]' />
+                </span>
+              ) : user ? (
+                <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
                         variant='ghost'
@@ -134,38 +182,37 @@ export function Header() {
                         aria-label={t('account')}
                         data-tooltip-id='account-menu'
                         data-tooltip-content={t('account')}
-                        className={headerButtonClass}
+                        className={cn(headerButtonClass, 'hidden md:inline-flex')}
                       >
                         <CircleUserRound className='h-[1.125rem] w-[1.125rem]' />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align='end' className='w-52'>
+                    <DropdownMenuContent align='end' className='w-56 rounded-xl border-border/60 bg-background/95 p-1.5 shadow-xl backdrop-blur-xl'>
                       <DropdownMenuItem asChild>
-                        <Link href={`/${locale}/account`} className='cursor-pointer'>
+                        <Link href={`/${locale}/account`} prefetch={false} className='cursor-pointer rounded-lg px-3 py-2.5 focus:bg-muted/80 focus:text-foreground!'>
                           <CircleUserRound className='mr-2 h-4 w-4' />
                           {t('account')}
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link href={`/${locale}/account/settings`} className='cursor-pointer'>
+                        <Link href={`/${locale}/account/settings`} prefetch={false} className='cursor-pointer rounded-lg px-3 py-2.5 focus:bg-muted/80 focus:text-foreground!'>
                           <Settings className='mr-2 h-4 w-4' />{t('settings')}
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
-                        className='cursor-pointer text-red-500'
+                        className='cursor-pointer rounded-lg px-3 py-2.5 text-red-500 focus:bg-red-500/10 focus:text-red-500'
                         onClick={() => void logoutUser()}
                       >
                         <LogOut className='mr-2 h-4 w-4' />
                         {t('logout')}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
-                  </DropdownMenu>
-                ) : (
-                  <Button asChild variant='ghost' className={cn(headerButtonClass, 'gap-2 px-3')}>
-                    <Link href={`/${locale}/auth`}><UserRound className='h-4 w-4' /><span className='hidden lg:inline'>{t('login')}</span></Link>
-                  </Button>
-                )
+                </DropdownMenu>
+              ) : (
+                <Button type='button' variant='ghost' onClick={openAuth} className={cn(headerButtonClass, 'hidden gap-2 px-3 md:inline-flex')}>
+                  <UserRound className='h-4 w-4' /><span className='hidden lg:inline'>{t('login')}</span>
+                </Button>
               )}
               {user && !isUserLoading && !isTouch && (
                 <ReactTooltip
@@ -193,22 +240,22 @@ export function Header() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align='end' className='w-48'>
                     <DropdownMenuItem asChild>
-                      <Link href={`/${locale}/admin/published`} className='cursor-pointer'>
+                      <Link href={`/${locale}/admin/published`} prefetch={false} className='cursor-pointer'>
                         Опубликованные
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href={`/${locale}/admin/drafts`} className='cursor-pointer'>
+                      <Link href={`/${locale}/admin/drafts`} prefetch={false} className='cursor-pointer'>
                         Черновики
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href={`/${locale}/admin/create-tab`} className='cursor-pointer'>
+                      <Link href={`/${locale}/admin/create-tab`} prefetch={false} className='cursor-pointer'>
                         Добавить таб
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href={`/${locale}/admin/newsletter`} className='cursor-pointer'>
+                      <Link href={`/${locale}/admin/newsletter`} prefetch={false} className='cursor-pointer'>
                         Рассылка
                       </Link>
                     </DropdownMenuItem>
@@ -235,7 +282,7 @@ export function Header() {
                 >
                   <ShoppingCart className='h-4 w-4' />
                   {count > 0 && (
-                    <span className='absolute -top-1.5 -right-1.5 flex items-center justify-center w-4 h-4 rounded-full bg-white text-primary text-[10px] font-bold leading-none shadow-sm'>
+                    <span className='absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-md bg-foreground px-1 text-[10px] font-bold leading-none text-background shadow-sm'>
                       {count}
                     </span>
                   )}
@@ -314,15 +361,31 @@ export function Header() {
                           {link.label}
                         </button>
                       ))}
-                      {!isUserLoading && (
-                        <Link
-                          href={user ? `/${locale}/account` : `/${locale}/auth`}
-                          onClick={() => setSheetOpen(false)}
-                          className='flex items-center gap-2 px-2 py-2.5 text-base font-medium text-foreground/80 transition-colors hover:text-foreground'
-                        >
+                      {isUserLoading ? (
+                        <span className='flex items-center gap-2 px-2 py-2.5 text-base font-medium text-muted-foreground/55'>
                           <UserRound className='h-4 w-4' />
-                          {user ? t('account') : t('login')}
-                        </Link>
+                          {t('login')}
+                        </span>
+                      ) : (
+                        user ? (
+                          <Link
+                            href={`/${locale}/account`}
+                            onClick={() => setSheetOpen(false)}
+                            className='flex items-center gap-2 px-2 py-2.5 text-base font-medium text-foreground/80 transition-colors hover:text-foreground'
+                          >
+                            <UserRound className='h-4 w-4' />
+                            {t('account')}
+                          </Link>
+                        ) : (
+                          <button
+                            type='button'
+                            onClick={openAuth}
+                            className='flex cursor-pointer items-center gap-2 px-2 py-2.5 text-left text-base font-medium text-foreground/80 transition-colors hover:text-foreground'
+                          >
+                            <UserRound className='h-4 w-4' />
+                            {t('login')}
+                          </button>
+                        )
                       )}
                       {user && (
                         <Link
@@ -398,7 +461,8 @@ export function Header() {
           </div>
         </div>
       </header>
-      <CartDrawer open={cartOpen} onOpenChange={setCartOpen} locale={locale} />
+      {cartOpen && <CartDrawer open onOpenChange={setCartOpen} locale={locale} />}
+      {authOpen && <AuthDialog open onOpenChange={handleAuthOpenChange} />}
     </>
   );
 }

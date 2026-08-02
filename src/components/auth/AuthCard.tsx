@@ -19,7 +19,7 @@ import {
 type Mode = 'login' | 'register';
 type FieldErrors = Partial<Record<'name' | 'email' | 'password' | 'consent', string>>;
 
-export function AuthCard() {
+export function AuthCard({ onSuccess }: { onSuccess?: () => void }) {
   const t = useTranslations('auth');
   const locale = useLocale();
   const router = useRouter();
@@ -123,13 +123,9 @@ export function AuthCard() {
         setCanResend(payload.error === 'email_not_verified' || payload.error === 'email_exists');
         return;
       }
-      if (mode === 'register') {
-        await refresh();
-        router.replace('/account');
-      } else {
-        await refresh();
-        router.replace('/account');
-      }
+      await refresh();
+      if (onSuccess) onSuccess();
+      else router.replace('/account');
     } catch {
       setError(t('errors.generic'));
     } finally {
@@ -167,35 +163,35 @@ export function AuthCard() {
   }
 
   return (
-    <div className='w-full max-w-xl rounded-[2rem] border border-border/60 bg-card/85 p-5 shadow-[0_24px_80px_hsl(var(--foreground)/0.08)] backdrop-blur-xl sm:p-8'>
-      <div className='mb-7'>
+    <div className='w-full max-w-[30rem] rounded-[1.375rem] border border-border/70 bg-card px-3.5 py-2.5 shadow-[0_24px_80px_hsl(var(--foreground)/0.12)] sm:rounded-[1.75rem] sm:px-7 sm:py-3'>
+      <div className='mb-4 sm:mb-5'>
         <span className='text-xs font-semibold uppercase tracking-[0.22em] text-primary'>
           OlegGuitar
         </span>
-        <h1 className='mt-2 text-3xl font-bold sm:text-4xl'>{t('title')}</h1>
-        <p className='mt-2 text-sm leading-relaxed text-muted-foreground'>{t('description')}</p>
+        <h1 className='mt-1.5 text-[1.4rem] font-bold leading-tight sm:mt-2 sm:text-[2.125rem]'>{t('title')}</h1>
+        <p className='mt-1.5 text-[13px] leading-relaxed text-muted-foreground sm:mt-2 sm:text-sm'>{t('description')}</p>
       </div>
 
       {telegramEnabled ? (
         <>
-          <TelegramLoginButton variant='outline' className='h-12 w-full'>
+          <TelegramLoginButton variant='outline' className='h-11 w-full disabled:pointer-events-auto disabled:cursor-not-allowed'>
             <Send className='text-[#229ED9]' />{t('telegram')}
           </TelegramLoginButton>
-          <p className='mt-2 text-center text-xs leading-relaxed text-muted-foreground'>
+          <p className='mt-1.5 text-center text-[10px] leading-relaxed text-muted-foreground sm:mt-2'>
             {t('telegramConsentPrefix')}{' '}
-            <Link href='/privacy' target='_blank' className='underline underline-offset-2 hover:text-foreground'>
+            <Link href='/privacy' prefetch={false} target='_blank' className='cursor-pointer underline underline-offset-2 hover:text-foreground'>
               {t('privacy')}
             </Link>
           </p>
         </>
       ) : (
-        <Button type='button' variant='outline' className='h-12 w-full' disabled>
+        <Button type='button' variant='outline' className='h-11 w-full disabled:pointer-events-auto disabled:cursor-not-allowed' disabled>
           <Send className='text-[#229ED9]' />{t('telegramSoon')}
         </Button>
       )}
       {telegramStatus === 'failed' && <p className='mt-3 text-sm text-destructive'>{t('errors.telegramFailed')}</p>}
 
-      <div className='my-6 flex items-center gap-4 text-xs uppercase tracking-widest text-muted-foreground'>
+      <div className='my-4 flex items-center gap-3 text-[11px] uppercase tracking-widest text-muted-foreground sm:my-5 sm:gap-4 sm:text-xs'>
         <span className='h-px flex-1 bg-border' />
         {t('orEmail')}
         <span className='h-px flex-1 bg-border' />
@@ -208,7 +204,7 @@ export function AuthCard() {
             type='button'
             onClick={() => changeMode(item)}
             className={cn(
-              'h-10 rounded-lg text-sm font-medium transition-colors',
+              'h-10 cursor-pointer rounded-lg text-sm font-medium transition-colors',
               mode === item
                 ? 'bg-background text-foreground shadow-sm'
                 : 'text-muted-foreground hover:text-foreground',
@@ -219,7 +215,7 @@ export function AuthCard() {
         ))}
       </div>
 
-      <form onSubmit={submit} noValidate className='mt-6 space-y-4'>
+      <form onSubmit={submit} noValidate className='mt-4 space-y-3 sm:mt-5 sm:space-y-3.5'>
         {mode === 'register' && (
           <Field label={t('name')} error={fieldErrors.name}>
             <input
@@ -235,14 +231,18 @@ export function AuthCard() {
           </Field>
         )}
         <Field label={t('email')} error={fieldErrors.email}>
-          <div className='relative'>
-            <Mail className='absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
+          <div className='group relative'>
+            <Mail className={cn('pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary', fieldErrors.email && 'text-destructive group-focus-within:text-destructive')} />
             <input
               type='email'
               value={email}
               onChange={(event) => { setEmail(event.target.value); clearFieldError('email'); }}
               onBlur={() => validateField('email')}
               autoComplete='email'
+              autoCapitalize='none'
+              autoCorrect='off'
+              spellCheck={false}
+              inputMode='email'
               placeholder='you@example.com'
               className={cn('auth-input pl-11', fieldErrors.email && 'border-destructive focus:border-destructive focus:ring-destructive/15')}
               aria-invalid={Boolean(fieldErrors.email)}
@@ -268,14 +268,14 @@ export function AuthCard() {
             <button
               type='button'
               onClick={() => setShowPassword((value) => !value)}
-              className='absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground'
+              className='absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground'
               aria-label={t('showPassword')}
             >
               {showPassword ? <EyeOff className='h-4 w-4' /> : <Eye className='h-4 w-4' />}
             </button>
           </div>
           {mode === 'register' && !fieldErrors.password && (
-            <p className='text-xs font-normal normal-case tracking-normal text-muted-foreground'>
+            <p className='text-[11px] font-normal normal-case leading-snug tracking-normal text-muted-foreground sm:text-xs'>
               {t('passwordHint')}
             </p>
           )}
@@ -283,19 +283,19 @@ export function AuthCard() {
 
         {mode === 'register' ? (
           <div>
-            <label className={cn('flex cursor-pointer items-start gap-3 rounded-xl border border-transparent p-2 text-sm leading-relaxed text-muted-foreground transition-colors', fieldErrors.consent && 'border-destructive/60 bg-destructive/5')}>
+            <label className={cn('flex cursor-pointer items-center gap-2.5 rounded-xl border border-transparent p-1.5 text-[10px] leading-relaxed text-muted-foreground transition-colors sm:gap-3 sm:p-2', fieldErrors.consent && 'border-destructive/60 bg-destructive/5')}>
               <input
                 type='checkbox'
                 checked={consent}
                 onChange={(event) => { setConsent(event.target.checked); clearFieldError('consent'); }}
                 onBlur={() => validateField('consent')}
-                className='mt-1 h-4 w-4 accent-primary'
+                className='h-4 w-4 shrink-0 cursor-pointer accent-primary'
                 aria-invalid={Boolean(fieldErrors.consent)}
                 required
               />
               <span>
                 {t('consentPrefix')}{' '}
-                <Link href='/privacy' target='_blank' className='text-primary underline-offset-4 hover:underline'>
+                <Link href='/privacy' prefetch={false} target='_blank' className='cursor-pointer text-primary underline-offset-4 hover:underline'>
                   {t('privacy')}
                 </Link>
               </span>
@@ -304,7 +304,7 @@ export function AuthCard() {
           </div>
         ) : (
           <div className='text-right'>
-            <Link href='/forgot-password' className='text-sm text-primary hover:underline'>
+            <Link href='/forgot-password' prefetch={false} className='cursor-pointer text-sm text-primary hover:underline'>
               {t('forgotPassword')}
             </Link>
           </div>
@@ -312,13 +312,13 @@ export function AuthCard() {
 
         {error && <p className='rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive'>{error}</p>}
         {canResend && (
-          <button type='button' onClick={() => void resendVerification()} className='text-sm text-primary hover:underline'>
+          <button type='button' onClick={() => void resendVerification()} className='cursor-pointer text-sm text-primary hover:underline'>
             {t('resendVerification')}
           </button>
         )}
         {message && <p className='rounded-xl bg-primary/10 px-4 py-3 text-sm text-primary'>{message}</p>}
 
-        <Button type='submit' size='lg' className='h-12 w-full' disabled={isSubmitting || !hasRequiredValues}>
+        <Button type='submit' size='lg' className='h-11 w-full disabled:pointer-events-auto disabled:cursor-not-allowed' disabled={isSubmitting || !hasRequiredValues}>
           {isSubmitting && <LoaderCircle className='animate-spin' />}
           {mode === 'login' ? t('submitLogin') : t('submitRegister')}
         </Button>
@@ -329,7 +329,7 @@ export function AuthCard() {
 
 function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (
-    <label className='block space-y-2'>
+    <label className='block space-y-1.5 sm:space-y-2'>
       <span className='text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground'>
         {label}
       </span>

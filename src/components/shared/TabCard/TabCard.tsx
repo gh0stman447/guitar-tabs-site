@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { Tooltip as ReactTooltip } from 'react-tooltip';
 import { Check, Download, Music, ShoppingBag, ShoppingCart, Trash2 } from 'lucide-react';
@@ -10,12 +11,16 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { MarqueeText } from '@/components/shared/MarqueeText';
-import { BuyDialog } from '@/components/shared/BuyDialog';
 import { FreeDownloadMenu } from '@/components/shared/FreeDownloadMenu';
 import { useCart } from '@/context/CartContext';
 import { useCartAnimation } from '@/context/CartAnimationContext';
 import { useIsTouch } from '@/hooks/useIsTouch';
 import type { Tab } from '@/types';
+
+const BuyDialog = dynamic(
+  () => import('@/components/shared/BuyDialog').then((module) => module.BuyDialog),
+  { ssr: false },
+);
 
 function getDifficultyColor(difficulty: string) {
   const num = parseInt(difficulty);
@@ -369,7 +374,7 @@ export function TabCard({
                     variant='outline'
                     className='w-full rounded-full bg-transparent hover:bg-muted/70'
                   >
-                    <Link href={`/${locale}/tabs/${tab.id}`}>
+                    <Link href={`/${locale}/tabs/${tab.id}`} prefetch={false}>
                       {locale === 'en' ? 'Details' : 'Подробнее'}
                     </Link>
                   </Button>
@@ -391,7 +396,7 @@ export function TabCard({
         </motion.div>
       </div>
 
-      {!adminActions && !isFree && (
+      {!adminActions && !isFree && buyOpen && (
         <BuyDialog tab={tab} locale={locale} open={buyOpen} onOpenChange={setBuyOpen} />
       )}
     </>

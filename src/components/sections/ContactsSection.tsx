@@ -73,16 +73,16 @@ function ContactCard({
       <Card
         className={`h-full transition-all ${border} ${shadow} ${!isTouch ? 'hover:shadow-lg' : ''}`}
       >
-        <CardContent className='flex flex-col items-center justify-center text-center p-6 h-full'>
+        <CardContent className='flex h-full flex-col items-center justify-center p-2 text-center sm:p-6'>
           <motion.div
-            className={`w-12 h-12 rounded-full border-2 ${border} flex items-center justify-center ${color}`}
+            className={`flex h-9 w-9 items-center justify-center rounded-full border sm:h-12 sm:w-12 sm:border-2 ${border} ${color}`}
             animate={controls}
             transition={{ duration: 0.5 }}
           >
             <Icon />
           </motion.div>
-          <h3 className='mt-4 text-[13px] font-medium text-muted-foreground'>{label}</h3>
-          <p className='mt-1 text-[13px] font-normal text-foreground/80'>{value}</p>
+          <h3 className='mt-2 text-[11px] font-medium text-muted-foreground sm:mt-4 sm:text-[13px]'>{label}</h3>
+          <p className='mt-0.5 max-w-full break-all text-[9px] font-normal leading-tight text-foreground/80 sm:mt-1 sm:text-[13px]'>{value}</p>
         </CardContent>
       </Card>
     </motion.div>
@@ -111,7 +111,7 @@ export function ContactsSection() {
           <p className='text-muted-foreground mt-3'>{t('description')}</p>
         </motion.div>
 
-        <div className='grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-2xl mx-auto'>
+        <div className='mx-auto grid max-w-2xl grid-cols-3 gap-2 sm:gap-6'>
           {contacts.map(({ icon: Icon, label, value, href, color, border, shadow }, i) => (
             <motion.div
               key={label}

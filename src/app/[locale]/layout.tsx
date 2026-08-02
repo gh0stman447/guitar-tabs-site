@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { ThemeProvider } from 'next-themes';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
+import { cookies } from 'next/headers';
+import Script from 'next/script';
 import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
 import { ScrollProgress } from '@/components/shared/ScrollProgress';
@@ -111,6 +113,7 @@ export default async function LocaleLayout({
   }
 
   const messages = await getMessages();
+  const hasUserSession = Boolean((await cookies()).get('user_session'));
 
   const websiteSchema = {
     '@context': 'https://schema.org',
@@ -140,8 +143,9 @@ export default async function LocaleLayout({
         {/* Yandex Metrika counter - only in production */}
         {process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_YANDEX_METRIKA_ID && (
           <>
-            <script
-              type='text/javascript'
+            <Script
+              id='yandex-metrika'
+              strategy='lazyOnload'
               dangerouslySetInnerHTML={{
                 __html: `
                   (function(m,e,t,r,i,k,a){
@@ -171,7 +175,7 @@ export default async function LocaleLayout({
       <body className={`antialiased ${inter.variable} ${caveat.variable} ${brandFont.variable}`}>
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider attribute='class' defaultTheme='dark'>
-            <UserAuthProvider>
+            <UserAuthProvider hasSessionCookie={hasUserSession}>
               <AdminProvider>
                 <CartProvider>
                   <CartAnimationProvider>

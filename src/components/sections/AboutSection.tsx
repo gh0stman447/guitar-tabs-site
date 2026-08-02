@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { useIsTouch } from '@/hooks/useIsTouch';
@@ -40,10 +41,12 @@ export function AboutSection() {
           >
             <div className='group relative isolate mx-auto flex h-[31rem] max-w-md items-end justify-center sm:h-[38rem]'>
               <div className='absolute left-1/2 top-1/2 h-[72%] w-[82%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/12 blur-3xl' />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 src='/generated/me.png'
                 alt='Олег Малыгин'
+                width={1066}
+                height={1600}
+                sizes='(max-width: 767px) calc(100vw - 2rem), 448px'
                 className='relative z-10 h-full w-full origin-center scale-[1.01] object-contain object-bottom pointer-events-none select-none transition-transform duration-700 ease-out will-change-transform [@media(hover:hover)]:group-hover:scale-[1.1] motion-reduce:transition-none motion-reduce:[@media(hover:hover)]:group-hover:scale-[1.01]'
                 draggable={false}
               />

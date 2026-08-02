@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslations, useLocale } from 'next-intl';
 import { useIsTouch } from '@/hooks/useIsTouch';
 import { Search, ChevronUp, ChevronDown, ArrowUpDown, Gift, Guitar, X } from 'lucide-react';
 import { TAB_TECHNIQUES, TAB_TUNINGS, type Tab, type TabTechnique, type TabTuning } from '@/types';
-import { TabCard, TabCardSkeleton } from '@/components/shared/TabCard';
-import { supabase } from '@/lib/supabase';
+import { TabCard } from '@/components/shared/TabCard';
 import { usePreviewBlock } from '@/context/PreviewBlockContext';
 import {
   DropdownMenu,
@@ -25,7 +24,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { normalizeTabCharacteristics } from '@/lib/tab-characteristics';
 import {
-  TABLE_TABS,
   DISCOUNT_TIER_1_MIN,
   DISCOUNT_TIER_1_RATE,
   DISCOUNT_TIER_2_MIN,
@@ -36,14 +34,13 @@ type SortKey = 'title' | 'difficulty' | 'price' | 'popular' | 'date';
 type TuningFilter = 'all' | TabTuning;
 type CapoFilter = 'all' | 'without' | 'with';
 
-export function TabsSection() {
+export function TabsSection({ initialTabs }: { initialTabs: Tab[] }) {
   const t = useTranslations('tabs');
   const locale = useLocale();
   const isTouch = useIsTouch();
   const headerDuration = isTouch ? 0.5 / 1.5 : 0.5;
   const cardDuration = 0.2;
-  const [tabs, setTabs] = useState<Tab[]>([]);
-  const [loading, setLoading] = useState(true);
+  const tabs = initialTabs;
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortKey>('popular');
   const [asc, setAsc] = useState(false);
@@ -52,17 +49,6 @@ export function TabsSection() {
   const [tuning, setTuning] = useState<TuningFilter>('all');
   const [capo, setCapo] = useState<CapoFilter>('all');
   const { flippingTabId } = usePreviewBlock();
-
-  useEffect(() => {
-    supabase
-      .from(TABLE_TABS)
-      .select('*')
-      .eq('is_published', true)
-      .then(({ data }) => {
-        if (data) setTabs(data as Tab[]);
-        setLoading(false);
-      });
-  }, []);
 
   const SORT_OPTIONS: { value: SortKey; label: string }[] = [
     { value: 'popular', label: t('sortPopular') },
@@ -379,15 +365,14 @@ export function TabsSection() {
         </motion.div>
 
         {/* Discount promo */}
-        {!loading && paidTabsCount >= DISCOUNT_TIER_2_MIN && (
+        {paidTabsCount >= DISCOUNT_TIER_2_MIN && (
           <p className='text-xs text-muted-foreground/60 mb-6'>
             {locale === 'en'
               ? `🎸 Buy ${DISCOUNT_TIER_1_MIN} tabs — get ${DISCOUNT_TIER_1_RATE * 100}% off, buy ${DISCOUNT_TIER_2_MIN} or more — get ${DISCOUNT_TIER_2_RATE * 100}% off`
               : `🎸 При покупке от ${DISCOUNT_TIER_1_MIN} табов — скидка ${DISCOUNT_TIER_1_RATE * 100}%, при покупке ${DISCOUNT_TIER_2_MIN} и более — скидка ${DISCOUNT_TIER_2_RATE * 100}%`}
           </p>
         )}
-        {!loading &&
-          paidTabsCount >= DISCOUNT_TIER_1_MIN &&
+        {paidTabsCount >= DISCOUNT_TIER_1_MIN &&
           paidTabsCount < DISCOUNT_TIER_2_MIN && (
           <p className='text-xs text-muted-foreground/60 mb-6'>
             {locale === 'en'
@@ -403,13 +388,7 @@ export function TabsSection() {
           </p>
         )}
 
-        {loading ? (
-          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 xl:gap-6'>
-            {Array.from({ length: 6 }).map((_, i) => (
-              <TabCardSkeleton key={i} showDetails />
-            ))}
-          </div>
-        ) : tabs.length === 0 ? (
+        {tabs.length === 0 ? (
           <div className='flex flex-col items-center py-14 text-center sm:py-20'>
             <div className='relative mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary'>
               <span className='absolute -right-1 top-1 h-2 w-2 rounded-full bg-primary/35' />

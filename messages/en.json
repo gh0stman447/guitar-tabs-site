@@ -55,6 +55,7 @@
       "emailSendFailed": "We couldn't send the email. Please try again later.",
       "authUnavailable": "Authentication is temporarily unavailable. Please try again later.",
       "telegramFailed": "Telegram sign-in failed. Please try again.",
+      "telegramUnavailable": "Telegram could not be loaded. Check your connection or enable a VPN and try again.",
       "generic": "Something went wrong. Please try again."
     }
   },

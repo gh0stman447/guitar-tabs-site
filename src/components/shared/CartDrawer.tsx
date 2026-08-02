@@ -154,7 +154,7 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
           <ShoppingCart className='h-5 w-5 text-primary' />
           <span className='font-semibold text-base'>{ru ? 'Корзина' : 'Cart'}</span>
           {items.length > 0 && (
-            <span className='rounded-full border border-black/10 bg-white px-2 py-0.5 text-xs font-semibold text-black shadow-sm'>
+            <span className='flex min-w-6 items-center justify-center rounded-md border border-foreground/10 bg-foreground px-1.5 py-0.5 text-xs font-semibold text-background shadow-sm'>
               {items.length}
             </span>
           )}

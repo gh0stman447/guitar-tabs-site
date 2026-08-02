@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useRef, useState } from 'react';
 import { motion, useAnimation } from 'framer-motion';
 import {
@@ -24,15 +25,25 @@ import {
 import { FaYoutube } from 'react-icons/fa';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { BuyDialog } from '@/components/shared/BuyDialog';
 import { FreeDownloadMenu } from '@/components/shared/FreeDownloadMenu';
-import { TabPreviewDialog } from '@/components/shared/TabPreviewDialog';
-import { AudioPlayerDialog } from '@/components/shared/AudioPlayerDialog';
 import { useCart } from '@/context/CartContext';
 import { useCartAnimation } from '@/context/CartAnimationContext';
 import { usePreviewBlock } from '@/context/PreviewBlockContext';
 import type { Tab } from '@/types';
 import { TabCharacteristics } from '@/components/shared/TabCharacteristics';
+
+const BuyDialog = dynamic(
+  () => import('@/components/shared/BuyDialog').then((module) => module.BuyDialog),
+  { ssr: false },
+);
+const TabPreviewDialog = dynamic(
+  () => import('@/components/shared/TabPreviewDialog').then((module) => module.TabPreviewDialog),
+  { ssr: false },
+);
+const AudioPlayerDialog = dynamic(
+  () => import('@/components/shared/AudioPlayerDialog').then((module) => module.AudioPlayerDialog),
+  { ssr: false },
+);
 
 const COPY = {
   ru: {
@@ -476,7 +487,7 @@ export function TabDetails({ tab, locale }: { tab: Tab; locale: string }) {
         </div>
       </main>
 
-      {!isFree && (
+      {!isFree && buyOpen && (
         <BuyDialog
           tab={tab}
           locale={locale}
@@ -484,7 +495,7 @@ export function TabDetails({ tab, locale }: { tab: Tab; locale: string }) {
           onOpenChange={setBuyOpen}
         />
       )}
-      {!isFree && (
+      {!isFree && previewOpen && (
         <TabPreviewDialog
           tab={tab}
           locale={locale}
@@ -493,12 +504,14 @@ export function TabDetails({ tab, locale }: { tab: Tab; locale: string }) {
           onBuy={() => setBuyOpen(true)}
         />
       )}
-      <AudioPlayerDialog
-        tab={tab}
-        locale={locale}
-        open={audioOpen}
-        onOpenChange={setAudioOpen}
-      />
+      {audioOpen && (
+        <AudioPlayerDialog
+          tab={tab}
+          locale={locale}
+          open
+          onOpenChange={setAudioOpen}
+        />
+      )}
     </>
   );
 }

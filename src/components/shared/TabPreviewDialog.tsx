@@ -250,9 +250,9 @@ export function TabPreviewDialog({
       >
         <DialogHeader
           style={{ backgroundColor: isDark ? undefined : 'rgba(68,77,86,0.1)' }}
-          className='px-6 pt-4 pb-4 flex flex-row items-center justify-between shrink-0 gap-2'
+          className='flex-row! items-center justify-between gap-2 px-6 pb-4 pt-4 text-left! shrink-0'
         >
-          <DialogTitle className='min-w-0 flex-1 truncate text-sm font-medium sm:text-base sm:font-semibold'>
+          <DialogTitle className='min-w-0 flex-1 truncate text-left! text-sm font-medium sm:text-base sm:font-semibold'>
             {title}
           </DialogTitle>
           {!isTouch ? (

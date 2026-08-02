@@ -1,14 +1,19 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { motion, useMotionValue, useSpring, useTransform, useAnimation } from 'framer-motion';
 import { ShoppingCart } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useCartAnimation } from '@/context/CartAnimationContext';
-import { CartDrawer } from './CartDrawer';
 import { useLocale } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { useIsTouch } from '@/hooks/useIsTouch';
+
+const CartDrawer = dynamic(
+  () => import('./CartDrawer').then((module) => module.CartDrawer),
+  { ssr: false },
+);
 
 function useAnimatedNumber(targetValue: number) {
   const motionValue = useMotionValue(targetValue);
@@ -112,7 +117,7 @@ export function FloatingCart() {
             transition={{ duration: 0.4 }}
           >
             <ShoppingCart className='h-5 w-5' />
-            <span className='absolute -top-2 -right-2 flex items-center justify-center w-4 h-4 rounded-full bg-white text-primary text-[10px] font-bold leading-none shadow-sm'>
+            <span className='absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-md bg-foreground px-1 text-[10px] font-bold leading-none text-background shadow-sm'>
               {count}
             </span>
           </motion.div>
@@ -130,7 +135,7 @@ export function FloatingCart() {
         </motion.button>
       </motion.div>
 
-      <CartDrawer open={open} onOpenChange={setOpen} locale={locale} />
+      {open && <CartDrawer open onOpenChange={setOpen} locale={locale} />}
     </>
   );
 }

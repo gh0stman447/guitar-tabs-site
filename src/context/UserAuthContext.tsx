@@ -19,9 +19,15 @@ interface UserAuthValue {
 
 const UserAuthContext = createContext<UserAuthValue | null>(null);
 
-export function UserAuthProvider({ children }: { children: React.ReactNode }) {
+export function UserAuthProvider({
+  children,
+  hasSessionCookie,
+}: {
+  children: React.ReactNode;
+  hasSessionCookie: boolean;
+}) {
   const [user, setUser] = useState<CurrentUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(hasSessionCookie);
 
   const refresh = useCallback(async () => {
     try {
@@ -36,8 +42,8 @@ export function UserAuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    if (hasSessionCookie) void refresh();
+  }, [hasSessionCookie, refresh]);
 
   const logout = useCallback(async () => {
     await fetch('/api/auth/logout', { method: 'POST' });

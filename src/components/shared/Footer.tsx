@@ -18,6 +18,7 @@ export function Footer() {
           <nav className='flex flex-wrap justify-center gap-x-5 gap-y-2 md:justify-end'>
             <Link
               href={`/${locale}/legal`}
+              prefetch={false}
               target='_blank'
               className='transition-colors hover:text-foreground'
             >
@@ -25,6 +26,7 @@ export function Footer() {
             </Link>
             <Link
               href={`/${locale}/privacy`}
+              prefetch={false}
               target='_blank'
               className='transition-colors hover:text-foreground'
             >

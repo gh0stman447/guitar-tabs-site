@@ -24,10 +24,12 @@ export function ThemeTransition() {
       const prefersReducedMotion = window.matchMedia(
         '(prefers-reduced-motion: reduce)',
       ).matches;
+      const isTouchViewport = window.matchMedia('(hover: none), (pointer: coarse)').matches;
 
       if (
         isTransitioning.current ||
         prefersReducedMotion ||
+        isTouchViewport ||
         !documentWithTransition.startViewTransition
       ) {
         setTheme(theme);

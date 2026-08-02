@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { MailX } from 'lucide-react';
 import { Footer } from '@/components/shared/Footer';
 import { Button } from '@/components/ui/button';
+import { StatusPage } from '@/components/shared/StatusPage';
 
 export default async function UnsubscribePage({
   params,
@@ -20,41 +21,29 @@ export default async function UnsubscribePage({
 
   return (
     <>
-      <main className='min-h-screen flex items-center justify-center px-4'>
-        <div className='max-w-md w-full text-center space-y-6'>
-          <div className='flex justify-center'>
-            <div className='w-20 h-20 rounded-full bg-muted flex items-center justify-center'>
-              <MailX className='h-10 w-10 text-muted-foreground' />
-            </div>
-          </div>
-
-          <div className='space-y-2'>
-            <h1 className='text-2xl font-bold'>{isRu ? 'Вы отписались' : 'Unsubscribed'}</h1>
-            <p className='text-muted-foreground'>
-              {isRu
-                ? 'Вы больше не будете получать письма о новых табах.'
-                : 'You will no longer receive emails about new tabs.'}
-            </p>
-          </div>
-
-          <div className='space-y-4'>
+      <StatusPage
+        icon={<MailX className='h-7 w-7' />}
+        eyebrow={isRu ? 'Рассылка' : 'Newsletter'}
+        title={isRu ? 'Вы отписались' : 'Unsubscribed'}
+        description={isRu ? 'Вы больше не будете получать письма о новых табах.' : 'You will no longer receive emails about new tabs.'}
+      >
+          <div className='space-y-3'>
             <Button
               asChild
-              className='bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-8 w-full'
+              className='w-full rounded-md px-8'
             >
               <Link href={`/${locale}`}>{isRu ? 'Вернуться на сайт' : 'Back to site'}</Link>
             </Button>
 
             {email && (
-              <Button asChild variant='outline' className='border-border rounded-full px-8 w-full'>
+              <Button asChild variant='outline' className='w-full rounded-md px-8'>
                 <Link href={resubscribeUrl} prefetch={false}>
                   {isRu ? 'Подписаться заново' : 'Resubscribe'}
                 </Link>
               </Button>
             )}
           </div>
-        </div>
-      </main>
+      </StatusPage>
       <Footer />
     </>
   );

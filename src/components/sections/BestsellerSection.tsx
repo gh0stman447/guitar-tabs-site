@@ -1,44 +1,26 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslations, useLocale } from 'next-intl';
 import { useIsTouch } from '@/hooks/useIsTouch';
 import { TrendingUp } from 'lucide-react';
 import { TabCard } from '@/components/shared/TabCard';
-import { TabCardSkeleton } from '@/components/shared/TabCard/TabCardSkeleton';
-import { supabase } from '@/lib/supabase';
 import { usePreviewBlock } from '@/context/PreviewBlockContext';
-import { TABLE_TABS } from '@/lib/constants';
 import type { Tab } from '@/types';
 
-export function BestsellerSection() {
+export function BestsellerSection({ initialTabs }: { initialTabs: Tab[] }) {
   const t = useTranslations('bestseller');
   const locale = useLocale();
   const isTouch = useIsTouch();
   const duration = isTouch ? 0.5 / 1.5 : 0.5;
   const cardDuration = isTouch ? 0.7 / 1.5 : 0.7;
-  const [topTabs, setTopTabs] = useState<Tab[]>([]);
-  const [loading, setLoading] = useState(true);
+  const topTabs = initialTabs
+    .filter((tab) => (tab.purchase_count ?? 0) > 0)
+    .sort((a, b) => (b.purchase_count ?? 0) - (a.purchase_count ?? 0))
+    .slice(0, 3);
   const { flippingTabId } = usePreviewBlock();
 
-  useEffect(() => {
-    supabase
-      .from(TABLE_TABS)
-      .select('*')
-      .eq('is_published', true)
-      .order('purchase_count', { ascending: false })
-      .limit(3)
-      .then(({ data }) => {
-        if (data) {
-          const withPurchases = (data as Tab[]).filter((t) => (t.purchase_count ?? 0) > 0);
-          setTopTabs(withPurchases);
-        }
-        setLoading(false);
-      });
-  }, []);
-
-  if (!loading && topTabs.length === 0) return null;
+  if (topTabs.length === 0) return null;
 
   return (
     <section className='section-warm py-12 sm:py-24'>
@@ -59,16 +41,7 @@ export function BestsellerSection() {
           <h2 className='text-3xl sm:text-4xl font-bold'>{t('title')}</h2>
         </motion.div>
 
-        {loading ? (
-          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
-            {Array.from({ length: 3 }).map((_, i) => (
-              <TabCardSkeleton key={i} showDetails={false} />
-            ))}
-          </div>
-        ) : topTabs.length === 0 ? (
-          <p className='text-center text-muted-foreground py-12'>{t('empty')}</p>
-        ) : (
-          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
+        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
             {topTabs.map((tab, i) => (
               <motion.div
                 key={tab.id}
@@ -97,8 +70,7 @@ export function BestsellerSection() {
                 />
               </motion.div>
             ))}
-          </div>
-        )}
+        </div>
       </div>
     </section>
   );

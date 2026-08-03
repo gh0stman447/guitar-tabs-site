@@ -4,7 +4,7 @@ import { query } from '@/lib/db';
 export { validatePassword } from '@/lib/password-policy';
 
 export const USER_SESSION_COOKIE = 'user_session';
-export const PERSONAL_DATA_CONSENT_VERSION = '2026-08-01';
+export const PERSONAL_DATA_CONSENT_VERSION = '2026-08-03';
 
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30;
 const SCRYPT_KEY_LENGTH = 64;

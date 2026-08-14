@@ -125,7 +125,7 @@ export default function NewsletterPage() {
             <Field label='Ссылка на таб'>
               <input
                 required
-                placeholder='https://olegguitar.com/ru/tabs/...'
+                placeholder={`${SITE_URL}/ru/tabs/...`}
                 value={tabUrl}
                 onChange={(e) => setTabUrl(e.target.value)}
                 className={inputCls}

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Footer } from '@/components/shared/Footer';
 import { ScrollToTop } from '@/components/shared/ScrollToTop';
 import { ShieldCheck } from 'lucide-react';
+import { SITE_URL } from '@/lib/constants';
 
 export async function generateMetadata() {
   return { title: 'Политика обработки персональных данных — OlegGuitar' };
@@ -38,8 +39,8 @@ export default async function PrivacyPage({
           <div className='rounded-xl border border-border bg-card p-6 text-sm leading-relaxed text-muted-foreground'>
             <p>
               Настоящая Политика определяет порядок обработки и защиты персональных данных на сайте{' '}
-              <a href='https://olegguitar.com' className='text-amber-500 hover:underline'>
-                olegguitar.com
+              <a href={SITE_URL} className='text-amber-500 hover:underline'>
+                {new URL(SITE_URL).hostname}
               </a>
               . Предоставляя данные через формы Сайта, Пользователь получает информацию о целях и
               условиях их обработки до совершения соответствующего действия.

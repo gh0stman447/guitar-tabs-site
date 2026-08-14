@@ -20,7 +20,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'olegguitar.com',
+        hostname: 'olegguitar.ru',
         pathname: '/api/files/**',
       },
     ],

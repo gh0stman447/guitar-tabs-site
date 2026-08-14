@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import { Footer } from '@/components/shared/Footer';
 import { ScrollToTop } from '@/components/shared/ScrollToTop';
 import { FileText } from 'lucide-react';
+import { SITE_URL } from '@/lib/constants';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -92,8 +93,8 @@ export default async function LegalPage({
                 <b>1.1.7. Сайт</b> — совокупность текстов, графических элементов, дизайна,
                 изображений, программного кода, фото- и видеоматериалов и иных результатов
                 интеллектуальной деятельности, содержащихся в сети Интернет по адресу{' '}
-                <a href='https://olegguitar.com' className='text-amber-500 hover:underline'>
-                  olegguitar.com
+                <a href={SITE_URL} className='text-amber-500 hover:underline'>
+                  {new URL(SITE_URL).hostname}
                 </a>
                 .
               </p>

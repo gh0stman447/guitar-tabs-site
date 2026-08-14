@@ -39,7 +39,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
         '@context': 'https://schema.org',
         '@type': 'ItemList',
         name: locale === 'ru' ? 'Гитарные табы' : 'Guitar Tabs',
-        url: `https://www.olegguitar.com`,
+        url: SITE_URL,
         numberOfItems: tabs.length,
         itemListElement: tabs.map((tab, index) => ({
           '@type': 'ListItem',
@@ -56,7 +56,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
               price: tab.price,
               priceCurrency: 'RUB',
               availability: 'https://schema.org/InStock',
-              url: `https://www.olegguitar.com`,
+              url: SITE_URL,
               seller: {
                 '@type': 'Person',
                 name: 'Oleg',

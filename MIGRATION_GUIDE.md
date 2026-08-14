@@ -131,7 +131,7 @@ DB_PASSWORD=<пароль-который-придумал>
 
 # Storage (файлы на VPS)
 STORAGE_ROOT=/var/www/guitar-tabs/storage
-STORAGE_URL=https://olegguitar.com/storage
+STORAGE_URL=https://olegguitar.ru/storage
 
 # YooKassa
 YUKASSA_SHOP_ID=<shop-id>
@@ -147,7 +147,7 @@ NALOG_PROXY_URL=http://157.22.204.114:5000
 NALOG_PROXY_TEST_MODE=false
 
 # Site
-NEXT_PUBLIC_SITE_URL=https://olegguitar.com
+NEXT_PUBLIC_SITE_URL=https://olegguitar.ru
 ```
 
 ---
@@ -163,7 +163,7 @@ sudo nano /etc/nginx/sites-available/guitar-tabs
 ```nginx
 server {
     listen 80;
-    server_name olegguitar.com www.olegguitar.com;
+    server_name olegguitar.ru www.olegguitar.ru;
 
     location /storage/ {
         alias /var/www/guitar-tabs/storage/;
@@ -171,7 +171,7 @@ server {
         try_files $uri $uri/ =404;
 
         # Защита от hotlink (опционально)
-        valid_referers olegguitar.com;
+        valid_referers olegguitar.ru;
         if ($invalid_referer) {
             return 403;
         }
@@ -256,7 +256,7 @@ DB_PASSWORD=<пароль>
 # STORAGE (файлы на диске VPS)
 # ===========================================
 STORAGE_ROOT=/var/www/guitar-tabs/storage
-STORAGE_URL=https://olegguitar.com/storage
+STORAGE_URL=https://olegguitar.ru/storage
 
 # ===========================================
 # YOOKASSA (платежи)
@@ -280,7 +280,7 @@ NALOG_PROXY_TEST_MODE=false
 # ===========================================
 # SITE
 # ===========================================
-NEXT_PUBLIC_SITE_URL=https://olegguitar.com
+NEXT_PUBLIC_SITE_URL=https://olegguitar.ru
 
 # ===========================================
 # ADMIN (пароль для админки)

@@ -1,5 +1,6 @@
 // Site URLs
-export const SITE_URL = 'https://olegguitar.com';
+export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://olegguitar.ru').replace(/\/$/, '');
+export const SITE_EMAIL = process.env.SITE_EMAIL || 'noreply@olegguitar.ru';
 export const LOCAL_DEV_URL = 'http://localhost:3000';
 
 // Supabase table names

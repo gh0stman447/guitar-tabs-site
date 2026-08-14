@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db, { query } from '@/lib/db';
-import { TABLE_CUSTOMERS, TABLE_NEWSLETTER_LOGS, SITE_URL } from '@/lib/constants';
+import { TABLE_CUSTOMERS, TABLE_NEWSLETTER_LOGS, SITE_EMAIL, SITE_URL } from '@/lib/constants';
 import { validateAdminSession } from '@/lib/admin-auth';
 
 export async function POST(req: NextRequest) {
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   });
 
   const emails = unique.map((c) => ({
-    from: 'OlegGuitar <noreply@olegguitar.com>',
+    from: `OlegGuitar <${SITE_EMAIL}>`,
     to: c.email,
     subject,
     html: buildEmailHtml({

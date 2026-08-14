@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next';
+import { SITE_URL } from '@/lib/constants';
 
-const BASE = 'https://www.olegguitar.com';
+const BASE = SITE_URL;
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [

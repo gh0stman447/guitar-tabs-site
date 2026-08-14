@@ -7,13 +7,13 @@ interface AuthEmailOptions {
 }
 
 const BRAND_NAME = 'OlegGuitar';
-const EMAIL_FROM = `${BRAND_NAME} <noreply@olegguitar.com>`;
+const EMAIL_FROM = `${BRAND_NAME} <${SITE_EMAIL}>`;
 
 export async function sendAuthEmail({ to, name, locale, type, token }: AuthEmailOptions) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) throw new Error('RESEND_API_KEY is not configured');
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  const baseUrl = SITE_URL;
   const localePrefix = locale === 'en' ? '/en' : '';
   const path = type === 'verify' ? 'verify-email' : 'reset-password';
   const url = `${baseUrl}${localePrefix}/${path}?token=${encodeURIComponent(token)}`;
@@ -80,3 +80,4 @@ function escapeHtml(value: string) {
     return entities[character];
   });
 }
+import { SITE_EMAIL, SITE_URL } from '@/lib/constants';

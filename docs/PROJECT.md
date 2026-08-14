@@ -721,7 +721,7 @@ export const routing = defineRouting({
 ## Email система
 
 - **Провайдер:** Resend
-- **From:** `OlegGuitar <noreply@olegguitar.com>`
+- **From:** `OlegGuitar <noreply@olegguitar.ru>`
 - **Batch sending** для рассылок
 - **Tracking:** opened/delivered статусы через вебхук `/api/email/webhook`
 - **Priority:** opened > delivered > sent

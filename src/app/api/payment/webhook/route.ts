@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import JSZip from 'jszip';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { TABLE_TABS, TABLE_PURCHASES, TABLE_TAB_FILES } from '@/lib/constants';
+import { TABLE_TABS, TABLE_PURCHASES, TABLE_TAB_FILES, SITE_EMAIL } from '@/lib/constants';
 import { query } from '@/lib/db';
 import { getRobokassaConfig, verifyRobokassaHash } from '@/lib/robokassa';
 
@@ -313,7 +313,7 @@ async function sendEmail({
         Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: 'OlegGuitar <noreply@olegguitar.com>',
+        from: `OlegGuitar <${SITE_EMAIL}>`,
         to,
         subject: `Ваши табы: ${tabTitles}`,
         html: `

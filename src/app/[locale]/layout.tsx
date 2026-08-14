@@ -19,6 +19,7 @@ import { ThemeTransition } from '@/components/shared/ThemeTransition';
 import { Header } from '@/components/shared/Header';
 import { Caveat, Inter, Kaushan_Script } from 'next/font/google';
 import '../globals.css';
+import { SITE_URL } from '@/lib/constants';
 
 const inter = Inter({
   subsets: ['latin', 'cyrillic'],
@@ -59,7 +60,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const meta = META[locale as 'ru' | 'en'] ?? META.ru;
-  const url = `https://www.olegguitar.com/${locale}`;
+  const url = `${SITE_URL}/${locale}`;
 
   return {
     title: meta.title,
@@ -71,8 +72,8 @@ export async function generateMetadata({
     alternates: {
       canonical: url,
       languages: {
-        ru: 'https://www.olegguitar.com/ru',
-        en: 'https://www.olegguitar.com/en',
+        ru: `${SITE_URL}/ru`,
+        en: `${SITE_URL}/en`,
       },
     },
     openGraph: {
@@ -119,7 +120,7 @@ export default async function LocaleLayout({
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: 'OlegGuitar',
-    url: 'https://www.olegguitar.com',
+    url: SITE_URL,
     inLanguage: locale === 'ru' ? 'ru-RU' : 'en-US',
     description:
       locale === 'ru'
@@ -128,7 +129,7 @@ export default async function LocaleLayout({
     author: {
       '@type': 'Person',
       name: 'Oleg',
-      url: 'https://www.olegguitar.com',
+      url: SITE_URL,
       knowsAbout: ['Guitar', 'Music Arrangement', 'Guitar Tablature'],
     },
   };

@@ -31,6 +31,7 @@ import { useCartAnimation } from '@/context/CartAnimationContext';
 import { usePreviewBlock } from '@/context/PreviewBlockContext';
 import type { Tab } from '@/types';
 import { TabCharacteristics } from '@/components/shared/TabCharacteristics';
+import { useIsTouch } from '@/hooks/useIsTouch';
 
 const BuyDialog = dynamic(
   () => import('@/components/shared/BuyDialog').then((module) => module.BuyDialog),
@@ -130,6 +131,7 @@ export function TabDetails({ tab, locale }: { tab: Tab; locale: string }) {
   const mediaCardRef = useRef<HTMLDivElement>(null);
   const previewDestinationRef = useRef({ x: 0, y: 0 });
   const previewControls = useAnimation();
+  const isTouch = useIsTouch();
   const { addItem, removeItem, hasItem } = useCart();
   const { flyToCart, flyFromCart } = useCartAnimation();
   const { isPreviewBlocking, startPreviewBlock, endPreviewBlock } = usePreviewBlock();
@@ -160,9 +162,14 @@ export function TabDetails({ tab, locale }: { tab: Tab; locale: string }) {
       : null;
 
   async function handlePreviewOpen() {
-    const element = mediaCardRef.current;
-    if (!element || previewOpen || previewFlying || isPreviewBlocking) return;
+    if (previewOpen) return;
+    if (isTouch) {
+      setPreviewOpen(true);
+      return;
+    }
 
+    const element = mediaCardRef.current;
+    if (!element || previewFlying || isPreviewBlocking) return;
     const rect = element.getBoundingClientRect();
     const centerX = window.innerWidth / 2 - rect.left - rect.width / 2;
     const centerY = window.innerHeight / 2 - rect.top - rect.height / 2;
@@ -192,8 +199,8 @@ export function TabDetails({ tab, locale }: { tab: Tab; locale: string }) {
   }
 
   async function handlePreviewChange(open: boolean) {
-    if (open) {
-      setPreviewOpen(true);
+    if (isTouch || open) {
+      setPreviewOpen(open);
       return;
     }
 
@@ -217,19 +224,13 @@ export function TabDetails({ tab, locale }: { tab: Tab; locale: string }) {
       filter: ['blur(10px)', 'blur(1px)', 'blur(0px)'],
       transition: { duration: 0.6, ease: 'easeInOut' },
     });
-    previewControls.set({
-      x: 0,
-      y: 0,
-      rotateY: 0,
-      scale: 1,
-      opacity: 1,
-      filter: 'blur(0px)',
-    });
+    previewControls.set({ x: 0, y: 0, rotateY: 0, scale: 1, opacity: 1, filter: 'blur(0px)' });
     setPreviewFlying(false);
     endPreviewBlock();
   }
 
   function animateCart(reverse: boolean) {
+    if (isTouch) return;
     const element = mediaCardRef.current;
     if (!element) return;
     const rect = element.getBoundingClientRect();

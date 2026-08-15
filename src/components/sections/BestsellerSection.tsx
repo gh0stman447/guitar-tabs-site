@@ -26,8 +26,8 @@ export function BestsellerSection({ initialTabs }: { initialTabs: Tab[] }) {
     <section className='section-warm py-12 sm:py-24'>
       <div className='max-w-6xl mx-auto px-4 sm:px-6 lg:px-8'>
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          initial={isTouch ? false : { opacity: 0, y: 20 }}
+          whileInView={isTouch ? undefined : { opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration }}
           className='text-center mb-12'
@@ -45,8 +45,8 @@ export function BestsellerSection({ initialTabs }: { initialTabs: Tab[] }) {
             {topTabs.map((tab, i) => (
               <motion.div
                 key={tab.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
+                initial={isTouch ? false : { opacity: 0, scale: 0.9 }}
+                whileInView={isTouch ? undefined : { opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 transition={{
                   duration: cardDuration,

@@ -16,7 +16,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { ThemeToggle } from './ThemeToggle';
 import { useCart } from '@/context/CartContext';
 import { cn } from '@/lib/utils';
-import { useEffect, useLayoutEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState, useTransition } from 'react';
 import { useAdmin } from '@/context/AdminContext';
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useIsTouch } from '@/hooks/useIsTouch';
@@ -45,6 +45,7 @@ export function Header() {
   const [cartOpen, setCartOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
+  const [localePending, startLocaleTransition] = useTransition();
   const { isAdmin, setIsAdmin } = useAdmin();
   const { user, isLoading: isUserLoading, logout: logoutUser } = useUserAuth();
 
@@ -91,7 +92,7 @@ export function Header() {
         const y = Math.max(window.scrollY, 0);
         const delta = y - lastY;
         setScrolled(y > 10);
-        if (y <= 40) setHidden(false);
+        if (isTouch || y <= 40) setHidden(false);
         else if (Math.abs(delta) >= 4) setHidden(delta > 0 && y > 80);
         lastY = y;
         frame = 0;
@@ -103,13 +104,19 @@ export function Header() {
       window.removeEventListener('scroll', onScroll);
       if (frame) window.cancelAnimationFrame(frame);
     };
-  }, []);
+  }, [isTouch]);
 
   function switchLocale() {
+    if (localePending) return;
     const next = locale === 'ru' ? 'en' : 'ru';
     const search = window.location.search;
     const hash = window.location.hash;
-    router.replace(pathname + search + hash, { locale: next, scroll: false });
+    setHidden(false);
+    setSheetOpen(false);
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    startLocaleTransition(() => {
+      router.replace(pathname + search + hash, { locale: next, scroll: false });
+    });
   }
 
   const isAdminRoute = pathname.includes('/admin');
@@ -138,13 +145,19 @@ export function Header() {
         data-no-particles
         style={{ paddingTop: 'calc(env(safe-area-inset-top) + 0.75rem)' }}
         className={cn(
-          'fixed top-0 left-0 right-0 z-50 transform-gpu will-change-transform px-3 sm:px-5 lg:px-6 transition-transform duration-200 ease-out sm:duration-300',
-          hidden ? '-translate-y-full' : 'translate-y-0',
+          'fixed top-0 left-0 right-0 z-50 px-3 sm:px-5 lg:px-6',
+          isTouch
+            ? 'translate-y-0'
+            : 'transform-gpu will-change-transform transition-transform duration-200 ease-out sm:duration-300',
+          !isTouch && (hidden ? '-translate-y-full' : 'translate-y-0'),
         )}
       >
         <div
           className={cn(
-            'max-w-7xl mx-auto rounded-[1.75rem] border border-border/60 bg-background/65 px-4 sm:px-6 lg:px-8 backdrop-blur-2xl backdrop-saturate-150 transition-[background-color,box-shadow] duration-300',
+            'max-w-7xl mx-auto rounded-[1.75rem] border border-border/60 px-4 sm:px-6 lg:px-8',
+            isTouch
+              ? 'bg-background/95'
+              : 'bg-background/65 backdrop-blur-2xl backdrop-saturate-150 transition-[background-color,box-shadow] duration-300',
             scrolled &&
               !hidden &&
               'bg-background/72 shadow-[0_4px_14px_hsl(var(--foreground)/0.07)]',
@@ -315,6 +328,7 @@ export function Header() {
                   variant='ghost'
                   size='icon'
                   onClick={switchLocale}
+                  disabled={localePending}
                   aria-label='Переключить язык'
                   className={cn(headerButtonClass, 'text-xs font-semibold')}
                 >

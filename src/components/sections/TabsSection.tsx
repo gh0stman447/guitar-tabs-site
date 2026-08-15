@@ -160,8 +160,8 @@ export function TabsSection({ initialTabs }: { initialTabs: Tab[] }) {
     <section id='tabs' className='py-12 sm:py-24'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          initial={isTouch ? false : { opacity: 0, y: 20 }}
+          whileInView={isTouch ? undefined : { opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: headerDuration }}
           className='text-center mb-12'
@@ -175,8 +175,8 @@ export function TabsSection({ initialTabs }: { initialTabs: Tab[] }) {
 
         {/* Search + Sort */}
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          initial={isTouch ? false : { opacity: 0, y: 16 }}
+          whileInView={isTouch ? undefined : { opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: headerDuration * 0.8, delay: 0.15 }}
           className='flex flex-col gap-3 mb-8'
@@ -349,10 +349,10 @@ export function TabsSection({ initialTabs }: { initialTabs: Tab[] }) {
             <AnimatePresence>
               {isDirty && (
                 <motion.button
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  transition={{ duration: 0.15 }}
+                  initial={isTouch ? false : { opacity: 0, scale: 0.8 }}
+                  animate={isTouch ? undefined : { opacity: 1, scale: 1 }}
+                  exit={isTouch ? undefined : { opacity: 0, scale: 0.8 }}
+                  transition={{ duration: isTouch ? 0 : 0.15 }}
                   onClick={reset}
                   className='flex items-center gap-1 h-8 px-3 rounded-md text-xs font-medium border border-border text-muted-foreground hover:border-red-400 hover:text-red-500 bg-background transition-colors cursor-pointer'
                 >

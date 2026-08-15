@@ -33,8 +33,8 @@ export function AboutSection() {
       <div className='max-w-6xl mx-auto px-4 sm:px-6 lg:px-8'>
         <div className='grid md:grid-cols-2 gap-12 items-center'>
           <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial={isTouch ? false : { opacity: 0, x: -30 }}
+            whileInView={isTouch ? undefined : { opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration }}
             className='relative'
@@ -54,8 +54,8 @@ export function AboutSection() {
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial={isTouch ? false : { opacity: 0, x: 30 }}
+            whileInView={isTouch ? undefined : { opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration, delay: 0.1 }}
           >
@@ -78,8 +78,8 @@ export function AboutSection() {
               {details.map(({ number, title, text }, index) => (
                 <motion.div
                   key={number}
-                  initial={{ opacity: 0, x: 16 }}
-                  whileInView={{ opacity: 1, x: 0 }}
+                  initial={isTouch ? false : { opacity: 0, x: 16 }}
+                  whileInView={isTouch ? undefined : { opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: duration * 0.65, delay: 0.08 + index * 0.07 }}
                   className='group relative flex gap-4 rounded-2xl px-1 py-3 transition-colors duration-300 [@media(hover:hover)]:hover:bg-background/45'
@@ -99,8 +99,8 @@ export function AboutSection() {
               {facts.map(({ icon: Icon, label, desc }, i) => (
                 <motion.article
                   key={label}
-                  initial={{ opacity: 0, x: 20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
+                  initial={isTouch ? false : { opacity: 0, x: 20 }}
+                  whileInView={isTouch ? undefined : { opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: duration * 0.7, delay: 0.1 + i * 0.1 }}
                   className='relative flex items-center gap-3.5 overflow-hidden rounded-2xl border border-border/60 bg-background/55 p-4 shadow-sm backdrop-blur-sm dark:bg-card/55'

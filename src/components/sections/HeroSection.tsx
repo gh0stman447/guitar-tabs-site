@@ -25,7 +25,8 @@ export function HeroSection() {
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
 
   const isMobile = useIsTouch();
-  const duration = isMobile ? 0.7 / 1.5 : 0.7;
+  const duration = 0.7;
+  const visibleNotes = isMobile ? floatingNotes.slice(0, 8) : floatingNotes;
 
   const [viewportHeight, setViewportHeight] = useState<number | null>(null);
 
@@ -64,10 +65,10 @@ export function HeroSection() {
 
       <div className='absolute inset-0 pointer-events-none'>
         <motion.div
-          style={{ y: notesY, display: isMobile ? 'none' : undefined }}
+          style={{ y: notesY }}
           className='absolute inset-0 pointer-events-none'
         >
-          {floatingNotes.map((note) => (
+          {visibleNotes.map((note) => (
             <motion.span
               key={note.id}
               className='absolute bottom-0 select-none text-primary/20 dark:text-primary/30'
@@ -88,12 +89,12 @@ export function HeroSection() {
       </div>
 
       <motion.div
-        style={{ y: contentY, opacity }}
+        style={isMobile ? undefined : { y: contentY, opacity }}
         className='relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center'
       >
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={isMobile ? false : { opacity: 0, y: 30 }}
+          animate={isMobile ? undefined : { opacity: 1, y: 0 }}
           transition={{ duration }}
         >
           <span

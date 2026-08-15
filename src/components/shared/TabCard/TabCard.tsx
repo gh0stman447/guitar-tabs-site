@@ -59,6 +59,7 @@ export function TabCard({
   const [justAdded, setJustAdded] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const isTouch = useIsTouch();
+  const animationsDisabled = disableAnimations || isTouch;
   const { addItem, removeItem, hasItem } = useCart();
   const { flyToCart, flyFromCart } = useCartAnimation();
   const inCart = hasItem(tab.id);
@@ -93,7 +94,7 @@ export function TabCard({
   });
 
   function handleMouseMove(event: React.MouseEvent<HTMLDivElement>) {
-    if (disableAnimations) return;
+    if (animationsDisabled) return;
     const rect = cardRef.current?.getBoundingClientRect();
     if (!rect) return;
     mouseX.set((event.clientX - rect.left) / rect.width - 0.5);
@@ -101,7 +102,7 @@ export function TabCard({
   }
 
   function handleMouseLeave() {
-    if (disableAnimations) return;
+    if (animationsDisabled) return;
     mouseX.set(0);
     mouseY.set(0);
   }
@@ -115,7 +116,7 @@ export function TabCard({
         description: locale === 'en' ? 'Removed from cart' : 'Убрано из корзины',
         icon: '🗑️',
       });
-      if (!disableAnimations && element) {
+      if (!animationsDisabled && element) {
         flyFromCart(element.getBoundingClientRect(), element);
       }
       return;
@@ -126,7 +127,7 @@ export function TabCard({
       description: locale === 'en' ? 'Added to cart' : 'Добавлено в корзину',
       icon: '🛒',
     });
-    if (!disableAnimations && element) {
+    if (!animationsDisabled && element) {
       setJustAdded(true);
       window.setTimeout(() => setJustAdded(false), 650);
       flyToCart(element.getBoundingClientRect(), element);
@@ -137,15 +138,15 @@ export function TabCard({
     <>
       <div
         className='w-full max-w-[22rem] mx-auto sm:max-w-none'
-        style={disableAnimations ? undefined : { perspective: 1000 }}
+        style={animationsDisabled ? undefined : { perspective: 1000 }}
       >
         <motion.div
           ref={cardRef}
-          className={disableAnimations ? 'touch-pan-y' : undefined}
-          style={disableAnimations ? undefined : { rotateX, rotateY }}
-          whileHover={disableAnimations ? undefined : { y: -4 }}
-          onMouseMove={disableAnimations ? undefined : handleMouseMove}
-          onMouseLeave={disableAnimations ? undefined : handleMouseLeave}
+          className={animationsDisabled ? 'touch-pan-y' : undefined}
+          style={animationsDisabled ? undefined : { rotateX, rotateY }}
+          whileHover={animationsDisabled ? undefined : { y: -4 }}
+          onMouseMove={animationsDisabled ? undefined : handleMouseMove}
+          onMouseLeave={animationsDisabled ? undefined : handleMouseLeave}
         >
           <Card
             className={`overflow-hidden h-full flex flex-col gap-0 py-0 relative transition-[border-color,box-shadow] duration-500 ${

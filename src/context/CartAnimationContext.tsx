@@ -3,6 +3,7 @@
 import { createContext, useContext, useRef, useState, useCallback, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
+import { useIsTouch } from '@/hooks/useIsTouch';
 
 interface FlyingParticle {
   id: number;
@@ -25,6 +26,7 @@ const CartAnimationContext = createContext<CartAnimationContextValue | null>(nul
 let nextId = 0;
 
 export function CartAnimationProvider({ children }: { children: ReactNode }) {
+  const isTouch = useIsTouch();
   const cartButtonRef = useRef<HTMLButtonElement | null>(null);
   const [particles, setParticles] = useState<FlyingParticle[]>([]);
 
@@ -33,7 +35,7 @@ export function CartAnimationProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const flyToCart = useCallback((fromRect: DOMRect, sourceEl: HTMLElement) => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || isTouch) return;
 
     let targetX: number;
     let targetY: number;
@@ -80,10 +82,10 @@ export function CartAnimationProvider({ children }: { children: ReactNode }) {
     };
 
     setParticles((prev) => [...prev, particle]);
-  }, []);
+  }, [isTouch]);
 
   const flyFromCart = useCallback((toRect: DOMRect, sourceEl: HTMLElement) => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || isTouch) return;
 
     let startX: number;
     let startY: number;
@@ -134,7 +136,7 @@ export function CartAnimationProvider({ children }: { children: ReactNode }) {
     };
 
     setParticles((prev) => [...prev, particle]);
-  }, []);
+  }, [isTouch]);
 
   const removeParticle = useCallback((id: number) => {
     setParticles((prev) => prev.filter((p) => p.id !== id));

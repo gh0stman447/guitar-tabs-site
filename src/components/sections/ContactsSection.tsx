@@ -60,8 +60,8 @@ function ContactCard({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
+      initial={isTouch ? false : { opacity: 0, y: 20 }}
+      whileInView={isTouch ? undefined : { opacity: 1, y: 0 }}
       viewport={{ once: true }}
       whileHover={!isTouch ? { scale: 1.08, rotateY: 10, rotateX: -5 } : undefined}
       onHoverStart={!isTouch ? () => controls.start({ rotate: 360, scale: 1.15 }) : undefined}
@@ -98,8 +98,8 @@ export function ContactsSection() {
     <section id='contacts' className='py-12 sm:py-24 overflow-hidden'>
       <div className='max-w-6xl mx-auto px-4 sm:px-6 lg:px-8'>
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          initial={isTouch ? false : { opacity: 0, y: 30 }}
+          whileInView={isTouch ? undefined : { opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration }}
           className='text-center mb-12'
@@ -115,8 +115,8 @@ export function ContactsSection() {
           {contacts.map(({ icon: Icon, label, value, href, color, border, shadow }, i) => (
             <motion.div
               key={label}
-              initial={{ opacity: 0, x: 50 }}
-              whileInView={{ opacity: 1, x: 0 }}
+              initial={isTouch ? false : { opacity: 0, x: 50 }}
+              whileInView={isTouch ? undefined : { opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration, delay: i * 0.1 }}
             >

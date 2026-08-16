@@ -139,8 +139,6 @@ export async function POST(req: NextRequest) {
   const outSum = totalAmount.toFixed(2);
   const successUrl = `${appUrl}/${locale}/payment/success?purchase_id=${purchase.id}`;
   const failUrl = `${appUrl}/${locale}/payment/canceled`;
-  const encodedSuccessUrl = encodeURIComponent(successUrl);
-  const encodedFailUrl = encodeURIComponent(failUrl);
   const receipt = encodeReceipt({
     items: distributeTotal(tabsData, totalAmount).map(({ tab, sum }) => ({
       name: tab.title_ru.slice(0, 128),
@@ -159,9 +157,9 @@ export async function POST(req: NextRequest) {
         outSum,
         invId,
         receipt,
-        encodedSuccessUrl,
+        successUrl,
         'GET',
-        encodedFailUrl,
+        failUrl,
         'GET',
         config.password1,
         shpPurchase,

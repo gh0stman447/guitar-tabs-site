@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { CircleUserRound, Menu, ShoppingCart, X, LogOut, Settings, UserRound } from 'lucide-react';
+import { CircleUserRound, Guitar, Mail, Menu, ShoppingCart, X, LogOut, Settings, UserRound } from 'lucide-react';
 import { Tooltip as ReactTooltip } from 'react-tooltip';
 import {
   DropdownMenu,
@@ -16,7 +16,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { ThemeToggle } from './ThemeToggle';
 import { useCart } from '@/context/CartContext';
 import { cn } from '@/lib/utils';
-import { useEffect, useLayoutEffect, useState, useTransition } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, useTransition } from 'react';
 import { useAdmin } from '@/context/AdminContext';
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useIsTouch } from '@/hooks/useIsTouch';
@@ -34,7 +34,10 @@ const AuthDialog = dynamic(
   { ssr: false },
 );
 
+const subscribeToHydration = () => () => {};
+
 export function Header() {
+  const hydrated = useSyncExternalStore(subscribeToHydration, () => true, () => false);
   const t = useTranslations('nav');
   const locale = useLocale();
   const pathname = usePathname();
@@ -46,8 +49,20 @@ export function Header() {
   const [authOpen, setAuthOpen] = useState(false);
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
   const [localePending, startLocaleTransition] = useTransition();
+  const navigationHideRef = useRef(false);
+  const navigationScrollTimerRef = useRef<number | null>(null);
   const { isAdmin, setIsAdmin } = useAdmin();
   const { user, isLoading: isUserLoading, logout: logoutUser } = useUserAuth();
+
+  const scheduleNavigationHideRelease = useCallback((delay: number) => {
+    if (navigationScrollTimerRef.current !== null) {
+      window.clearTimeout(navigationScrollTimerRef.current);
+    }
+    navigationScrollTimerRef.current = window.setTimeout(() => {
+      navigationHideRef.current = false;
+      navigationScrollTimerRef.current = null;
+    }, delay);
+  }, []);
 
   function handleLogout() {
     fetch('/api/admin/logout', { method: 'POST' }).then(() => {
@@ -92,7 +107,10 @@ export function Header() {
         const y = Math.max(window.scrollY, 0);
         const delta = y - lastY;
         setScrolled(y > 10);
-        if (isTouch || y <= 40) setHidden(false);
+        if (navigationHideRef.current) {
+          setHidden(true);
+          scheduleNavigationHideRelease(180);
+        } else if (y <= 40) setHidden(false);
         else if (Math.abs(delta) >= 4) setHidden(delta > 0 && y > 80);
         lastY = y;
         frame = 0;
@@ -103,8 +121,11 @@ export function Header() {
     return () => {
       window.removeEventListener('scroll', onScroll);
       if (frame) window.cancelAnimationFrame(frame);
+      if (navigationScrollTimerRef.current !== null) {
+        window.clearTimeout(navigationScrollTimerRef.current);
+      }
     };
-  }, [isTouch]);
+  }, [scheduleNavigationHideRelease]);
 
   function switchLocale() {
     if (localePending) return;
@@ -125,6 +146,9 @@ export function Header() {
     setSheetOpen(false);
     const element = document.getElementById(id);
     if (element) {
+      navigationHideRef.current = true;
+      setHidden(true);
+      scheduleNavigationHideRelease(1200);
       element.scrollIntoView({ behavior: 'smooth' });
     } else {
       router.push(`/#${id}`);
@@ -132,9 +156,9 @@ export function Header() {
   }
 
   const navLinks = [
-    { id: 'tabs', label: t('tabs') },
-    { id: 'about', label: t('about') },
-    { id: 'contacts', label: t('contacts') },
+    { id: 'tabs', label: t('tabs'), icon: Guitar },
+    { id: 'about', label: t('about'), icon: UserRound },
+    { id: 'contacts', label: t('contacts'), icon: Mail },
   ];
   const headerButtonClass =
     'rounded-md border-0 bg-transparent text-foreground/70! shadow-none ring-0 transition-colors duration-200 hover:bg-muted/90! hover:text-foreground! dark:text-muted-foreground! dark:hover:bg-muted/80! dark:hover:text-foreground! focus-visible:border-transparent focus-visible:outline-none focus-visible:ring-0';
@@ -146,21 +170,15 @@ export function Header() {
         style={{ paddingTop: 'calc(env(safe-area-inset-top) + 0.75rem)' }}
         className={cn(
           'fixed top-0 left-0 right-0 z-50 px-3 sm:px-5 lg:px-6',
-          isTouch
-            ? 'translate-y-0'
-            : 'transform-gpu will-change-transform transition-transform duration-200 ease-out sm:duration-300',
-          !isTouch && (hidden ? '-translate-y-full' : 'translate-y-0'),
+          'transform-gpu will-change-transform transition-transform duration-200 ease-out sm:duration-300',
+          hidden ? '-translate-y-full' : 'translate-y-0',
         )}
       >
         <div
           className={cn(
-            'max-w-7xl mx-auto rounded-[1.75rem] border border-border/60 px-4 sm:px-6 lg:px-8',
-            isTouch
-              ? 'bg-background/95'
-              : 'bg-background/65 backdrop-blur-2xl backdrop-saturate-150 transition-[background-color,box-shadow] duration-300',
-            scrolled &&
-              !hidden &&
-              'bg-background/72 shadow-[0_4px_14px_hsl(var(--foreground)/0.07)]',
+            'max-w-7xl mx-auto rounded-[1.75rem] border border-border/60 px-4 max-[420px]:px-2.5 sm:px-6 lg:px-8',
+            'bg-background/65 backdrop-blur-2xl backdrop-saturate-150 transition-colors duration-300',
+            scrolled && !hidden && 'bg-background/72',
           )}
         >
           <div className='flex items-center justify-between h-16 lg:h-[4.5rem]'>
@@ -181,7 +199,7 @@ export function Header() {
               ))}
             </nav>
 
-            <div className='flex items-center gap-2'>
+            <div className='flex items-center gap-2 max-[420px]:gap-1'>
               {isUserLoading ? (
                 <span className='hidden h-9 w-9 items-center justify-center text-muted-foreground/45 md:flex' aria-hidden='true'>
                   <CircleUserRound className='h-[1.125rem] w-[1.125rem]' />
@@ -283,14 +301,17 @@ export function Header() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
-              {isTouch && (
+              {(isTouch || !hydrated) && (
                 <button
                   onClick={() => count > 0 && setCartOpen(true)}
+                  disabled={!hydrated || count === 0}
+                  aria-busy={!hydrated}
+                  aria-label={locale === 'en' ? 'Cart' : 'Корзина'}
                   className={cn(
-                    'relative flex h-9 w-9 items-center justify-center',
-                    count > 0
+                    'relative flex h-9 w-9 items-center justify-center md:hidden',
+                    hydrated && count > 0
                       ? cn(headerButtonClass, 'cursor-pointer')
-                      : 'rounded-md border-0 bg-transparent text-muted-foreground/30 ring-0 cursor-not-allowed',
+                      : 'cursor-wait rounded-md border-0 bg-transparent text-muted-foreground/45 ring-0 disabled:cursor-wait',
                   )}
                 >
                   <ShoppingCart className='h-4 w-4' />
@@ -309,6 +330,8 @@ export function Header() {
                     variant='ghost'
                     size='icon'
                     onClick={switchLocale}
+                    disabled={!hydrated || localePending}
+                    aria-busy={!hydrated || localePending}
                     aria-label='Переключить язык'
                     className={cn(headerButtonClass, 'text-xs font-semibold')}
                   >
@@ -328,7 +351,8 @@ export function Header() {
                   variant='ghost'
                   size='icon'
                   onClick={switchLocale}
-                  disabled={localePending}
+                  disabled={!hydrated || localePending}
+                  aria-busy={!hydrated || localePending}
                   aria-label='Переключить язык'
                   className={cn(headerButtonClass, 'text-xs font-semibold')}
                 >
@@ -340,9 +364,11 @@ export function Header() {
                 <SheetTrigger asChild>
                   <button
                     suppressHydrationWarning
+                    disabled={!hydrated}
+                    aria-busy={!hydrated}
                     className={cn(
                       headerButtonClass,
-                      'md:hidden flex items-center justify-center w-9 h-9 cursor-pointer',
+                      'md:hidden flex items-center justify-center w-9 h-9 cursor-pointer disabled:cursor-wait disabled:opacity-50',
                     )}
                   >
                     <Menu className='h-4 w-4' />
@@ -354,30 +380,46 @@ export function Header() {
                   aria-describedby={undefined}
                   className='h-auto max-h-screen overflow-y-auto px-6 pb-8 pt-20'
                 >
-                  <SheetTitle className='sr-only'>Меню</SheetTitle>
+                  <SheetTitle className='sr-only'>{t('menu')}</SheetTitle>
                   <button
                     onClick={() => setSheetOpen(false)}
                     className='absolute top-4 right-4 flex items-center justify-center w-9 h-9 rounded border border-border text-muted-foreground hover:text-foreground hover:border-primary transition-colors cursor-pointer'
                   >
                     <X className='h-4 w-4' />
                   </button>
-                  <div className='max-w-6xl mx-auto flex flex-col gap-6'>
-                    <nav className='flex flex-col gap-1'>
-                      <p className='text-xs font-semibold text-muted-foreground/60 uppercase tracking-widest px-2 mb-1'>
-                        Навигация
+                  <div className='mx-auto flex max-w-md flex-col gap-4'>
+                    <nav>
+                      <p className='mb-2 px-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/60'>
+                        {t('navigation')}
                       </p>
-                      {navLinks.map((link) => (
-                        <button
-                          key={link.id}
-                          onClick={() => scrollToSection(link.id)}
-                          className='w-full text-left text-base font-medium px-2 py-2.5 rounded-lg text-foreground/80 hover:text-foreground hover:bg-muted transition-colors cursor-pointer'
-                        >
-                          {link.label}
-                        </button>
-                      ))}
+                      <div className='flex flex-col gap-1'>
+                        {navLinks.map((link) => (
+                          <button
+                            key={link.id}
+                            onClick={() => scrollToSection(link.id)}
+                            className='group flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-foreground/80 transition-colors hover:bg-muted/75 hover:text-foreground'
+                          >
+                            <span className='flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary/15'>
+                              <link.icon className='h-4 w-4' />
+                            </span>
+                            {link.label}
+                          </button>
+                        ))}
+                      </div>
+                    </nav>
+
+                    <div className='h-px bg-border/70' aria-hidden='true' />
+
+                    <div>
+                      <p className='mb-2 px-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/60'>
+                        {t('userMenu')}
+                      </p>
+                      <div className='flex flex-col gap-1'>
                       {isUserLoading ? (
-                        <span className='flex items-center gap-2 px-2 py-2.5 text-base font-medium text-muted-foreground/55'>
-                          <UserRound className='h-4 w-4' />
+                        <span className='flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground/55'>
+                          <span className='flex h-8 w-8 items-center justify-center rounded-lg bg-muted'>
+                            <UserRound className='h-4 w-4' />
+                          </span>
                           {t('login')}
                         </span>
                       ) : (
@@ -385,18 +427,22 @@ export function Header() {
                           <Link
                             href={`/${locale}/account`}
                             onClick={() => setSheetOpen(false)}
-                            className='flex items-center gap-2 px-2 py-2.5 text-base font-medium text-foreground/80 transition-colors hover:text-foreground'
+                            className='flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-foreground/80 transition-colors hover:bg-muted/75 hover:text-foreground'
                           >
-                            <UserRound className='h-4 w-4' />
+                            <span className='flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary'>
+                              <UserRound className='h-4 w-4' />
+                            </span>
                             {t('account')}
                           </Link>
                         ) : (
                           <button
                             type='button'
                             onClick={openAuth}
-                            className='flex cursor-pointer items-center gap-2 px-2 py-2.5 text-left text-base font-medium text-foreground/80 transition-colors hover:text-foreground'
+                            className='flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-foreground/80 transition-colors hover:bg-muted/75 hover:text-foreground'
                           >
-                            <UserRound className='h-4 w-4' />
+                            <span className='flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary'>
+                              <UserRound className='h-4 w-4' />
+                            </span>
                             {t('login')}
                           </button>
                         )
@@ -405,20 +451,27 @@ export function Header() {
                         <Link
                           href={`/${locale}/account/settings`}
                           onClick={() => setSheetOpen(false)}
-                          className='flex items-center gap-2 px-2 py-2.5 text-base font-medium text-foreground/80 transition-colors hover:text-foreground'
+                          className='flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-foreground/80 transition-colors hover:bg-muted/75 hover:text-foreground'
                         >
-                          <Settings className='h-4 w-4' /> {t('settings')}
+                          <span className='flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-muted-foreground'>
+                            <Settings className='h-4 w-4' />
+                          </span>
+                          {t('settings')}
                         </Link>
                       )}
                       {user && (
                         <button
                           onClick={() => { void logoutUser(); setSheetOpen(false); }}
-                          className='flex items-center gap-2 px-2 py-2.5 text-left text-base font-medium text-red-500'
+                          className='flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-red-500 transition-colors hover:bg-red-500/10'
                         >
-                          <LogOut className='h-4 w-4' /> {t('logout')}
+                          <span className='flex h-8 w-8 items-center justify-center rounded-lg bg-red-500/10'>
+                            <LogOut className='h-4 w-4' />
+                          </span>
+                          {t('logout')}
                         </button>
                       )}
-                    </nav>
+                      </div>
+                    </div>
 
                     {isAdmin && (
                       <>

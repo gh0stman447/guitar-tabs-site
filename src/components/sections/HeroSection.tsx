@@ -25,8 +25,7 @@ export function HeroSection() {
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
 
   const isMobile = useIsTouch();
-  const duration = 0.7;
-  const visibleNotes = isMobile ? floatingNotes.slice(0, 8) : floatingNotes;
+  const visibleNotes = floatingNotes;
 
   const [viewportHeight, setViewportHeight] = useState<number | null>(null);
 
@@ -41,11 +40,7 @@ export function HeroSection() {
   // Используем null check чтобы избежать гидратационных ошибок
   const isCompact = isMobile && viewportHeight !== null && viewportHeight < 570;
 
-  const blobY1 = useTransform(scrollYProgress, [0, 1], isMobile ? ['0%', '0%'] : ['0%', '-40%']);
-  const blobY2 = useTransform(scrollYProgress, [0, 1], isMobile ? ['0%', '0%'] : ['0%', '-20%']);
   const notesY = useTransform(scrollYProgress, [0, 1], ['0%', '-60%']);
-  const contentY = useTransform(scrollYProgress, [0, 1], isMobile ? ['0%', '0%'] : ['0%', '30%']);
-  const opacity = useTransform(scrollYProgress, [0, 0.6], isMobile ? [1, 1] : [1, 0]);
 
   return (
     <section
@@ -54,12 +49,10 @@ export function HeroSection() {
       className='relative min-h-screen flex items-center justify-center overflow-hidden'
     >
       <div className='absolute inset-0 bg-gradient-to-b from-background via-muted/20 to-background' />
-      <motion.div
-        style={{ y: blobY1 }}
+      <div
         className='absolute top-1/4 right-1/4 w-[32rem] h-[32rem] bg-primary/[0.03] dark:bg-primary/[0.05] rounded-full blur-3xl'
       />
-      <motion.div
-        style={{ y: blobY2 }}
+      <div
         className='absolute bottom-1/4 left-1/4 w-[40rem] h-[40rem] bg-primary/[0.02] dark:bg-primary/[0.04] rounded-full blur-3xl'
       />
 
@@ -88,15 +81,8 @@ export function HeroSection() {
         </motion.div>
       </div>
 
-      <motion.div
-        style={isMobile ? undefined : { y: contentY, opacity }}
-        className='relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center'
-      >
-        <motion.div
-          initial={isMobile ? false : { opacity: 0, y: 30 }}
-          animate={isMobile ? undefined : { opacity: 1, y: 0 }}
-          transition={{ duration }}
-        >
+      <div className='relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center'>
+        <div>
           <span
             className={cn(
               'mb-5 inline-flex -rotate-1 items-center gap-2 rounded-full border border-primary/25 bg-background/80 text-primary shadow-[0_8px_22px_hsl(var(--primary)/0.12)] backdrop-blur-md [font-family:var(--font-caveat)]',
@@ -149,16 +135,14 @@ export function HeroSection() {
               </Button>
             </div>
           )}
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
 
-      <motion.div
+      <div
         className='absolute bottom-8 left-1/2 -translate-x-1/2'
-        animate={isMobile ? {} : { y: [0, 8, 0] }}
-        transition={{ repeat: Infinity, duration: 2 }}
       >
         <ArrowDown className='h-5 w-5 text-muted-foreground' />
-      </motion.div>
+      </div>
     </section>
   );
 }

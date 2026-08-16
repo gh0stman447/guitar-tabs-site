@@ -239,10 +239,10 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
                   publishedPaidCount >= DISCOUNT_TIER_1_MIN && (
                     <motion.div
                       key={`tier1-${items.length}`}
-                      initial={isTouch ? false : { opacity: 0, scale: 0.8 }}
-                      animate={isTouch ? undefined : { opacity: 1, scale: 1 }}
-                      exit={isTouch ? undefined : { opacity: 0, scale: 0.8 }}
-                      transition={{ duration: isTouch ? 0 : 0.25 }}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      transition={{ duration: 0.25 }}
                       className='mx-6 my-2 rounded-lg bg-primary/10 border border-primary/20 px-4 py-2.5 text-sm text-primary'
                     >
                       {ru
@@ -254,10 +254,10 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
                   publishedPaidCount >= DISCOUNT_TIER_2_MIN && (
                     <motion.div
                       key={`tier2-${items.length}`}
-                      initial={isTouch ? false : { opacity: 0, scale: 0.8 }}
-                      animate={isTouch ? undefined : { opacity: 1, scale: 1 }}
-                      exit={isTouch ? undefined : { opacity: 0, scale: 0.8 }}
-                      transition={{ duration: isTouch ? 0 : 0.25 }}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      transition={{ duration: 0.25 }}
                       className='mx-6 my-2 rounded-lg bg-primary/10 border border-primary/20 px-4 py-2.5 text-sm text-primary'
                     >
                       {ru
@@ -268,10 +268,10 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
                 {hasMaximumAvailableDiscount && (
                   <motion.div
                     key={`maximum-discount-${discountRate}`}
-                    initial={isTouch ? false : { opacity: 0, scale: 0.8 }}
-                    animate={isTouch ? undefined : { opacity: 1, scale: 1 }}
-                    exit={isTouch ? undefined : { opacity: 0, scale: 0.8 }}
-                    transition={{ duration: isTouch ? 0 : 0.25 }}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={{ duration: 0.25 }}
                     className='mx-6 my-2 rounded-lg border border-green-500/20 bg-green-500/10 px-4 py-2.5 text-sm text-green-700 dark:text-green-400'
                   >
                     {ru

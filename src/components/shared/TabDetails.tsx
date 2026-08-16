@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { useRef, useState } from 'react';
+import { useRef, useState, useSyncExternalStore } from 'react';
 import { motion, useAnimation } from 'framer-motion';
 import {
   ArrowLeft,
@@ -45,6 +45,8 @@ const AudioPlayerDialog = dynamic(
   () => import('@/components/shared/AudioPlayerDialog').then((module) => module.AudioPlayerDialog),
   { ssr: false },
 );
+
+const subscribeToHydration = () => () => {};
 
 const COPY = {
   ru: {
@@ -124,6 +126,7 @@ const COPY = {
 } as const;
 
 export function TabDetails({ tab, locale }: { tab: Tab; locale: string }) {
+  const hydrated = useSyncExternalStore(subscribeToHydration, () => true, () => false);
   const [buyOpen, setBuyOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewFlying, setPreviewFlying] = useState(false);
@@ -259,7 +262,7 @@ export function TabDetails({ tab, locale }: { tab: Tab; locale: string }) {
                 transformStyle: 'preserve-3d',
                 transformOrigin: 'center center',
                 position: 'relative',
-                zIndex: previewFlying || previewOpen ? 99999 : 0,
+                zIndex: previewFlying ? 99999 : 0,
               }}
             >
               <div
@@ -321,6 +324,8 @@ export function TabDetails({ tab, locale }: { tab: Tab; locale: string }) {
                       variant='outline'
                       className='rounded-full bg-transparent'
                       onClick={handlePreviewOpen}
+                      disabled={!hydrated || previewFlying}
+                      aria-busy={!hydrated}
                     >
                       <Eye className='h-4 w-4' />
                       {copy.preview}
@@ -331,6 +336,8 @@ export function TabDetails({ tab, locale }: { tab: Tab; locale: string }) {
                       variant='outline'
                       className='rounded-full bg-transparent'
                       onClick={() => setAudioOpen(true)}
+                      disabled={!hydrated}
+                      aria-busy={!hydrated}
                     >
                       <Headphones className='h-4 w-4' />
                       {copy.audio}

@@ -1,10 +1,9 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslations, useLocale } from 'next-intl';
 import { useIsTouch } from '@/hooks/useIsTouch';
-import { Search, ChevronUp, ChevronDown, ArrowUpDown, Gift, Guitar, X } from 'lucide-react';
+import { Search, ChevronUp, ChevronDown, ArrowUpDown, Check, Gift, Guitar, X } from 'lucide-react';
 import { TAB_TECHNIQUES, TAB_TUNINGS, type Tab, type TabTechnique, type TabTuning } from '@/types';
 import { TabCard } from '@/components/shared/TabCard';
 import { usePreviewBlock } from '@/context/PreviewBlockContext';
@@ -23,6 +22,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { normalizeTabCharacteristics } from '@/lib/tab-characteristics';
+import { cn } from '@/lib/utils';
 import {
   DISCOUNT_TIER_1_MIN,
   DISCOUNT_TIER_1_RATE,
@@ -38,8 +38,6 @@ export function TabsSection({ initialTabs }: { initialTabs: Tab[] }) {
   const t = useTranslations('tabs');
   const locale = useLocale();
   const isTouch = useIsTouch();
-  const headerDuration = isTouch ? 0.5 / 1.5 : 0.5;
-  const cardDuration = 0.2;
   const tabs = initialTabs;
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortKey>('popular');
@@ -48,6 +46,7 @@ export function TabsSection({ initialTabs }: { initialTabs: Tab[] }) {
   const [techniques, setTechniques] = useState<TabTechnique[]>([]);
   const [tuning, setTuning] = useState<TuningFilter>('all');
   const [capo, setCapo] = useState<CapoFilter>('all');
+  const [mobileFilter, setMobileFilter] = useState<'techniques' | 'tuning' | 'capo' | null>(null);
   const { flippingTabId } = usePreviewBlock();
 
   const SORT_OPTIONS: { value: SortKey; label: string }[] = [
@@ -159,28 +158,16 @@ export function TabsSection({ initialTabs }: { initialTabs: Tab[] }) {
   return (
     <section id='tabs' className='py-12 sm:py-24'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: headerDuration }}
-          className='text-center mb-12'
-        >
+        <div className='text-center mb-12'>
           <span className='text-primary text-sm font-medium tracking-widest uppercase'>
             {t('badge')}
           </span>
           <h2 className='text-3xl sm:text-4xl font-bold mt-2'>{t('title')}</h2>
           <p className='text-muted-foreground mt-3 max-w-xl mx-auto'>{t('description')}</p>
-        </motion.div>
+        </div>
 
         {/* Search + Sort */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: headerDuration * 0.8, delay: 0.15 }}
-          className='flex flex-col gap-3 mb-8'
-        >
+        <div className='flex flex-col gap-3 mb-8'>
           <div className='relative'>
             <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
             <input
@@ -215,7 +202,11 @@ export function TabsSection({ initialTabs }: { initialTabs: Tab[] }) {
                   )}
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align='start' className='min-w-60'>
+              <DropdownMenuContent
+                align='start'
+                collisionPadding={12}
+                className='min-w-60'
+              >
                 <DropdownMenuLabel className='text-xs text-muted-foreground'>
                   {t('sortLabel')}
                 </DropdownMenuLabel>
@@ -246,6 +237,8 @@ export function TabsSection({ initialTabs }: { initialTabs: Tab[] }) {
                   {t('characteristics')}
                 </DropdownMenuLabel>
 
+                {!isTouch && (
+                  <>
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger className='focus:bg-muted/70 data-[state=open]:bg-muted/70 data-[state=open]:text-foreground'>
                     {t('techniques')}
@@ -329,6 +322,88 @@ export function TabsSection({ initialTabs }: { initialTabs: Tab[] }) {
                     </DropdownMenuRadioGroup>
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
+                  </>
+                )}
+
+                {isTouch && (
+                  <div className='space-y-1'>
+                    <button
+                      type='button'
+                      onClick={() => setMobileFilter((current) => current === 'techniques' ? null : 'techniques')}
+                      className='flex w-full items-center rounded-sm px-2 py-2 text-left text-sm outline-none hover:bg-muted/70'
+                    >
+                      {t('techniques')}
+                      <ChevronDown className={cn('ml-auto h-4 w-4 transition-transform', mobileFilter === 'techniques' && 'rotate-180')} />
+                    </button>
+                    {mobileFilter === 'techniques' && (
+                      <div className='space-y-0.5 border-l border-border/70 pl-2'>
+                        {TAB_TECHNIQUES.map((technique) => {
+                          const active = techniques.includes(technique);
+                          return (
+                            <button
+                              key={technique}
+                              type='button'
+                              aria-pressed={active}
+                              onClick={() => setTechniques((current) => active ? current.filter((item) => item !== technique) : [...current, technique])}
+                              className='flex w-full items-center gap-2 rounded-sm px-2 py-2 text-left text-sm hover:bg-muted/70'
+                            >
+                              <span className='flex h-4 w-4 items-center justify-center'>{active && <Check className='h-3.5 w-3.5' />}</span>
+                              {techniqueLabels[technique]}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    <button
+                      type='button'
+                      onClick={() => setMobileFilter((current) => current === 'tuning' ? null : 'tuning')}
+                      className='flex w-full items-center rounded-sm px-2 py-2 text-left text-sm outline-none hover:bg-muted/70'
+                    >
+                      {t('tuning')}
+                      <ChevronDown className={cn('ml-auto h-4 w-4 transition-transform', mobileFilter === 'tuning' && 'rotate-180')} />
+                    </button>
+                    {mobileFilter === 'tuning' && (
+                      <div className='space-y-0.5 border-l border-border/70 pl-2'>
+                        {(['all', ...TAB_TUNINGS.filter((value) => value !== 'custom')] as TuningFilter[]).map((value) => (
+                          <button
+                            key={value}
+                            type='button'
+                            onClick={() => setTuning(value)}
+                            className='flex w-full items-center gap-2 rounded-sm px-2 py-2 text-left text-sm hover:bg-muted/70'
+                          >
+                            <span className='flex h-4 w-4 items-center justify-center'>{tuning === value && <span className='h-1.5 w-1.5 rounded-full bg-foreground' />}</span>
+                            {value === 'all' ? t('all') : tuningLabels[value]}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    <button
+                      type='button'
+                      onClick={() => setMobileFilter((current) => current === 'capo' ? null : 'capo')}
+                      className='flex w-full items-center rounded-sm px-2 py-2 text-left text-sm outline-none hover:bg-muted/70'
+                    >
+                      {t('capo')}
+                      <ChevronDown className={cn('ml-auto h-4 w-4 transition-transform', mobileFilter === 'capo' && 'rotate-180')} />
+                    </button>
+                    {mobileFilter === 'capo' && (
+                      <div className='space-y-0.5 border-l border-border/70 pl-2'>
+                        {(['all', 'without', 'with'] as CapoFilter[]).map((value) => (
+                          <button
+                            key={value}
+                            type='button'
+                            onClick={() => setCapo(value)}
+                            className='flex w-full items-center gap-2 rounded-sm px-2 py-2 text-left text-sm hover:bg-muted/70'
+                          >
+                            <span className='flex h-4 w-4 items-center justify-center'>{capo === value && <span className='h-1.5 w-1.5 rounded-full bg-foreground' />}</span>
+                            {value === 'all' ? t('all') : value === 'without' ? t('withoutCapo') : t('withCapo')}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
 
@@ -346,23 +421,17 @@ export function TabsSection({ initialTabs }: { initialTabs: Tab[] }) {
               {t('freeOnly')}
             </button>
 
-            <AnimatePresence>
-              {isDirty && (
-                <motion.button
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  transition={{ duration: 0.15 }}
+            {isDirty && (
+                <button
                   onClick={reset}
                   className='flex items-center gap-1 h-8 px-3 rounded-md text-xs font-medium border border-border text-muted-foreground hover:border-red-400 hover:text-red-500 bg-background transition-colors cursor-pointer'
                 >
                   <X className='h-3 w-3' />
                   {t('reset')}
-                </motion.button>
+                </button>
               )}
-            </AnimatePresence>
           </div>
-        </motion.div>
+        </div>
 
         {/* Discount promo */}
         {paidTabsCount >= DISCOUNT_TIER_2_MIN && (
@@ -419,7 +488,7 @@ export function TabsSection({ initialTabs }: { initialTabs: Tab[] }) {
               {t('resetSearch')}
             </button>
           </div>
-        ) : isTouch ? (
+        ) : (
           <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 xl:gap-6'>
             {filtered.map((tab) => (
               <div
@@ -441,37 +510,6 @@ export function TabsSection({ initialTabs }: { initialTabs: Tab[] }) {
               </div>
             ))}
           </div>
-        ) : (
-          <motion.div
-            layout
-            className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 xl:gap-6'
-          >
-            <AnimatePresence>
-              {filtered.map((tab) => (
-                <motion.div
-                  key={tab.id}
-                  layout
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: cardDuration }}
-                  style={{
-                    zIndex: flippingTabId === `catalog-${tab.id}` ? 100 : 0,
-                  }}
-                >
-                  <TabCard
-                    tab={tab}
-                    locale={locale}
-                    buyLabel={t('buy')}
-                    showDetails
-                    index={filtered.indexOf(tab)}
-                    tooltipPrefix='catalog'
-                    sectionPrefix='catalog'
-                  />
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </motion.div>
         )}
       </div>
     </section>

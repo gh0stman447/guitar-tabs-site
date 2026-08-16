@@ -21,15 +21,18 @@ export function ThemeTransition() {
     const handleThemeChange = (event: Event) => {
       const { theme } = (event as ThemeChangeEvent).detail;
       const documentWithTransition = document as DocumentWithViewTransition;
+      const supportsDesktopInteraction = window.matchMedia(
+        '(hover: hover) and (pointer: fine)',
+      ).matches;
       const prefersReducedMotion = window.matchMedia(
         '(prefers-reduced-motion: reduce)',
       ).matches;
-      const isTouchViewport = window.matchMedia('(hover: none), (pointer: coarse)').matches;
+
+      if (isTransitioning.current) return;
 
       if (
-        isTransitioning.current ||
+        !supportsDesktopInteraction ||
         prefersReducedMotion ||
-        isTouchViewport ||
         !documentWithTransition.startViewTransition
       ) {
         setTheme(theme);
@@ -37,15 +40,10 @@ export function ThemeTransition() {
       }
 
       isTransitioning.current = true;
-      document.documentElement.dataset.themeTransition = 'active';
-
-      const transition = documentWithTransition.startViewTransition(() => {
-        setTheme(theme);
-      });
+      const transition = documentWithTransition.startViewTransition(() => setTheme(theme));
 
       transition.finished.finally(() => {
         isTransitioning.current = false;
-        delete document.documentElement.dataset.themeTransition;
       });
     };
 

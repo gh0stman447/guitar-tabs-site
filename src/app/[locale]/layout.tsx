@@ -175,7 +175,7 @@ export default async function LocaleLayout({
       </head>
       <body className={`antialiased ${inter.variable} ${caveat.variable} ${brandFont.variable}`}>
         <NextIntlClientProvider messages={messages}>
-          <ThemeProvider attribute='class' defaultTheme='dark'>
+          <ThemeProvider attribute='class' defaultTheme='dark' disableTransitionOnChange>
             <UserAuthProvider hasSessionCookie={hasUserSession}>
               <AdminProvider>
                 <CartProvider>

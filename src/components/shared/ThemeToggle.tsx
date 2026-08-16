@@ -19,9 +19,7 @@ export function ThemeToggle({ className }: { className?: string }) {
   const prefersReducedMotion = useReducedMotion();
   const mounted = useSyncExternalStore(subscribeToHydration, () => true, () => false);
 
-  if (!mounted) return <div className='w-9 h-9' />;
-
-  const isDark = theme === 'dark';
+  const isDark = !mounted || theme === 'dark';
   const isRu = locale === 'ru';
   const animatedIcon = (
     <span className='relative flex h-[18px] w-[18px] items-center justify-center'>
@@ -30,7 +28,7 @@ export function ThemeToggle({ className }: { className?: string }) {
           key={isDark ? 'sun' : 'moon'}
           className='absolute inset-0 flex items-center justify-center'
           initial={
-            prefersReducedMotion
+            !mounted || prefersReducedMotion || isTouch
               ? false
               : {
                   opacity: 0.35,
@@ -41,7 +39,7 @@ export function ThemeToggle({ className }: { className?: string }) {
           }
           animate={{ opacity: 1, rotate: 0, scale: 1, filter: 'blur(0px)' }}
           exit={
-            prefersReducedMotion
+            !mounted || prefersReducedMotion || isTouch
               ? { opacity: 0 }
               : {
                   opacity: 0.35,
@@ -51,7 +49,7 @@ export function ThemeToggle({ className }: { className?: string }) {
                 }
           }
           transition={
-            prefersReducedMotion
+            !mounted || prefersReducedMotion || isTouch
               ? { duration: 0 }
               : { duration: 0.7, ease: [0.22, 1, 0.36, 1] }
           }
@@ -78,6 +76,8 @@ export function ThemeToggle({ className }: { className?: string }) {
         variant='ghost'
         size='icon'
         onClick={handleThemeChange}
+        disabled={!mounted}
+        aria-busy={!mounted}
         aria-label='Переключить тему'
         className={className}
       >
@@ -94,18 +94,22 @@ export function ThemeToggle({ className }: { className?: string }) {
         variant='ghost'
         size='icon'
         onClick={handleThemeChange}
+        disabled={!mounted}
+        aria-busy={!mounted}
         aria-label='Переключить тему'
         className={cn(className)}
       >
         {animatedIcon}
       </Button>
-      <ReactTooltip
-        id='theme-toggle'
-        place='bottom'
-        opacity={1}
-        delayShow={350}
-        style={{ fontSize: 13 }}
-      />
+      {mounted && (
+        <ReactTooltip
+          id='theme-toggle'
+          place='bottom'
+          opacity={1}
+          delayShow={350}
+          style={{ fontSize: 13 }}
+        />
+      )}
     </>
   );
 }

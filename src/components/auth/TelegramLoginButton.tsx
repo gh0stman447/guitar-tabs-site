@@ -31,6 +31,7 @@ declare global {
 
 let telegramScriptPromise: Promise<void> | null = null;
 let telegramScriptAttempt = 0;
+const TELEGRAM_SCRIPT_TIMEOUT_MS = 8_000;
 
 function resetTelegramScript() {
   telegramScriptAttempt += 1;
@@ -46,7 +47,12 @@ function loadTelegramScript() {
   telegramScriptPromise = new Promise<void>((resolve, reject) => {
     const existing = document.querySelector<HTMLScriptElement>('script[data-oleg-telegram-login]');
     const script = existing ?? document.createElement('script');
+    const timeout = window.setTimeout(() => {
+      cleanup();
+      reject(new Error('Telegram Login Widget timed out'));
+    }, TELEGRAM_SCRIPT_TIMEOUT_MS);
     const cleanup = () => {
+      window.clearTimeout(timeout);
       script.removeEventListener('load', handleLoad);
       script.removeEventListener('error', handleError);
     };
@@ -89,6 +95,12 @@ export function TelegramLoginButton({ children, disabled, ...props }: TelegramLo
   useEffect(() => {
     // Загружаем виджет заранее, но не показываем ошибку без действия пользователя.
     void loadTelegramScript().catch(() => undefined);
+
+    return () => {
+      // Если окно закрыли во время зависшей загрузки, следующему открытию нужна
+      // новая попытка, а не сохранённый незавершённый Promise.
+      if (!window.Telegram?.Login) resetTelegramScript();
+    };
   }, []);
 
   async function authenticate() {

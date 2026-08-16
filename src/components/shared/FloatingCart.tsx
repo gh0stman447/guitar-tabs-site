@@ -66,21 +66,22 @@ export function FloatingCart() {
 
   // Bump animation on count change
   useEffect(() => {
-    if (count === 0) return;
+    if (count === 0 || isTouch) return;
     controls.start({
       scale: [1, 1.6, 1],
       transition: { duration: 0.3, ease: 'easeOut' },
     });
-  }, [count, controls]);
+  }, [count, controls, isTouch]);
 
   const ru = locale !== 'en';
+
+  if (isTouch) return null;
 
   return (
     <>
       <motion.div
         className={cn(
           'fixed bottom-25 right-6 z-40 transition-all duration-500',
-          isTouch && 'hidden',
         )}
         initial={false}
         animate={visible ? 'visible' : 'hidden'}

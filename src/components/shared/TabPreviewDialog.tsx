@@ -300,7 +300,7 @@ export function TabPreviewDialog({
                       animate={{
                         strokeDashoffset: 75.4 - (downloadProgress / 100) * 75.4,
                       }}
-                      transition={{ duration: 0.1 }}
+                      transition={{ duration: isTouch ? 0 : 0.1 }}
                     />
                   </svg>
                 )}
@@ -373,7 +373,7 @@ export function TabPreviewDialog({
                       animate={{
                         strokeDashoffset: 75.4 - (downloadProgress / 100) * 75.4,
                       }}
-                      transition={{ duration: 0.1 }}
+                      transition={{ duration: isTouch ? 0 : 0.1 }}
                     />
                   </svg>
                 )}

@@ -36,6 +36,7 @@ export function AudioPlayerDialog({ tab, locale, open, onOpenChange }: AudioPlay
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [audioError, setAudioError] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(1);
   const [isDragging, setIsDragging] = useState(false);
@@ -64,6 +65,7 @@ export function AudioPlayerDialog({ tab, locale, open, onOpenChange }: AudioPlay
       }
       hasLoadedRef.current = false;
       shouldAutoPlayRef.current = false;
+      setAudioError(false);
       // Don't call setState directly in effect - let the audio events handle it
     }
   }, [open]);
@@ -124,6 +126,7 @@ export function AudioPlayerDialog({ tab, locale, open, onOpenChange }: AudioPlay
     console.error('[AudioPlayer] Failed to load audio');
     setIsLoading(false);
     setIsPlaying(false);
+    setAudioError(true);
   }, []);
 
   const togglePlay = useCallback(() => {
@@ -270,6 +273,8 @@ export function AudioPlayerDialog({ tab, locale, open, onOpenChange }: AudioPlay
     );
     if (open && audioRef.current && !hasLoadedRef.current) {
       hasLoadedRef.current = true;
+      setAudioError(false);
+      setIsLoading(true);
       const src = `/api/tabs/${tab.id}/audio`;
       console.log('[AudioPlayer] loading:', src, 'at', new Date().toISOString());
       // preload=none + crossOrigin заставляет браузер использовать Range requests с самого начала
@@ -353,6 +358,17 @@ export function AudioPlayerDialog({ tab, locale, open, onOpenChange }: AudioPlay
           )}
 
           {/* Progress bar */}
+          {audioError && (
+            <div
+              role='alert'
+              className='rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-center text-sm text-destructive'
+            >
+              {locale === 'en'
+                ? 'Audio preview is temporarily unavailable. Please try again later.'
+                : 'Аудиопревью временно недоступно. Попробуйте позже.'}
+            </div>
+          )}
+
           <div className='flex flex-col gap-2'>
             <div
               ref={progressRef}

@@ -59,11 +59,11 @@ export function AboutSection() {
               <p className='leading-relaxed'>{t('text1')}</p>
             </div>
 
-            <div className='relative mb-7 ml-1 space-y-1 before:absolute before:bottom-5 before:left-[1.15rem] before:top-5 before:w-px before:bg-gradient-to-b before:from-primary/70 before:via-primary/25 before:to-transparent'>
+            <div className='relative mb-7 ml-1 space-y-1 before:absolute before:bottom-5 before:left-[1.15rem] before:top-5 before:w-px before:rounded-full before:bg-gradient-to-b before:from-primary/70 before:via-primary/25 before:to-transparent'>
               {details.map(({ number, title, text }) => (
                 <div
                   key={number}
-                  className='group relative flex gap-4 rounded-2xl px-1 py-3 transition-colors duration-300 [@media(hover:hover)]:hover:bg-background/45'
+                  className='group relative flex gap-4 rounded-2xl px-2 py-3 transition-[background-color,box-shadow] duration-0 [@media(hover:hover)]:hover:bg-primary/10 [@media(hover:hover)]:hover:shadow-[0_8px_24px_hsl(var(--primary)/0.08)]'
                 >
                   <span className='relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-primary/25 bg-background text-[10px] font-bold tracking-wider text-primary shadow-[0_4px_14px_hsl(var(--primary)/0.1)] dark:bg-card'>
                     {number}

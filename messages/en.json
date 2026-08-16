@@ -11,6 +11,12 @@
     "settings": "Settings",
     "logout": "Sign out"
   },
+  "notFound": {
+    "stringBroke": "A string broke",
+    "title": "This page does not exist",
+    "description": "The link may be outdated. Go back home — the music is still playing there.",
+    "home": "Back to home"
+  },
   "auth": {
     "title": "Sign in to OlegGuitar",
     "description": "Keep your purchases and access your materials from any device.",

@@ -127,9 +127,11 @@ export function TabCard({
       description: locale === 'en' ? 'Added to cart' : 'Добавлено в корзину',
       icon: '🛒',
     });
-    if (!animationsDisabled && element) {
+    if (!adminActions) {
       setJustAdded(true);
       window.setTimeout(() => setJustAdded(false), 650);
+    }
+    if (!animationsDisabled && element) {
       flyToCart(element.getBoundingClientRect(), element);
     }
   }

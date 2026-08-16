@@ -483,7 +483,7 @@ export function TabsSection({ initialTabs }: { initialTabs: Tab[] }) {
             <button
               type='button'
               onClick={reset}
-              className='mt-5 rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted/70'
+              className='mt-5 cursor-pointer rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted/70'
             >
               {t('resetSearch')}
             </button>

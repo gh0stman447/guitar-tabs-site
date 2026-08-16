@@ -9,6 +9,8 @@ export function ThemedToaster() {
     <Toaster
       position='bottom-center'
       richColors
+      expand
+      visibleToasts={3}
       duration={2500}
       theme={resolvedTheme === 'dark' ? 'dark' : 'light'}
     />

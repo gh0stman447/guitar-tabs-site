@@ -143,7 +143,7 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
     }
 
     clearCart();
-    submitPaymentRedirect(data);
+    submitPaymentRedirect(data, 'robokassa-cart-widget');
   }
 
   const renderContent = () => (
@@ -337,6 +337,7 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
                 price={total}
                 onSubmit={handleSubmit}
               />
+              <div id='robokassa-cart-widget' className='w-full min-w-0' />
             </div>
           </div>
         )}

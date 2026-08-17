@@ -4,9 +4,34 @@ interface PaymentRedirect {
   payment_fields?: Record<string, string>;
 }
 
+interface RobokassaIframe {
+  Render: (params: Record<string, unknown>) => void;
+}
+
+declare global {
+  interface Window {
+    Robokassa?: RobokassaIframe;
+  }
+}
+
 export function submitPaymentRedirect(payment: PaymentRedirect) {
   if (payment.payment_method !== 'POST' || !payment.payment_fields) {
     window.location.href = payment.confirmation_url;
+    return;
+  }
+
+  const fields = payment.payment_fields;
+  if (
+    window.Robokassa?.Render &&
+    fields.MerchantLogin &&
+    fields.OutSum &&
+    fields.SignatureValue
+  ) {
+    window.Robokassa.Render({
+      ...fields,
+      InvId: fields.InvId ? Number(fields.InvId) : undefined,
+      Settings: JSON.stringify({ Mode: 'modal' }),
+    });
     return;
   }
 

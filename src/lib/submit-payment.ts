@@ -5,7 +5,7 @@ interface PaymentRedirect {
 }
 
 interface RobokassaIframe {
-  Render: (params: Record<string, unknown>) => void;
+  Render: (params: Record<string, unknown>, targetId?: string) => void;
 }
 
 declare global {
@@ -14,7 +14,7 @@ declare global {
   }
 }
 
-export function submitPaymentRedirect(payment: PaymentRedirect) {
+export function submitPaymentRedirect(payment: PaymentRedirect, widgetId?: string) {
   if (payment.payment_method !== 'POST' || !payment.payment_fields) {
     window.location.href = payment.confirmation_url;
     return;
@@ -30,8 +30,8 @@ export function submitPaymentRedirect(payment: PaymentRedirect) {
     window.Robokassa.Render({
       ...fields,
       InvId: fields.InvId ? Number(fields.InvId) : undefined,
-      Settings: JSON.stringify({ Mode: 'modal' }),
-    });
+      Settings: JSON.stringify({ Mode: widgetId ? 'widget' : 'modal' }),
+    }, widgetId);
     return;
   }
 

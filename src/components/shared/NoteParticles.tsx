@@ -105,5 +105,5 @@ export function NoteParticles() {
     };
   }, []);
 
-  return <div ref={containerRef} aria-hidden />;
+  return <div ref={containerRef} data-print-hide aria-hidden />;
 }

@@ -14,25 +14,6 @@ declare global {
   }
 }
 
-function showPaymentBackdrop() {
-  const id = 'robokassa-payment-backdrop';
-  if (document.getElementById(id)) return;
-
-  const backdrop = document.createElement('div');
-  backdrop.id = id;
-  backdrop.setAttribute('aria-hidden', 'true');
-  Object.assign(backdrop.style, {
-    position: 'fixed',
-    inset: '0',
-    zIndex: '9998',
-    pointerEvents: 'none',
-    background: 'rgb(8 12 20 / 38%)',
-    backdropFilter: 'blur(10px)',
-    WebkitBackdropFilter: 'blur(10px)',
-  });
-  document.body.appendChild(backdrop);
-}
-
 export function submitPaymentRedirect(payment: PaymentRedirect) {
   if (payment.payment_method !== 'POST' || !payment.payment_fields) {
     window.location.href = payment.confirmation_url;
@@ -41,7 +22,6 @@ export function submitPaymentRedirect(payment: PaymentRedirect) {
 
   const fields = payment.payment_fields;
   if (window.Robokassa?.Render && fields.MerchantLogin && fields.OutSum && fields.SignatureValue) {
-    showPaymentBackdrop();
     window.Robokassa.Render({
       ...fields,
       InvId: fields.InvId ? Number(fields.InvId) : undefined,

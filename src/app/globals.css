@@ -395,6 +395,28 @@ body {
   }
 }
 
+@media print {
+  @page {
+    margin: 18mm 14mm 16mm;
+  }
+
+  .document-download,
+  [data-print-hide],
+  footer {
+    display: none !important;
+  }
+
+  /* Убираем экранные отступы шапки документов в PDF. */
+  .pt-16 {
+    padding-top: 0 !important;
+  }
+
+  .py-12 {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+}
+
 /* Уменьшаем ширину контейнеров на экранах от 640px до 1024px */
 @media (min-width: 640px) and (max-width: 1023px) {
   .max-w-4xl,

@@ -1,14 +1,13 @@
 import Link from 'next/link';
-import { getTranslations } from 'next-intl/server';
 import { Footer } from '@/components/shared/Footer';
 import { ScrollToTop } from '@/components/shared/ScrollToTop';
 import { FileText } from 'lucide-react';
 import { SITE_URL } from '@/lib/constants';
+import { DocumentDownloadButton } from '@/components/shared/DocumentDownloadButton';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
-  const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: 'legal' });
-  return { title: t('title') };
+  await params;
+  return { title: 'Публичная оферта — OlegGuitar' };
 }
 
 export default async function LegalPage({
@@ -21,25 +20,28 @@ export default async function LegalPage({
     <>
       <main className='min-h-screen bg-background'>
         <div className='border-b border-border bg-muted/30 pt-16'>
-          <div className='max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12'>
-            <div className='flex items-center gap-3 mb-4'>
-              <div className='w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-950/40 flex items-center justify-center'>
+          <div className='mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8'>
+            <div className='mb-4 flex items-center gap-3'>
+              <div className='flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-950/40'>
                 <FileText className='h-5 w-5 text-amber-500' />
               </div>
-              <span className='text-amber-500 text-sm font-medium tracking-widest uppercase'>
+              <span className='text-sm font-medium uppercase tracking-widest text-amber-500'>
                 Правовая информация
               </span>
             </div>
-            <h1 className='text-3xl sm:text-4xl font-bold'>Публичная оферта</h1>
-            <p className='text-muted-foreground mt-2 text-sm'>
+            <h1 className='text-3xl font-bold sm:text-4xl'>Публичная оферта</h1>
+            <p className='mt-2 text-sm text-muted-foreground'>
               Договор о реализации цифровых продуктов · Версия 2.0 · Дата вступления в силу:
               03.08.2026
             </p>
+            <div className='mt-5'>
+              <DocumentDownloadButton locale={locale} />
+            </div>
           </div>
         </div>
 
-        <div className='max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-2'>
-          <div className='rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground leading-relaxed space-y-2'>
+        <div className='mx-auto max-w-3xl space-y-2 px-4 py-12 sm:px-6 lg:px-8'>
+          <div className='border-l-2 border-amber-500/70 py-2 pl-5 text-sm leading-relaxed text-muted-foreground'>
             <p>
               Настоящий документ является официальным предложением (публичной офертой) Малыгина
               Олега Романовича (самозанятого), далее именуемого «Продавец», заключить Договор
@@ -706,9 +708,9 @@ export default async function LegalPage({
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className='rounded-xl border border-border bg-card p-6 space-y-2 text-sm text-muted-foreground leading-relaxed'>
-      <h2 className='mb-3 text-[15px] font-semibold text-foreground sm:text-base'>{title}</h2>
-      {children}
-    </div>
+    <section className='border-b border-border py-6 last:border-0'>
+      <h2 className='mb-3 text-xl font-semibold'>{title}</h2>
+      <div className='space-y-2 text-sm leading-relaxed text-muted-foreground'>{children}</div>
+    </section>
   );
 }

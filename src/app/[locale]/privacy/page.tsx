@@ -3,6 +3,7 @@ import { Footer } from '@/components/shared/Footer';
 import { ScrollToTop } from '@/components/shared/ScrollToTop';
 import { ShieldCheck } from 'lucide-react';
 import { SITE_URL } from '@/lib/constants';
+import { DocumentDownloadButton } from '@/components/shared/DocumentDownloadButton';
 
 export async function generateMetadata() {
   return { title: 'Политика обработки персональных данных — OlegGuitar' };
@@ -32,11 +33,14 @@ export default async function PrivacyPage({
             <p className='mt-2 text-sm text-muted-foreground'>
               Версия 2.0 · Дата вступления в силу: 03.08.2026
             </p>
+            <div className='mt-5'>
+              <DocumentDownloadButton locale={locale} />
+            </div>
           </div>
         </div>
 
         <div className='mx-auto max-w-3xl space-y-2 px-4 py-12 sm:px-6 lg:px-8'>
-          <div className='rounded-xl border border-border bg-card p-6 text-sm leading-relaxed text-muted-foreground'>
+          <div className='border-l-2 border-amber-500/70 py-2 pl-5 text-sm leading-relaxed text-muted-foreground'>
             <p>
               Настоящая Политика определяет порядок обработки и защиты персональных данных на сайте{' '}
               <a href={SITE_URL} className='text-amber-500 hover:underline'>

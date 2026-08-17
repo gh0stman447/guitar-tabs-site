@@ -167,6 +167,7 @@ export function Header() {
     <>
       <header
         data-no-particles
+        data-print-hide
         style={{ paddingTop: 'calc(env(safe-area-inset-top) + 0.75rem)' }}
         className={cn(
           'fixed top-0 left-0 right-0 z-50 px-3 sm:px-5 lg:px-6',

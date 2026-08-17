@@ -80,6 +80,7 @@ export function FloatingCart() {
   return (
     <>
       <motion.div
+        data-print-hide
         className={cn(
           'fixed bottom-25 right-6 z-40 transition-all duration-500',
         )}

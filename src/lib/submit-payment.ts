@@ -45,7 +45,10 @@ export function submitPaymentRedirect(payment: PaymentRedirect) {
     window.Robokassa.Render({
       ...fields,
       InvId: fields.InvId ? Number(fields.InvId) : undefined,
-      Settings: JSON.stringify({ Mode: 'modal' }),
+      Settings: JSON.stringify({
+        Mode: 'modal',
+        PaymentMethods: ['BankCard', 'SBP', 'SberPay', 'TinkoffPay'],
+      }),
     });
     return;
   }

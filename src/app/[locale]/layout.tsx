@@ -172,6 +172,13 @@ export default async function LocaleLayout({
           </>
         )}
         {/* /Yandex Metrika counter */}
+        {process.env.NODE_ENV === 'production' && (
+          <Script
+            id='robokassa-iframe'
+            src='https://auth.robokassa.ru/Merchant/bundle/robokassa_iframe.js'
+            strategy='afterInteractive'
+          />
+        )}
       </head>
       <body className={`antialiased ${inter.variable} ${caveat.variable} ${brandFont.variable}`}>
         <NextIntlClientProvider messages={messages}>

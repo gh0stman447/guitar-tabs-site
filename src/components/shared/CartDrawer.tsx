@@ -142,8 +142,7 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
       throw new Error(data.error ?? (ru ? 'Что-то пошло не так' : 'Something went wrong'));
     }
 
-    clearCart();
-    submitPaymentRedirect(data, 'robokassa-cart-widget');
+    submitPaymentRedirect(data);
   }
 
   const renderContent = () => (
@@ -337,7 +336,6 @@ export function CartDrawer({ open, onOpenChange, locale }: CartDrawerProps) {
                 price={total}
                 onSubmit={handleSubmit}
               />
-              <div id='robokassa-cart-widget' className='w-full min-w-0' />
             </div>
           </div>
         )}

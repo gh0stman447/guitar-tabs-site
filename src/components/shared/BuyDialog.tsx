@@ -50,7 +50,7 @@ export function BuyDialog({ tab, locale, open, onOpenChange, testMode }: BuyDial
       throw new Error(data.error ?? (locale === 'en' ? 'Something went wrong' : 'Что-то пошло не так'));
     }
 
-    submitPaymentRedirect(data, `robokassa-widget-${tab.id}`);
+    submitPaymentRedirect(data);
   }
 
   return (
@@ -69,7 +69,6 @@ export function BuyDialog({ tab, locale, open, onOpenChange, testMode }: BuyDial
           price={tab.price}
           onSubmit={handleSubmit}
         />
-        <div id={`robokassa-widget-${tab.id}`} className='w-full min-w-0' />
       </DialogContent>
     </Dialog>
   );

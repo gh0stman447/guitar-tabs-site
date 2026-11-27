@@ -1020,6 +1020,14 @@ const isLandscape = useOrientation();
 
 ## Команды для разработки
 
+Production-сборка использует `output: 'standalone'`. После `npm run build`
+скрипт `scripts/prepare-standalone.mjs` копирует `public` (кроме runtime MP3 в
+`public/audio`) и `.next/static` в `.next/standalone`, чтобы серверный деплой
+содержал логотип, фото About, PDF worker и клиентские ресурсы. Запуск готовой
+сборки: `node .next/standalone/server.js`. Для MP3 на сервере по-прежнему нужно
+отдельное постоянное хранилище. На Onreza build command должен быть
+`npm run build`, чтобы выполнялся npm lifecycle `postbuild`.
+
 ```bash
 # Development
 npm run dev

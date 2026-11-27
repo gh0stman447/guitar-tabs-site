@@ -1,13 +1,27 @@
 import { Pool, PoolClient, QueryResult } from 'pg';
 
+const connectionString = process.env.DATABASE_URL?.trim();
+// pg does not map the connection_limit URL parameter to its pool size.
+const connectionLimit = connectionString
+  ? new URL(connectionString).searchParams.get('connection_limit')
+  : null;
+const maxConnections = connectionLimit === null ? 20 : Number(connectionLimit);
+if (!Number.isSafeInteger(maxConnections) || maxConnections < 1) {
+  throw new Error('DATABASE_URL connection_limit must be a positive integer');
+}
+
 // PostgreSQL connection pool with increased timeouts for remote connections
 const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432'),
-  database: process.env.DB_NAME || 'guitar_tabs',
-  user: process.env.DB_USER || 'guitar',
-  password: process.env.DB_PASSWORD,
-  max: 20,
+  ...(connectionString
+    ? { connectionString }
+    : {
+        host: process.env.DB_HOST || 'localhost',
+        port: parseInt(process.env.DB_PORT || '5432'),
+        database: process.env.DB_NAME || 'guitar_tabs',
+        user: process.env.DB_USER || 'guitar',
+        password: process.env.DB_PASSWORD,
+      }),
+  max: maxConnections,
   idleTimeoutMillis: 60000,
   connectionTimeoutMillis: 30000,
   // Keep connections alive for remote DB

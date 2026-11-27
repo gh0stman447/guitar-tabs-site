@@ -3,6 +3,7 @@ import JSZip from 'jszip';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { TABLE_TABS, TABLE_PURCHASES, TABLE_TAB_FILES, SITE_EMAIL } from '@/lib/constants';
 import { query } from '@/lib/db';
+import { downloadFile } from '@/lib/storage';
 import { getRobokassaConfig, verifyRobokassaHash } from '@/lib/robokassa';
 
 export const dynamic = 'force-dynamic';
@@ -223,13 +224,12 @@ async function buildZipAttachments(
     // Get file data from DB
     const fileNamesResult = await supabaseAdmin
       .from(TABLE_TAB_FILES)
-      .select('format, filename, data')
+      .select('format, filename')
       .eq('tab_id', tab.id);
 
     const fileRecords = fileNamesResult.data as Array<{
       format: string;
       filename: string;
-      data: string | Buffer | null;
     }>;
 
     for (const [format, exists] of Object.entries(files)) {
@@ -238,33 +238,7 @@ async function buildZipAttachments(
       const fileRecord = fileRecords?.find((f) => f.format === format);
       if (!fileRecord) continue;
 
-      let fileData: Buffer;
-
-      // MP3 files are stored in filesystem, others in database
-      if (format === 'mp3') {
-        const fs = await import('fs');
-        const path = await import('path');
-        const filePath = path.join(process.cwd(), 'public', 'audio', `${tab.id}.mp3`);
-        if (!fs.existsSync(filePath)) {
-          console.error(`[webhook] MP3 file not found: ${filePath}`);
-          continue;
-        }
-        fileData = await fs.promises.readFile(filePath);
-      } else if (fileRecord.data) {
-        // Read from database (bytea)
-        if (typeof fileRecord.data === 'string') {
-          const hexString = fileRecord.data.replace(/^\\x/, '');
-          fileData = Buffer.from(hexString, 'hex');
-        } else if (Buffer.isBuffer(fileRecord.data)) {
-          fileData = fileRecord.data;
-        } else {
-          console.error(`[webhook] Invalid data for ${tab.id}/${format}`);
-          continue;
-        }
-      } else {
-        console.error(`[webhook] No data for ${tab.id}/${format}`);
-        continue;
-      }
+      const fileData = await downloadFile(`${tab.id}/${fileRecord.filename}`);
 
       const filename = fileRecord.filename ?? `tab.${format}`;
       folder.file(filename, fileData);

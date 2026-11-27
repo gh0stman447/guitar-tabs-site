@@ -39,7 +39,7 @@ function getFilePath(tabId: string): string {
 }
 
 /**
- * Upload a file to filesystem storage
+ * Upload a file to PostgreSQL
  * @param key - File path like 'tab-id/filename.ext'
  * @param buffer - File content as ArrayBuffer or Buffer
  * @param contentType - MIME type
@@ -52,67 +52,38 @@ export async function uploadFile(
   const { tabId, filename, format } = parseKey(key);
   const bufferToUse = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
 
-  // MP3 files go to filesystem, others to database (bytea)
-  if (format === 'mp3') {
-    const filePath = getFilePath(tabId);
-    console.log(`[storage] Writing MP3 to filesystem: ${filePath}`);
-    await fs.promises.mkdir(AUDIO_DIR, { recursive: true });
-    await fs.promises.writeFile(filePath, bufferToUse);
-
-    await query(
-      `INSERT INTO tab_files (tab_id, format, filename, content_type, data)
-       VALUES ($1, $2, $3, $4, NULL)
-       ON CONFLICT (tab_id, format) DO UPDATE SET
-         filename = EXCLUDED.filename,
-         content_type = EXCLUDED.content_type,
-         data = NULL`,
-      [tabId, format, `${tabId}.mp3`, contentType || 'audio/mpeg']
-    );
-  } else {
-    // Store in database as bytea
-    console.log(`[storage] Storing ${format} in database (bytea)`);
-    await query(
-      `INSERT INTO tab_files (tab_id, format, filename, content_type, data)
-       VALUES ($1, $2, $3, $4, $5)
-       ON CONFLICT (tab_id, format) DO UPDATE SET
-         filename = EXCLUDED.filename,
-         content_type = EXCLUDED.content_type,
-         data = EXCLUDED.data`,
-      [tabId, format, filename, contentType || 'application/octet-stream', bufferToUse]
-    );
-  }
+  // Store every new upload in PostgreSQL so it survives redeploys.
+  await query(
+    `INSERT INTO tab_files (tab_id, format, filename, content_type, data)
+     VALUES ($1, $2, $3, $4, $5)
+     ON CONFLICT (tab_id, format) DO UPDATE SET
+       filename = EXCLUDED.filename,
+       content_type = EXCLUDED.content_type,
+       data = EXCLUDED.data`,
+    [tabId, format, filename, contentType || 'application/octet-stream', bufferToUse],
+  );
 
   console.log(`[storage] Upload complete: ${key}`);
   return { path: key };
 }
 
 /**
- * Download a file (MP3 from filesystem, others from database)
+ * Download a file from PostgreSQL, falling back to legacy local MP3
  * @param key - File path like 'tab-id/filename.ext'
  * @returns File content as Buffer
  */
 export async function downloadFile(key: string): Promise<Buffer> {
-  const { tabId, filename, format } = parseKey(key);
-
-  // MP3 from filesystem, others from database
-  if (format === 'mp3') {
-    const filePath = getFilePath(tabId);
-    if (!fs.existsSync(filePath)) {
-      throw new Error(`File not found: ${key}`);
-    }
-    return await fs.promises.readFile(filePath);
-  } else {
-    // Read from database bytea
-    const result = await query('SELECT data FROM tab_files WHERE tab_id = $1 AND format = $2', [tabId, format]);
-    if (result.rows.length === 0) {
-      throw new Error(`File not found in database: ${key}`);
-    }
-    const row = result.rows[0];
-    if (!row.data) {
-      throw new Error(`File data is null: ${key}`);
-    }
-    return Buffer.isBuffer(row.data) ? row.data : Buffer.from(row.data, 'hex');
+  const { tabId, format } = parseKey(key);
+  const result = await query('SELECT data FROM tab_files WHERE tab_id = $1 AND format = $2', [tabId, format]);
+  const data = result.rows[0]?.data;
+  if (data) {
+    return Buffer.isBuffer(data) ? data : Buffer.from(data.replace(/^\\x/, ''), 'hex');
   }
+  // Compatibility with MP3 uploaded before database storage was introduced.
+  if (format === 'mp3' && result.rows.length > 0) {
+    return fs.promises.readFile(getFilePath(tabId));
+  }
+  throw new Error(`File not found in database: ${key}`);
 }
 
 /**
@@ -120,7 +91,7 @@ export async function downloadFile(key: string): Promise<Buffer> {
  * @param key - File path like 'tab-id/filename.ext'
  */
 export async function deleteFile(key: string) {
-  const { tabId, filename, format } = parseKey(key);
+  const { tabId, format } = parseKey(key);
 
   // Delete MP3 from filesystem, others just from database
   if (format === 'mp3') {
@@ -181,17 +152,13 @@ export function getPublicUrl(key: string): string {
 }
 
 /**
- * Check if file exists (MP3 in filesystem, others in database)
+ * Check for database content or a legacy local MP3
  * @param key - File path like 'tab-id/filename.ext'
  */
 export async function fileExists(key: string): Promise<boolean> {
   const { tabId, format } = parseKey(key);
 
-  if (format === 'mp3') {
-    const filePath = getFilePath(tabId);
-    return fs.existsSync(filePath);
-  } else {
-    const result = await query('SELECT 1 FROM tab_files WHERE tab_id = $1 AND format = $2 AND data IS NOT NULL', [tabId, format]);
-    return result.rows.length > 0;
-  }
+  const result = await query('SELECT data IS NOT NULL AS has_data FROM tab_files WHERE tab_id = $1 AND format = $2', [tabId, format]);
+  return result.rows[0]?.has_data === true ||
+    (format === 'mp3' && result.rows.length > 0 && fs.existsSync(getFilePath(tabId)));
 }

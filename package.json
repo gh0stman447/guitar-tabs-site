@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:up": "docker compose up -d --wait db",
+    "db:stop": "docker compose stop db",
+    "db:logs": "docker compose logs --tail=100 db",
+    "db:shell": "docker compose exec db psql -U guitar -d guitar_tabs_dev"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.98.0",

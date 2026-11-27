@@ -165,6 +165,54 @@ messages/                         # i18n translations
 - `guitar_tabs_dev` — разработка;
 - `guitar_tabs` — production.
 
+### Локальная база в Docker
+
+`compose.yaml` запускает PostgreSQL 17 на `127.0.0.1:5433`, база
+`guitar_tabs_dev`, пользователь `guitar`. Приложение запускается на хосте через
+`npm run dev`; Docker нужен только для БД.
+
+```bash
+npm run db:up     # запустить БД и дождаться готовности
+npm run dev
+npm run db:stop   # остановить БД, сохранив данные
+npm run db:logs   # последние сообщения PostgreSQL
+npm run db:shell  # открыть psql
+```
+
+Локальный пароль хранится в игнорируемом `.env.docker`:
+
+```dotenv
+POSTGRES_DB=guitar_tabs_dev
+POSTGRES_USER=guitar
+POSTGRES_PASSWORD=<локальный пароль>
+```
+
+При настройке с нуля создать этот файл и указать тот же пароль в `.env.local`:
+
+```dotenv
+DB_HOST=127.0.0.1
+DB_PORT=5433
+DB_NAME=guitar_tabs_dev
+DB_USER=guitar
+DB_PASSWORD=<тот же локальный пароль>
+```
+
+При текущем переключении исходный `.env.local` сохранён в игнорируемом
+`.env.local.vps-backup`. Остальные настройки приложения сохранены.
+После изменения подключения нужно перезапустить уже работающий Next.js.
+
+Новый volume инициализируется через `docker/postgres/001-base.sql`, затем
+существующими SQL-файлами характеристик и аккаунтов. Это восстановленная по
+исходникам и документации схема для пустой dev-базы, а не подтверждённый дамп
+схемы VPS. Bootstrap не предназначен для выполнения на production; SQL-изменений
+production в этой задаче нет. Схему VPS нужно сверить после восстановления доступа.
+
+Данные сохраняются в Docker volume `guitar-tabs-local_postgres_data`.
+Обычные `stop` и `down` сохраняют volume; `down -v` удаляет данные.
+Init SQL выполняется только при первом запуске на пустом volume.
+Старые табы, покупки и файлы не восстанавливаются автоматически: для них нужен
+дамп VPS, а для MP3 также каталог `public/audio`.
+
 ### Схема `purchases`
 
 ```sql
